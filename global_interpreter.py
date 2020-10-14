@@ -13,7 +13,12 @@ import pandas, numpy
 from scipy.stats import mode
 import datetime
 from matplotlib import pyplot as plt
+from matplotlib import rc
 plt.locator_params(axis='y', nbins=6)
+#rc('font', )
+#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+#rc('font',**{'family':'serif','serif':['Times New Roman']})
+#rc('text', usetex=True)
 
 
 def deuterontepol(B,T):
@@ -22,8 +27,6 @@ def deuterontepol(B,T):
 	# 	Boltzmann law w/ j=1; or if you're really fancy
 	# 	you can do the QM density operator for j=1
 	# default Mu is for the proton
-	ub = 9.274009994*10**(-24) # Bohr Magnetron 
-	up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
 	k = 1.38064852 * 10 ** -23
 	
 	gammad_over_2pi = 6.535902311 #MHz/T
@@ -35,8 +38,7 @@ def deuterontepol(B,T):
 def pBdeuterontepol(B,T):
 	# Partial derivative for uncert propogation
 	# default Mu is for the proton
-	ub = 9.274009994*10**(-24) # Bohr Magnetron 
-	up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
+	
 	k = 1.38064852 * 10 ** -23
 	gammad_over_2pi = 6.535902311 #MHz/T
 	h_over_2kb=2.4*10**-5
@@ -47,8 +49,7 @@ def pBdeuterontepol(B,T):
 def pTdeuterontepol(B,T):
 	# Partial derivative for uncert propogation
 	# default Mu is for the proton
-	ub = 9.274009994*10**(-24) # Bohr Magnetron 
-	up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
+	
 	k = 1.38064852 * 10 ** -23
 	gammad_over_2pi = 6.535902311 #MHz/T
 	h_over_2kb=2.4*10**-5
@@ -82,8 +83,7 @@ def pTtpol(b, t, mu = 1.4106067873 * 10 ** -26):
 
 def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, to_save = [], title=None, enforce_T3=False, enforce_VP=False, prevanalized=None, N=1):
 	plt.clf()
-	print("\n"*4)
-	print(y,m,d)
+	print(y,m,d, "Enhanced" if te == False else "")
 	if prevanalized is None:
 		if not te:
 			pltsave = "Enhanced_Results"
@@ -170,23 +170,23 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			else:
 				constants = teval/y3*100
 
-
+			N = numpy.mean([len(y1a), len(y1b), len(t3y), len(y3), len(vpy), len(y3a)])
 			B_x0_BEST = numpy.mean((y1a+y1b)/2)
-			B_x0_UNCERT = numpy.std((y1a+y1b)/2)
-			print("B", B_x0_BEST, "±", B_x0_UNCERT)
+			B_x0_UNCERT = numpy.std((y1a+y1b)/2)/(N)**.5
+			print("B", "{0:.8f}".format(B_x0_BEST), "±", "{0:.8f}".format(B_x0_UNCERT))
 			T_BEST = numpy.mean((t3y+vpy)/2)
-			T_UNCERT = numpy.std((t3y+vpy)/2)
-			print("T", T_BEST,"±", T_UNCERT)
+			T_UNCERT = numpy.std((t3y+vpy)/2)/(N)**.5
+			print("T", "{0:.8f}".format(T_BEST),"±", "{0:.8f}".format(T_UNCERT))
 			TE_BEST = tpol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTtpol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBtpol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", TE_BEST,"±", TE_UNCERT)
+			print("TE", "{0:.8f}".format(TE_BEST),"±", TE_UNCERT)
 			A_BEST = numpy.mean((y3*0.7+y3a*.3))
-			A_UNCERT = numpy.std((y3*0.7+y3a*.3))
-			print("Area", A_BEST,"±", A_UNCERT)
+			A_UNCERT = numpy.std((y3*0.7+y3a*.3))/(N)**.5
+			print("Area", "{0:.8f}".format(A_BEST),"±", "{0:.8f}".format(A_UNCERT))
 			CAL_BEST = TE_BEST/A_BEST
-			#CAL_UNCERT = ((A_UNCERT/A_BEST)**2+(TE_UNCERT/TE_BEST)**2)**.5
-			CAL_UNCERT = A_UNCERT/A_BEST+TE_UNCERT/TE_BEST
-			print("Cal", CAL_BEST,"±", CAL_UNCERT, "(% Polarization / (Volt-area))")
+			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
+			
+			print("Cal", "{0:.8f}".format(CAL_BEST),"±", "{0:.8f}".format(CAL_UNCERT), "(% Polarization / (Volt-area))")
 			
 			results_df["B via x0 (T)"] = y1b
 			results_df["Integrated Data Area"] = y3a
@@ -203,32 +203,32 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 				#constants = teval/y3a*100
 				constants = deuterontepol(y1a, t3y)/y3a*100
 			
-			ub = 9.274009994*10**(-24) # Bohr Magnetron 
-			up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
-			ud = 0.307012207*up        # doi.org/10.1016/j.physleta.2003.09.030
+			
+			N = numpy.mean([len(y1a), len(t3y), len(y3a)])
 			B_x0_BEST = numpy.mean(y1a)
-			B_x0_UNCERT = numpy.std(y1a)#/(N)**.5
-			print("B", B_x0_BEST, "±", B_x0_UNCERT)
+			B_x0_UNCERT = numpy.std(y1a)/(N)**.5
+			print("B", "{0:.8f}".format(B_x0_BEST), "±", "{0:.8f}".format(B_x0_UNCERT))
 			T_BEST = numpy.mean(t3y)
-			T_UNCERT = numpy.std(t3y)#/(N)**.5
-			print("T", T_BEST,"±", T_UNCERT)
+			T_UNCERT = numpy.std(t3y)/(N)**.5
+			print("T", "{0:.8f}".format(T_BEST),"±", "{0:.8f}".format(T_UNCERT))
 			TE_BEST = deuterontepol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", TE_BEST,"±", TE_UNCERT)
+			print("TE", "{0:.8f}".format(TE_BEST),"±", "{0:.8f}".format(TE_UNCERT))
 			A_BEST = numpy.mean(y3a)
-			A_UNCERT = numpy.std(y3a)#/(N)**.5
-			print("Area", A_BEST,"±", A_UNCERT)
+			A_UNCERT = numpy.std(y3a)/(N)**.5
+			print("Area", "{0:.8f}".format(A_BEST),"±", "{0:.8f}".format(A_UNCERT))
 			CAL_BEST = TE_BEST/A_BEST
-			#CAL_UNCERT = ((A_UNCERT/A_BEST)**2+(TE_UNCERT/TE_BEST)**2)**.5
-			CAL_UNCERT = A_UNCERT/A_BEST+TE_UNCERT/TE_BEST
-			print("Cal", CAL_BEST,"±", CAL_UNCERT, "(% Polarization / (Volt-area))")
+			
+
+			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
+			print("Cal", "{0:.8f}".format(CAL_BEST),"±", "{0:.8f}".format(CAL_UNCERT), "(% Polarization / (Volt-area))")
 	
 
 		fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
 		teinfo = [B_x0_BEST, B_x0_UNCERT, T_BEST, T_UNCERT, TE_BEST, TE_UNCERT, A_BEST, A_UNCERT, CAL_BEST, CAL_UNCERT]
 		
 		#ax[2].scatter(x,y3a, color="red")
-		ax[2].errorbar(x,y3a, yerr=numpy.std(y3a), color="red")
+		ax[2].errorbar(x,y3a, yerr=numpy.std(y3a)/(len(y3a))**.5, color="red")
 		ax[2].set_ylabel("Data Area", color="red")
 		#ax[2].set_ylim(-.01, .02)
 
@@ -238,14 +238,14 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 
 		if deuteron:
 			fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
-			print("Max Pol", max(y3a)*CAL_BEST, "±", max(y3a)*CAL_UNCERT)
-			print("Min Pol", min(y3a)*CAL_BEST, "±", min(y3a)*CAL_UNCERT)
+			print("Max Pol", "{0:.8f}".format(max(y3a)*CAL_BEST), "±", "{0:.8f}".format(max(y3a)*CAL_UNCERT))
+			print("Min Pol", "{0:.8f}".format(min(y3a)*CAL_BEST), "±", "{0:.8f}".format(min(y3a)*CAL_UNCERT))
 
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
 			#ax[2].fill_between(x,y3a*(CAL_BEST-CAL_UNCERT), y2=y3a*(CAL_BEST+CAL_UNCERT), color='black', alpha=0.3)
-			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT) )
-			ax[2].scatter(x,y3a*CAL_BEST, color='black')
+			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
+			ax[2].scatter(x,y3a*CAL_BEST, color='blue',zorder=2, s=2)
 
 			results_df["Scaled Polarization (%) (Errorless)"] = y3a*const  # ERRORLESS MEANS NO UNCERT PROPOGATION
 
@@ -279,8 +279,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			
 			
 			ax[2].errorbar(x, y3*CAL_BEST, yerr=y3*CAL_UNCERT, color="green")
-			print("Max Pol", max(y3)*CAL_BEST, "±", max(y3)*CAL_UNCERT)
-			print("Min Pol", min(y3)*CAL_BEST, "±", min(y3)*CAL_UNCERT)
+			print("Max Pol", "{0:.8f}".format(max(y3)*CAL_BEST), "±", "{0:.8f}".format(max(y3)*CAL_UNCERT))
+			print("Min Pol", "{0:.8f}".format(min(y3)*CAL_BEST), "±", "{0:.8f}".format(min(y3)*CAL_UNCERT))
 
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
@@ -301,9 +301,9 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 	fig.suptitle(y+" "+m+" "+d+" "+pltsave)
 	
 	ax[0].set_title("Magnetic Field Strength")
-	ax[0].scatter(x,y1a, label="B via I (T)", color='c')
+	ax[0].scatter(x,y1a, label="B via I (T)", color='purple')
 	
-	ax[0].set_ylabel("B via I (T)",  color='c')
+	ax[0].set_ylabel("B via I (T)",  color='purple')
 	ax[0].legend(loc='best')
 	if not deuteron:
 		bviagmr = ax[0].twinx()
@@ -395,15 +395,16 @@ d="14"
 m="9"
 y="2020"
 
-home= "~/research/wdirs/TE_Extraction/"	# Where the interpreter will drop final results.
+home= "sep_2020/data_record_9-14-2020/700pte/final_results/"	# Where the interpreter will drop final results.
 
+print("First Half")
 datapath = "sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/first_half/"
 constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="628p-630p TE d-Prop", deuteron=True)# N=5)
 
 datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="628p-630p TE calibrated ENHANCED d-Prop", deuteron=True)
 
-
+print("\nSecond Half")
 datapath = "sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/2nd_half/"
 constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="641p-650p TE d-Prop", deuteron=True)#18)
 
@@ -411,4 +412,10 @@ datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_d
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="641p-650p TE calibrated ENHANCED d-Prop", deuteron=True)
 
 
+print("\nGrand Total")
+datapath = "sep_2020/data_record_9-14-2020/700pte/7p_lab/"
+constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="Grand Total TE d-Prop", deuteron=True)# N=5)
+
+datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="Grand Total TE-calibrated ENHANCED d-Prop", deuteron=True)
 

@@ -220,9 +220,9 @@ def kc1(filesdir, dn='', dump='.', additive="TE"):
 
 # A place where there are a bunch of child directories containing .ta1 files (organized by te_directory_sorter.py)
 # And averages each child directory into a single file which it writes in parent directory
-bldirs = "/home/kb/research/wdirs/TE_Extraction/sep_2020/data_record_9-12-2020/TE/912_514p/"
+bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"
 additive=''.join(bldirs.split('/')[-3]) # Is a string of the element between  /^^/ <- there. Useful in making the user type less.
-kc1("/home/kb/research/wdirs/TE_Extraction/sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", dump="/home/kb/research/wdirs/TE_Extraction/sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", additive='TE_')
+kc1("sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", dump="sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", additive='TE_')
 exit()
 for (dirpath, dirnames, filenames) in os.walk(bldirs):
 	dirnames = dirnames
