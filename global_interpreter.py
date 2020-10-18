@@ -11,6 +11,12 @@ Proceed Formally.
 # Omitted the correlative uncertainty in the calibration constant
 # 	since the TE value and Area values both are dependent on T and B 
 
+"""
+TODO: Ship the toolsuite with a .ini so columnames can be generalized. 
+
+TODO: Seperate the TE from the Enhanced routines. Condense TE error propogation
+
+"""
 
 import pandas, numpy
 from scipy.stats import mode
@@ -29,11 +35,7 @@ def report(number, sigfigs=3):
 	return string
 
 def deuterontepol(B,T):
-	# The good-old fashioned thermal polarization eqn
-	# 	thanks to the zeeman interaction (2j+1), derived from the 
-	# 	Boltzmann law w/ j=1; or if you're really fancy
-	# 	you can do the QM density operator for j=1
-	# default Mu is for the proton
+	# Spin 1 TE Equation
 	k = 1.38064852 * 10 ** -23
 	
 	gammad_over_2pi = 6.535902311 #MHz/T
@@ -62,14 +64,10 @@ def pTdeuterontepol(B,T):
 	h_over_2kb=2.4*10**-5
 	a=h_over_2kb*gammad_over_2pi
 	x =a*B/T
-	return 4*a*B*(numpy.tanh(x)**2-3)*(1/numpy.cosh(x)**2)/(T**2*(numpy.tanh(x)**2+3)**2)
-	
+	return 4*a*B*(numpy.tanh(x)**2-3)*(1/numpy.cosh(x)**2)/(T**2*(numpy.tanh(x)**2+3)**2)	
 
 def tpol(b, t, mu = 1.4106067873 * 10 ** -26):
-	# The good-old fashioned thermal polarization eqn
-	# 	thanks to the zeeman interaction (2j+1), derived from the 
-	# 	Boltzmann law w/ j=1/2
-    # default Mu is for the proton
+	# Spin 1/2 TE Equation
     k = 1.38064852 * 10 ** -23
     x = mu * b / (k * t)
     return numpy.tanh(x)
@@ -93,6 +91,11 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 	print(y,m,d, "Enhanced" if te == False else "")
 
 	if prevanalized is None:
+		# Prevanalized is a toggleable function that allows
+		# 	for a tertiary analysis on a dataset that has
+		# 	already been analyzed by the global_interpreter
+		#
+		#		this section is for a first, fresh dataset analysis.
 		if not te:
 			pltsave = "Enhanced_Results"
 			with open(datapath+"enhanced_global_analysis.csv", 'r') as f:
@@ -100,14 +103,13 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 
 		else:
 			pltsave = "TE_Results"
-			#with open(datapath+"global_analysis_ellie_requested.csv", 'r') as f:
 			with open(datapath+"global_analysis.csv", 'r') as f:
 				df = pandas.read_csv(f)
 
 		if title is not None:
 			pltsave = title
 
-		# From global_analysis files.
+		# Header from global_analysis files.
 		rows_to_keep =["name", "time", "B", "ltzian_area", "data_area", "x0", "CCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue"]
 		mhz_to_b = 42.58
 
@@ -116,6 +118,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			if column not in rows_to_keep:
 				rows_to_delete.append(column)
 
+		# Pull out the data needed to do the analysis from our file.
 		if not deuteron:
 			y1 = df["x0"].values.astype(float)
 			y1b = df["x0"].values.astype(float)/mhz_to_b
@@ -130,6 +133,11 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 		
 
 	else:
+		# Prevanalized is a toggleable function that allows
+		# 	for a tertiary analysis on a dataset that has
+		# 	already been analyzed by the global_interpreter
+		#
+		#		This is the portion for the tertiary analysis
 		with open(prevanalized, 'r') as f:
 			df = pandas.read_csv(f)
 		y1a = df['B via I (T)'].values
@@ -153,7 +161,6 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			y1a[index] = 0
 		else:
 			y1a[index] = float(val)
-	
 
 	if enforce_T3:
 		print("Enforcing T3 Value.")
@@ -164,28 +171,35 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 
 	y2 = (t3y+vpy)/2
 
-	
-
 	if te:
-		
+		# Begin calculating the thermal equalibrium polarization, and calibration constant 
+		#	for the polarization area method based on NMR signal extraction.
 		if not deuteron:
-			if mode(teval)[0] == 0: # tanh(x) = 0 iff x=0. Here, x = uB/(kT) ==> B = 0 (we didn't get I for some reason from PSU)
+			if mode(teval)[0] == 0: # tanh(x) = 0 iff x=0. Here, x = uB/(kT) ==> B = 0 (we didn't get I for some reason from magnet PSU)
 				bviax0 = y1b
 				y1a = y1b
 				constants = tpol(bviax0, y2)/y3*100
 				viax0 = tpol(bviax0, y2) # average temperature that I average here, since the since global_analysis
-										 # 		is just .ta1 compction.
 			else:
 				constants = teval/y3*100
 
+			# Get the number of datapoints.
 			N = numpy.mean([len(y1a), len(y1b), len(t3y), len(y3), len(vpy), len(y3a)])
+			
+			# Get the math in line for the calibration constant
+			# 	and uncert propogation 
 			B_x0_BEST = numpy.mean((y1a+y1b)/2)
 			B_x0_UNCERT = numpy.std((y1a+y1b)/2)/(N)**.5
 			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean((t3y+vpy)/2)
 			T_UNCERT = numpy.std((t3y+vpy)/2)/(N)**.5
-			if N < 10:
-				T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
+			T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
+			
+			# This Bandaid fix for the issues of not having enough datapoints
+			#	I have yet to develop a reasonable confidence interval on low count set.
+			if N < 10 and T_VAR/2 > T_UNCERT:
+				T_UNCERT = T_VAR/2
+
 			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = tpol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTtpol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBtpol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
@@ -198,6 +212,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			
 			print("Cal", report(CAL_BEST),"±", report(CAL_UNCERT), "(% Polarization / (Volt-area))")
 			
+			# Save the data
 			results_df["B via x0 (T)"] = y1b
 			results_df["Integrated Data Area"] = y3a
 			results_df["Lorentzian Area"] = y3
@@ -210,9 +225,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 				constants = deuterontepol(bviax0, y2a)/y3*100
 
 			else:
-				#constants = teval/y3a*100
+				# Recalculate the TE equation because legacy analysis may have not always done it correctly.
 				constants = deuterontepol(y1a, t3y)/y3a*100
-			
 			
 			N = numpy.mean([len(y1a), len(t3y), len(y3a)])
 			B_x0_BEST = numpy.mean(y1a)
@@ -220,8 +234,12 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean(t3y)
 			T_UNCERT = numpy.std(t3y)/(N)**.5
-			if N < 10:
-				T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
+			T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
+			
+			# Haven't developed intelligent way to handle uncertainties. 
+			if N < 10 and T_VAR/2 > T_UNCERT:
+				T_UNCERT = T_VAR/2
+
 			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = deuterontepol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
@@ -244,7 +262,9 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 		ax[2].set_ylabel("Data Area", color="red")
 		#ax[2].set_ylim(-.01, .02)
 
-	else:
+	else:	
+		# Propogate what happened earlier, forward onto this second "enhanced" dataset. to_save is a variable
+		#	containing the results of the te handling
 		B_x0_BEST, B_x0_UNCERT, T_BEST, T_UNCERT, TE_BEST, TE_UNCERT, A_BEST, A_UNCERT, CAL_BEST, CAL_UNCERT = to_save
 		const = numpy.mean(constant) # This is passed to the function
 
@@ -253,16 +273,11 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			print("Max Pol", report(max(y3a)*CAL_BEST), "±", report(max(y3a)*CAL_UNCERT))
 			print("Min Pol", report(min(y3a)*CAL_BEST), "±", report(min(y3a)*CAL_UNCERT))
 
-			# This draws the green uncertainty-band for our polarization. It is generally
-			#	Too thin to see without cranking up the chart's DPI.
-			#ax[2].fill_between(x,y3a*(CAL_BEST-CAL_UNCERT), y2=y3a*(CAL_BEST+CAL_UNCERT), color='black', alpha=0.3)
 			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
 			ax[2].scatter(x,y3a*CAL_BEST, color='blue',zorder=2, s=2)
 
-			results_df["Scaled Polarization (%) (Errorless)"] = y3a*const  # ERRORLESS MEANS NO UNCERT PROPOGATION
-
 			# "BEST" is with uncert
-			results_df["Best Scaled Polarization (%)"] = y3a*CAL_BEST
+			results_df["Scaled Polarization (%)"] = y3a*CAL_BEST
 			results_df["Uncert in Scaled polarization"] = y3a*CAL_UNCERT
 		
 		else:
@@ -296,20 +311,16 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
-			ax[2].fill_between(x,y3*(CAL_BEST-CAL_UNCERT), y2=y3*(CAL_BEST+CAL_UNCERT), color='black', alpha=0.3)
-			ax[2].scatter(x,y3*CAL_BEST, color='black')
-
-			results_df["Scaled Polarization (%) (Errorless)"] = y3*const  # ERRORLESS MEANS NO UNCERT PROPOGATION
+			ax[2].errorbar(x,y3*(CAL_BEST-CAL_UNCERT), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
+			ax[2].scatter(x,y3*CAL_BEST, color='blue', zorder=2, s=2)
 
 			# "BEST" is with uncert
-			results_df["Best Scaled Polarization (%)"] = y3*CAL_BEST
+			results_df["Scaled Polarization (%)"] = y3*CAL_BEST
 			results_df["Uncert in Scaled polarization"] = y3*CAL_UNCERT
-
 
 		ax[2].set_ylabel("Scaled Polarization (%)")
 	
-
-
+	# Begin ubiquitous stuff, and general useful data.
 	fig.suptitle(y+" "+m+" "+d+" "+pltsave)
 	
 	ax[0].set_title("Magnetic Field Strength")
@@ -359,6 +370,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			# List passing > typing lots
 			return constants, teinfo
 		return False
+	
 	else:
 		results_df["B via I (T)"] = y1a
 		results_df["CCCS.T3 (K)"] = t3y
