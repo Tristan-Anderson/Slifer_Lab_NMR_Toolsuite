@@ -8,6 +8,9 @@ but noble fruit tastes bad.
 Proceed Formally.
 """
 
+# Omitted the correlative uncertainty in the calibration constant
+# 	since the TE value and Area values both are dependent on T and B 
+
 
 import pandas, numpy
 from scipy.stats import mode
@@ -88,8 +91,7 @@ def pTtpol(b, t, mu = 1.4106067873 * 10 ** -26):
 def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, to_save = [], title=None, enforce_T3=False, enforce_VP=False, prevanalized=None, N=1):
 	plt.clf()
 	print(y,m,d, "Enhanced" if te == False else "")
-	print("We have omitted the correlative uncertainty in the calibration constant\n since the TE value and Area values both are dependent on T and B")
-	print("Since the Area value requires a first principles calculaton of the NMR circuit response (which is hard)\nwe've neglected to do the correlative uncertainty propogation.")
+
 	if prevanalized is None:
 		if not te:
 			pltsave = "Enhanced_Results"
@@ -139,7 +141,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 		vpy = df["VP (K)"].values.astype(float)
 		sweep_centroids = df["sweep centroid"].values.astype(float)
 		sweep_width = df["sweep width"].values.astype(float)
-	#print(df)
+
 	df["time"] = pandas.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 	results_df = pandas.DataFrame()
 	results_df["time"] = df["time"]
@@ -182,10 +184,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean((t3y+vpy)/2)
 			T_UNCERT = numpy.std((t3y+vpy)/2)/(N)**.5
-			"""
-				Write a smol "if" clause here that checks the standard deviation from the 
-					variance, on a confidence interval.
-			"""
+			if N < 10:
+				T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
 			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = tpol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTtpol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBtpol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
@@ -220,6 +220,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean(t3y)
 			T_UNCERT = numpy.std(t3y)/(N)**.5
+			if N < 10:
+				T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
 			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = deuterontepol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
@@ -405,27 +407,27 @@ d="14"
 m="9"
 y="2020"
 
-home= "sep_2020/data_record_9-14-2020/700pte/final_results/"	# Where the interpreter will drop final results.
+home= "datasets/sep_2020/data_record_9-14-2020/700pte/final_results/"	# Where the interpreter will drop final results.
 
 print("First Half")
-datapath = "sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/first_half/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/first_half/"
 constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="628p-630p TE d-Prop", deuteron=True)# N=5)
 
-datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="628p-630p TE calibrated ENHANCED d-Prop", deuteron=True)
 
 print("\nSecond Half")
-datapath = "sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/2nd_half/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/2nd_half/"
 constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="641p-650p TE d-Prop", deuteron=True)#18)
 
-datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="641p-650p TE calibrated ENHANCED d-Prop", deuteron=True)
 
 
 print("\nGrand Total")
-datapath = "sep_2020/data_record_9-14-2020/700pte/7p_lab/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_lab/"
 constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="Grand Total TE d-Prop", deuteron=True)# N=5)
 
-datapath = "sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="Grand Total TE-calibrated ENHANCED d-Prop", deuteron=True)
 
