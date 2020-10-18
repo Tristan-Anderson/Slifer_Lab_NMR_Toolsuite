@@ -15,11 +15,15 @@ import datetime
 from matplotlib import pyplot as plt
 from matplotlib import rc
 plt.locator_params(axis='y', nbins=6)
-#rc('font', )
-#rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-#rc('font',**{'family':'serif','serif':['Times New Roman']})
-#rc('text', usetex=True)
 
+
+def report(number, sigfigs=3):
+	# This reports significant figures
+	# by exploiting the exponential format
+	# since I could not find something prebuilt.
+	formatstring = "{0:."+str(sigfigs)+"E}"
+	string = str(float(formatstring.format(number)))
+	return string
 
 def deuterontepol(B,T):
 	# The good-old fashioned thermal polarization eqn
@@ -84,6 +88,8 @@ def pTtpol(b, t, mu = 1.4106067873 * 10 ** -26):
 def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, to_save = [], title=None, enforce_T3=False, enforce_VP=False, prevanalized=None, N=1):
 	plt.clf()
 	print(y,m,d, "Enhanced" if te == False else "")
+	print("We have omitted the correlative uncertainty in the calibration constant\n since the TE value and Area values both are dependent on T and B")
+	print("Since the Area value requires a first principles calculaton of the NMR circuit response (which is hard)\nwe've neglected to do the correlative uncertainty propogation.")
 	if prevanalized is None:
 		if not te:
 			pltsave = "Enhanced_Results"
@@ -173,20 +179,24 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			N = numpy.mean([len(y1a), len(y1b), len(t3y), len(y3), len(vpy), len(y3a)])
 			B_x0_BEST = numpy.mean((y1a+y1b)/2)
 			B_x0_UNCERT = numpy.std((y1a+y1b)/2)/(N)**.5
-			print("B", "{0:.8f}".format(B_x0_BEST), "±", "{0:.8f}".format(B_x0_UNCERT))
+			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean((t3y+vpy)/2)
 			T_UNCERT = numpy.std((t3y+vpy)/2)/(N)**.5
-			print("T", "{0:.8f}".format(T_BEST),"±", "{0:.8f}".format(T_UNCERT))
+			"""
+				Write a smol "if" clause here that checks the standard deviation from the 
+					variance, on a confidence interval.
+			"""
+			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = tpol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTtpol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBtpol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", "{0:.8f}".format(TE_BEST),"±", TE_UNCERT)
+			print("TE", report(TE_BEST),"±", TE_UNCERT)
 			A_BEST = numpy.mean((y3*0.7+y3a*.3))
 			A_UNCERT = numpy.std((y3*0.7+y3a*.3))/(N)**.5
-			print("Area", "{0:.8f}".format(A_BEST),"±", "{0:.8f}".format(A_UNCERT))
+			print("Area", report(A_BEST),"±", report(A_UNCERT))
 			CAL_BEST = TE_BEST/A_BEST
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
 			
-			print("Cal", "{0:.8f}".format(CAL_BEST),"±", "{0:.8f}".format(CAL_UNCERT), "(% Polarization / (Volt-area))")
+			print("Cal", report(CAL_BEST),"±", report(CAL_UNCERT), "(% Polarization / (Volt-area))")
 			
 			results_df["B via x0 (T)"] = y1b
 			results_df["Integrated Data Area"] = y3a
@@ -207,21 +217,21 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			N = numpy.mean([len(y1a), len(t3y), len(y3a)])
 			B_x0_BEST = numpy.mean(y1a)
 			B_x0_UNCERT = numpy.std(y1a)/(N)**.5
-			print("B", "{0:.8f}".format(B_x0_BEST), "±", "{0:.8f}".format(B_x0_UNCERT))
+			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
 			T_BEST = numpy.mean(t3y)
 			T_UNCERT = numpy.std(t3y)/(N)**.5
-			print("T", "{0:.8f}".format(T_BEST),"±", "{0:.8f}".format(T_UNCERT))
+			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = deuterontepol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", "{0:.8f}".format(TE_BEST),"±", "{0:.8f}".format(TE_UNCERT))
+			print("TE", report(TE_BEST),"±", report(TE_UNCERT))
 			A_BEST = numpy.mean(y3a)
 			A_UNCERT = numpy.std(y3a)/(N)**.5
-			print("Area", "{0:.8f}".format(A_BEST),"±", "{0:.8f}".format(A_UNCERT))
+			print("Area", report(A_BEST),"±", report(A_UNCERT))
 			CAL_BEST = TE_BEST/A_BEST
 			
 
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
-			print("Cal", "{0:.8f}".format(CAL_BEST),"±", "{0:.8f}".format(CAL_UNCERT), "(% Polarization / (Volt-area))")
+			print("Cal", report(CAL_BEST),"±", report(CAL_UNCERT), "(% Polarization / (Volt-area))")
 	
 
 		fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
@@ -238,8 +248,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 
 		if deuteron:
 			fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
-			print("Max Pol", "{0:.8f}".format(max(y3a)*CAL_BEST), "±", "{0:.8f}".format(max(y3a)*CAL_UNCERT))
-			print("Min Pol", "{0:.8f}".format(min(y3a)*CAL_BEST), "±", "{0:.8f}".format(min(y3a)*CAL_UNCERT))
+			print("Max Pol", report(max(y3a)*CAL_BEST), "±", report(max(y3a)*CAL_UNCERT))
+			print("Min Pol", report(min(y3a)*CAL_BEST), "±", report(min(y3a)*CAL_UNCERT))
 
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
@@ -279,8 +289,8 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 			
 			
 			ax[2].errorbar(x, y3*CAL_BEST, yerr=y3*CAL_UNCERT, color="green")
-			print("Max Pol", "{0:.8f}".format(max(y3)*CAL_BEST), "±", "{0:.8f}".format(max(y3)*CAL_UNCERT))
-			print("Min Pol", "{0:.8f}".format(min(y3)*CAL_BEST), "±", "{0:.8f}".format(min(y3)*CAL_UNCERT))
+			print("Max Pol", report(max(y3)*CAL_BEST), "±", report(max(y3)*CAL_UNCERT))
+			print("Min Pol", report(min(y3)*CAL_BEST), "±", report(min(y3)*CAL_UNCERT))
 
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
