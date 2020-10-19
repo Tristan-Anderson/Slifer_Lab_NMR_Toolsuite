@@ -229,12 +229,13 @@ def directory(datapath, filedump, cwd):
         print(filestuff)
         print('#'*len(filestuff))
         file_muncher(file, raw_data, fdump+dumps[index])
+    print("Complete.")
 
 def single_file(datafile, filedump):
     datadir = '/'.join((datafile.split('/')[:-2]))+'/'
     #print(datadir)
     file_muncher(datafile,datadir,filedump)
-
+    print("Complete.")
 
 
 

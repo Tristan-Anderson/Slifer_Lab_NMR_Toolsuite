@@ -25,7 +25,16 @@ import os, datetime,shutil, glob
 
 
 
-def te_directory_sorter(location, timestep):
+def shelf(location, **ts):
+	"""
+	Takes all of the .ta1 files and "shelves" them
+	into tiny directories, the timespan of which
+	is regulated by the user
+	"""
+	hours = ts.pop("hours",0)
+	minutes = ts.pop("minutes",0)
+	seconds = ts.pop("seconds",0)
+	timestep = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
 	for (dirpath, dirnames, filenames) in os.walk(location):
 		fnames = filenames
 		break
@@ -81,7 +90,21 @@ def te_directory_sorter(location, timestep):
 		prevstepalldates = stepalldates
 		stepalldates += timestep
 
-timestep = datetime.timedelta(seconds=5)#minutes=1)
-location = "/home/kb/Desktop/Polarization/915_405a_enhanced/"
-
-te_directory_sorter(location, timestep)
+def unshelf(location):
+	"""
+	From a shelved 2-D file structure, go into the
+	children of the "location" directory, and move
+	them to the parent/root/"location" directory.
+	"""
+	home = location
+	
+	for (dirpath, dirnames, filenames) in os.walk(location)
+		dirnames = dirnames
+		break
+	for child in dirnames:
+		os.chdir(child)
+		for (dirpath, dirnames, filenames) in os.walk(location)
+			filenames = filenames
+			break
+		for file in filenames:
+			shutil.move

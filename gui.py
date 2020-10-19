@@ -10,6 +10,7 @@ import tkinter.scrolledtext as scrolledtext
 from tkinter import filedialog
 import NMR_Analyzer as v
 import daq_muncher
+import directory_sorter
 from statistics import mode
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -37,7 +38,7 @@ class NMR_Visualizer(tk.Tk):                # Class
 
         self.frames = {}                            # Attribute            
         options = [File_Selector, Data_Selector, Fitting_Page, 
-                   DAQ_Extractor, Global_Interpreter, ta1_Directory_Sorter,
+                   DAQ_Extractor, Global_Interpreter, Directory_Sorter,
                    Sweep_Averager,NMR_Splash]
         for F in options:
             frame = F(window, self)
@@ -182,7 +183,7 @@ class Global_Interpreter(tk.Frame):
     def populate_toggleables(self):
         pass
 
-class ta1_Directory_Sorter(tk.Frame):
+class Directory_Sorter(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
@@ -219,7 +220,7 @@ class NMR_Splash(tk.Frame):
         self.goto_DAQ_extractor = tk.Button(self.splashFrame, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont=DAQ_Extractor))
         self.goto_DAQ_extractor.grid(column=0,row=2, pady=10)
 
-        self.ta1DirSorter = tk.Button(self.splashFrame, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont=ta1_Directory_Sorter))
+        self.ta1DirSorter = tk.Button(self.splashFrame, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont=Directory_Sorter))
         self.ta1DirSorter.grid(column=0,row=3, pady=10)
 
         self.sweepavgr = tk.Button(self.splashFrame, text="Sweep Averager", command=lambda:self.controller.show_frame(cont=Sweep_Averager))
