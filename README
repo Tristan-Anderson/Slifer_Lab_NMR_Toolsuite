@@ -3,7 +3,7 @@ I develop features in each branch of the repository.
 I try to keep the main branch free of the insane number of commits I might make in a day.
 
 I work on one feature at a time, which means that I also work on one branch at a time.
-That beging said, the most recent commit you see to the repository is probably the code
+That being said, the most recent commit you see to the repository is probably the code
 that I'm working on currently. I generally do not push to this repository unless the
 entire toolsuite is working.
 
