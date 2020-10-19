@@ -173,6 +173,7 @@ class DAQ_Extractor(tk.Frame):
         self.daqexportname = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A Directory")
         self.exportButton.configure(text=self.daqexportname)
 
+
 class Global_Interpreter(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -183,6 +184,7 @@ class Global_Interpreter(tk.Frame):
 
     def populate_toggleables(self):
         pass
+
 
 class Directory_Sorter(tk.Frame):
     def __init__(self, parent, controller):
@@ -257,6 +259,7 @@ class Directory_Sorter(tk.Frame):
         self.location = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
         self.directory_Button.configure(text = self.location)
 
+
 class Sweep_Averager(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -264,15 +267,37 @@ class Sweep_Averager(tk.Frame):
 
         self.guiTitle = tk.LabelFrame(self, text="Sweep Averager")
         self.guiTitle.grid(column=0, row=0)
+
+        self.status = tk.StringVar(value="directory")
         
+        self.location_Button = tk.Button(self.guiTitle, text="Select Location to Average", command=self.pickdir)
+        self.location_Button.grid(column=0, row=1)
+        tk.Radiobutton(self.guiTitle, text="Directory", value='directory', variable=self.status).grid(column=1,row=1)
+        tk.Radiobutton(self.guiTitle, text="Nested Directory", value='nested', variable=self.status).grid(column=1,row=2)
 
-
+        self.sweep_averager_button = tk.Button(self.guiTitle, text='Start', command=self.send_it)
+        self.sweep_averager_button.grid(column=3, row=3)
+        
+        self.backbutton = tk.Button(self.guiTitle, text="Back", command = lambda: self.controller.show_frame(cont=NMR_Splash))
+        self.backbutton.grid(column=2, row=3)
     def fetch_kwargs(self, **kwargs):
+        #
         self.populate_toggleables()
 
     def populate_toggleables(self):
+        #
         pass
 
+    def send_it(self):
+        status = self.status.get()
+        if status == "directory":
+            sweep_averager.avg_single_dir(self.location)
+        elif status == "nested":
+            sweep_averager.avg_nested_dirs(self.location)
+
+    def pickdir(self):
+        self.location = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
+        self.location_Button.configure(text = self.location)
 
 class NMR_Splash(tk.Frame):
     def __init__(self, parent, controller):
