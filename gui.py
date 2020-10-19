@@ -9,8 +9,7 @@ import tkinter as tk
 import tkinter.scrolledtext as scrolledtext
 from tkinter import filedialog
 import NMR_Analyzer as v
-import daq_muncher
-import directory_sorter
+import daq_muncher, directory_sorter,sweep_averager,global_interpreter
 from statistics import mode
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -37,9 +36,9 @@ class NMR_Visualizer(tk.Tk):                # Class
         window.grid_columnconfigure(0,weight=1)
 
         self.frames = {}                            # Attribute            
-        options = [File_Selector, Data_Selector, Fitting_Page, 
+        options = [NMR_Splash, File_Selector, Data_Selector, Fitting_Page, 
                    DAQ_Extractor, Global_Interpreter, Directory_Sorter,
-                   Sweep_Averager,NMR_Splash]
+                   Sweep_Averager]
         for F in options:
             frame = F(window, self)
 
@@ -187,11 +186,74 @@ class Directory_Sorter(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+
+        self.guiTitle = tk.LabelFrame(self, text="NMR Sweep Sorter")
+        self.guiTitle.grid(column=0,row=0,padx=35, pady=10)
+
+        self.status = tk.StringVar(value='shelf')
+        tk.Radiobutton(self.guiTitle, text="Shelf (Organize into Child Dirs)", variable=self.status, value="shelf").grid(column=2,row=0, pady=10)
+        tk.Radiobutton(self.guiTitle, text="Un-Shelf (Remove from Child Dirs into Root Dir)", variable=self.status, value="unshelf").grid(column=2,row=2, pady=10)
+        self.sortd_LF = tk.LabelFrame(self.guiTitle, text="Directory to Sort")
+        self.sortd_LF.grid(column=0,row=1, pady=10)
+
+        self.directory_Button = tk.Button(self.sortd_LF, text='Pick Directory', command=self.pickdir)
+        self.directory_Button.grid(column=0, row=1)
+
+        self.timedelta_organize_LF = tk.LabelFrame(self, text="Timedelta")
+        self.timedelta_organize_LF.grid(column=1, row=0, padx=35,pady=10)
+        
+        hours = [str(i) for i in range(0,24)]
+        minutes = [str(i) for i in range(0,60)]
+        seconds = minutes
+        
+        self.timedeltalabel = tk.Label(self.timedelta_organize_LF, text="Timedelta Selection:")
+        self.timedeltalabel.grid(column=1,row=0)
+        
+        self.hourslabel = tk.Label(self.timedelta_organize_LF, text="Hours:")
+        self.hourslabel.grid(column=0, row=1)
+        self.hours = tk.StringVar(self)
+        self.hours.set(hours[0])
+        self.hoursPulldown = tk.OptionMenu(self.timedelta_organize_LF, self.hours, *hours)
+        self.hoursPulldown.grid(column=2, row=1)
+        
+        self.minuteslabel = tk.Label(self.timedelta_organize_LF, text="Minutes:")
+        self.minuteslabel.grid(column=0, row=2)
+        self.minutes = tk.StringVar(self)
+        self.minutes.set(minutes[0])
+        self.minutesPulldown = tk.OptionMenu(self.timedelta_organize_LF, self.minutes, *minutes)
+        self.minutesPulldown.grid(column=2, row=2)
+        
+        self.secondslabel = tk.Label(self.timedelta_organize_LF,text="Seconds:")
+        self.secondslabel.grid(column=0,row=3)
+        self.seconds = tk.StringVar(self)
+        self.seconds.set(seconds[0])
+        self.secondsPulldown = tk.OptionMenu(self.timedelta_organize_LF, self.seconds, *seconds)
+        self.secondsPulldown.grid(column=2, row=3)
+
+        self.beginButton = tk.Button(self.timedelta_organize_LF, text="Organize", command=self.organize)
+        self.beginButton.grid(column=1,row=4, padx=25,pady=10)
+
+        self.backbutton = tk.Button(self, text="Back", command=lambda: self.controller.show_frame(cont=NMR_Splash))
+        self.backbutton.grid(column=0,row=1)
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
     def populate_toggleables(self):
         pass
+
+    def organize(self):
+        h = int(self.hours.get())
+        m = int(self.minutes.get())
+        s = int(self.seconds.get())
+        status = self.status.get()
+        if status == "shelf":
+            directory_sorter.shelf(self.location, hours=h, minutes=m, seconds=s)
+        elif status == "unshelf":
+            directory_sorter.unshelf(self.location)
+
+    def pickdir(self):
+        self.location = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
+        self.directory_Button.configure(text = self.location)
 
 class Sweep_Averager(tk.Frame):
     def __init__(self, parent, controller):

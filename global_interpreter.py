@@ -414,7 +414,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 	return False
 
 
-
+"""
 d="14"
 m="9"
 y="2020"
@@ -442,4 +442,4 @@ constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="Grand To
 
 datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="Grand Total TE-calibrated ENHANCED d-Prop", deuteron=True)
-
+"""

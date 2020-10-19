@@ -48,7 +48,6 @@ def shelf(location, **ts):
 	minalldates = min(alldates)
 	prevstepalldates = minalldates
 	stepalldates = minalldates+timestep
-	print(minalldates, stepalldates)
 	while prevstepalldates < max(alldates):
 		os.chdir(location)
 
@@ -96,15 +95,18 @@ def unshelf(location):
 	children of the "location" directory, and move
 	them to the parent/root/"location" directory.
 	"""
-	home = location
-	
-	for (dirpath, dirnames, filenames) in os.walk(location)
+	home = os.getcwd()
+	os.chdir(location)
+	for (dirpath, dirnames, filenames) in os.walk(location):
 		dirnames = dirnames
 		break
 	for child in dirnames:
-		os.chdir(child)
-		for (dirpath, dirnames, filenames) in os.walk(location)
-			filenames = filenames
+		d = location+child
+		os.chdir(d)
+		for (dirpath, dirnames, filenames) in os.walk(d):
+			for file in filenames:
+				shutil.move(d+'/'+file, location+'/'+file)
 			break
-		for file in filenames:
-			shutil.move
+		os.chdir(location)
+		os.rmdir(d)
+	os.chdir(home)
