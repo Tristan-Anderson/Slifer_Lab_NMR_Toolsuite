@@ -299,6 +299,7 @@ class Sweep_Averager(tk.Frame):
         self.location = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
         self.location_Button.configure(text = self.location)
 
+
 class NMR_Splash(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
