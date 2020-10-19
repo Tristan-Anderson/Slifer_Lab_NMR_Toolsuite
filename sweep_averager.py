@@ -24,6 +24,21 @@ Takes the .ta1 files of the first child directories,
 and creates an average of them, writing it in a parent directory.
 """
 
+global time_colname, primary_thermometer_colname,secondary_thermometer_colname,\
+        magnet_psu_amperage_colname,sweep_centroid_colname,sweep_width_colname,\
+        system_status_colname,system_status_nulls,system_null_status_directory,\
+        terminal_colname
+time_colname = "Time"
+primary_thermometer_colname = "CCX.T3 (K)"
+secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
+magnet_psu_amperage_colname = "Magnet Current (A)"
+sweep_centroid_colname  = "Central Freq (MHz)"
+sweep_width_colname = "Freq Span (MHz)"
+system_status_colname = "NMR Status"
+system_status_nulls = ['---']
+system_null_status_directory = 'null_status'
+terminal_colname = 'NMR Data' # This is the column below, and after which sweep data
+                                #   data accumulates.
 
 def ta1parser(path,columns=[], delimeter='\t'):
     #import datetime
@@ -117,18 +132,16 @@ def ta1parser(path,columns=[], delimeter='\t'):
     return {"data":ta1f, "lines_to_skip":lines_to_skip, "Temperature":T, "Mag Current":I, "Central Freq (MHz)":cfq, "Freq Span (MHz)":fqs, "Time":dateish}
 
 def ta1filewriter(f, y, x, T, I,cfq,fqspan, date="None", nmr_status="Baseline"):
-    f.write("Time\t"+date+'\t')
-    f.write("Vapor Pressure Temperature (K)\t"+str(T)+'\n')
-    f.write("Magnet Current (A)\t"+str(I)+'\t')
-    f.write("CCCS.T3 (K)\t"+str(T)+'\n')
-    f.write("Central Freq (MHz)\t"+str(cfq)+'\t')
-    f.write("Freq Span (MHz)\t"+str(fqspan)+'\n')
-    f.write("NMR Status\t"+str(nmr_status)+'\n')
-    f.write("#\tMHz\tNMR Data\n")
+    f.write(time_colname+"\t"+date+'\t')
+    f.write(secondary_thermometer_colname+"\t"+str(T)+'\n')
+    f.write(magnet_psu_amperage_colname+"\t"+str(I)+'\t')
+    f.write(primary_thermometer_colname+"\t"+str(T)+'\n')
+    f.write(sweep_centroid_colname+"\t"+str(cfq)+'\t')
+    f.write(sweep_width_colname+"\t"+str(fqspan)+'\n')
+    f.write(system_status_colname+"\t"+str(nmr_status)+'\n')
+    f.write("#\tMHz\t"+terminal_colname+"\n")
     for index, val in enumerate(y):
         f.write(str(x[index])+"\t"+ str(val)+"\n")
-
-
 
 def kc1(filesdir, dn='', dump='.', additive="TE"):
 	"""
@@ -217,6 +230,18 @@ def kc1(filesdir, dn='', dump='.', additive="TE"):
 	with open(dn+additive+"_average.ta1", 'w') as f:
 		ta1filewriter(f, yavg, xavg, avgt, icurent, cfq, freqspan,date=(min(da)+(max(da)-min(da))/2).strftime("%Y-%m-%d %H:%M:%S"))
 
+def avg_nested_dirs(filesdir):
+    #bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"
+    additive=''.join(filesdir.split('/')[-3]) # Is a string of the element between  /^^/ <- there. Useful in making the user type less.
+    for (dirpath, dirnames, filenames) in os.walk(filesdir):
+        dirnames = dirnames
+        break
+    for dirname in dirnames:
+        kc1(bldirs+dirname+'/', dn=dirname+'_', dump=bldirs, additive=additive)
+
+def avg_single_dir(filesdir)
+    additive=''.join(filesdir.split('/')[-3])
+    kc1(filesdir, dump=filesdir, additive=additive)
 
 # A place where there are a bunch of child directories containing .ta1 files (organized by te_directory_sorter.py)
 # And averages each child directory into a single file which it writes in parent directory

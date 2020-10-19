@@ -19,6 +19,8 @@ import datetime, pandas, os, numpy
 I have almost no formal training with GUIs.
 All this stuff is self taught
 and found from the library's documentation.
+
+Each class is its own window-pane.
 """
 
 class NMR_Visualizer(tk.Tk):                # Class
@@ -259,6 +261,11 @@ class Sweep_Averager(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+
+        self.guiTitle = tk.LabelFrame(self, text="Sweep Averager")
+        self.guiTitle.grid(column=0, row=0)
+        
+
 
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
