@@ -35,15 +35,17 @@ class NMR_Visualizer(tk.Tk):                # Class
         window.grid_columnconfigure(0,weight=1)
 
         self.frames = {}                            # Attribute            
-
-        for F in (File_Selector, Data_Selector, Fitting_Page):
+        options = [DAQ_Extractor, Global_Interpreter,ta1_Directory_Sorter,
+                   Sweep_Averager,NMR_Splash,File_Selector, Data_Selector, 
+                   Fitting_Page]
+        for F in options:
             frame = F(window, self)
 
             self.frames[F] = frame
 
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(cont=File_Selector)
+        self.show_frame(cont=NMR_Splash)
 
     def show_frame(self, **kwargs):
         cont = kwargs.pop('cont', False)
@@ -102,11 +104,36 @@ class DAQ_Extractor(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
+        self.guiTitle = tk.Label(self, text="NMR DAQ Extractor")
+        self.guiTitle.grid(column=1,row=1)
+
+        self.daqFileSelectorButton = tk.Button(self, text = "Select Raw DAQ File", command = self.daqFileDialog)
+        self.daqFileSelectorButton.grid(column = 2, row = 2)
+        
+
+        self.bldataFileSelector = tk.LabelFrame(self, text = "Select Export Director")
+        self.bldataFileSelector.grid(column = 1, row = 2)
+        
+       
+        self.Switches = tk.Button(self, text = "Start")
+        self.Switches.grid(column = 2, row = 2)
+
+        self.delimeter = tk.Button(self, text="Back")
+        self.delimeter.grid(column=2, row=1)
+
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
     def populate_toggleables(self):
+        # Nothing to pass (as of yet!)
         pass
+        
+    def daqFileDialog(self):
+        ftyps = (("All Files", "*.*"))
+        self.daqfilename = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File", filetypes = ftyps)
+        #self.bllabel = tk.Label(self.bldataFileSelector, text = "")
+        #self.bllabel.grid(column = 1, row = 2)
+        self.bllabel.configure(text = self.blfilename)
 
 class Global_Interpreter(tk.Frame):
     def __init__(self, parent, controller):
@@ -132,8 +159,8 @@ class ta1_Directory_Sorter(tk.Frame):
 class Sweep_Averager(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
         self.controller = controller
+
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
@@ -144,19 +171,27 @@ class Sweep_Averager(tk.Frame):
 class NMR_Splash(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        tk.Label(self, text="NMR Toolsuite")
+        tk.Label(self, text="NMR Toolsuite").grid(column=0,row=0)
+        
         self.controller = controller
 
-    def goto_Sweep_Averager(self):
-        pass
-        self.button
-    def goto_ta1_Directory_sorter(self):
-        pass
 
-    def goto_Global_Interpreter(self):
-        pass
+        self.goto_analyser = tk.Button(self,text="NMR Signal Extractor", command= lambda: self.controller.show_frame(cont=File_Selector))
+        self.goto_analyser.grid(column=0, row=1,padx = 35)
 
-    def goto_Daq_Extractor(self):
+        self.goto_DAQ_extractor = tk.Button(self, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont=DAQ_Extractor))
+        self.goto_DAQ_extractor.grid(column=0,row=2,padx = 35)
+
+        self.ta1DirSorter = tk.Button(self, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont=ta1_Directory_Sorter))
+        self.ta1DirSorter.grid(column=0,row=3,padx = 35)
+
+        self.sweepavgr = tk.Button(self, text="Sweep Averager", command=lambda:self.controller.show_frame(cont=Sweep_Averager))
+        self.sweepavgr.grid(column=0, row=4,padx = 35)
+
+        self.globalinterpreter = tk.Button(self, text="Global Interpreter", command = lambda:self.controller.show_frame(cont=Global_Interpreter))
+        self.globalinterpreter.grid(column=0,row=5,padx = 35)
+
+    def fetch_kwargs(self, **kwargs):
         pass
 ### Future tkinter Windows time permitting ###
 
@@ -175,7 +210,9 @@ class File_Selector(tk.Frame):
 
         self.bldataFileSelector = tk.LabelFrame(self, text = "Select Baseline Data File")
         self.bldataFileSelector.grid(column = 0, row = 2, padx = 35, pady = 50)
-        
+
+        self.return_to_splash = tk.Button(self, text="Return to Splash", command= lambda: self.controller.show_frame(cont=NMR_Splash))
+        self.return_to_splash.grid(column=1, row=3)
        
         self.Switches = tk.LabelFrame(self, text = "File Parsing Options")
         self.Switches.grid(column = 0, row = 1, padx = 35, pady = 50)
@@ -194,6 +231,8 @@ class File_Selector(tk.Frame):
         self.vnaneRadioButton()
         self.fileDelimeter()
         self.goTransition()
+
+
 
     def vnaneRadioButton(self):
         self.vnaVmeType = tk.StringVar(self.Switches)
