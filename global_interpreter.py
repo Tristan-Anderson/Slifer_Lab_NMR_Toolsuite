@@ -24,6 +24,8 @@ import datetime
 from matplotlib import pyplot as plt
 from matplotlib import rc
 plt.locator_params(axis='y', nbins=6)
+font = {'size': 12}
+rc('font', **font)
 
 
 def report(number, sigfigs=3):
@@ -86,9 +88,8 @@ def pTtpol(b, t, mu = 1.4106067873 * 10 ** -26):
     x = mu * b / (k * t)
     return - mu*b/(k*t**2)*1/(numpy.cosh(x))**2
 
-def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, to_save = [], title=None, enforce_T3=False, enforce_VP=False, prevanalized=None, N=1):
+def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save = [], title=None, enforce_T3=False, enforce_VP=False, prevanalized=None, N=1):
 	plt.clf()
-	print(y,m,d, "Enhanced" if te == False else "")
 
 	if prevanalized is None:
 		# Prevanalized is a toggleable function that allows
@@ -96,18 +97,14 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 		# 	already been analyzed by the global_interpreter
 		#
 		#		this section is for a first, fresh dataset analysis.
-		if not te:
-			pltsave = "Enhanced_Results"
-			with open(datapath+"enhanced_global_analysis.csv", 'r') as f:
-				df = pandas.read_csv(f)
+		
+		pltsave = "Enhanced_Results" if not te else "TE_Results"
+		
+		pltsave = title if title is not None else pltsave
+		
+		with open(datapath, 'r') as f:
+				df = pandas.read_csv(f)	
 
-		else:
-			pltsave = "TE_Results"
-			with open(datapath+"global_analysis.csv", 'r') as f:
-				df = pandas.read_csv(f)
-
-		if title is not None:
-			pltsave = title
 
 		# Header from global_analysis files.
 		rows_to_keep =["name", "time", "B", "ltzian_area", "data_area", "x0", "CCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue"]
@@ -151,6 +148,11 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 		sweep_width = df["sweep width"].values.astype(float)
 
 	df["time"] = pandas.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+	dt_for_dmy = df.loc[1, "time"]
+
+	y,m,d = dt_for_dmy.strftime("%Y,%m,%d").split(',')
+	print(y,m,d, "Enhanced" if te == False else "")
+
 	results_df = pandas.DataFrame()
 	results_df["time"] = df["time"]
 
@@ -225,7 +227,7 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 				constants = deuterontepol(bviax0, y2a)/y3*100
 
 			else:
-				# Recalculate the TE equation because legacy analysis may have not always done it correctly.
+				# Recalculate the TE equation  legacy analysis may have not always done it correctly.
 				constants = deuterontepol(y1a, t3y)/y3a*100
 			
 			N = numpy.mean([len(y1a), len(t3y), len(y3a)])
@@ -414,36 +416,17 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 	return False
 
 
-def te(datapath, d,m,y, home, title, deuteron=True):
-	constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title=title, deuteron=deuteron)# N=5)
-
 
 """
-d="14"
-m="9"
-y="2020"
+Useage:
 
-home= "datasets/sep_2020/data_record_9-14-2020/700pte/final_results/"	# Where the interpreter will drop final results.
+home= ""		# Where the interpreter will drop final results.
+datapath = ""	# Where the TE global analysis csv is
 
-print("First Half")
-datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/first_half/"
-constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="628p-630p TE d-Prop", deuteron=True)# N=5)
+# constants and teinfo are calibration parameters, and some statistics passed foward to the enhanced calculation
+constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="TE d-Prop", deuteron=True)
 
-datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="628p-630p TE calibrated ENHANCED d-Prop", deuteron=True)
-
-print("\nSecond Half")
-datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_divided_TEs/2nd_half/"
-constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="641p-650p TE d-Prop", deuteron=True)#18)
-
-datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="641p-650p TE calibrated ENHANCED d-Prop", deuteron=True)
-
-
-print("\nGrand Total")
-datapath = "datasets/sep_2020/data_record_9-14-2020/700pte/7p_lab/"
-constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="Grand Total TE d-Prop", deuteron=True)# N=5)
-
-datapath = "datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-collator(datapath, "15",m,y, home=home, constant=constants, to_save=teinfo, title="Grand Total TE-calibrated ENHANCED d-Prop", deuteron=True)
+datapath = ""	# Where the enhanced global analysis csv is
+collator(datapath, home=home, constant=constants, to_save=teinfo, title="ENHANCED d-Prop", deuteron=True)
 """
+

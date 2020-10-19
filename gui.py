@@ -129,10 +129,10 @@ class DAQ_Extractor(tk.Frame):
         
        
         self.start = tk.Button(self.guiTitle, text = "Start", command=self.execute)
-        self.start.grid(column = 3, row = 2,padx=35)
+        self.start.grid(column = 3, row = 1,padx=35)
 
         self.back_2_splash = tk.Button(self.guiTitle, text="Back to Splash", command= lambda:self.controller.show_frame(cont=NMR_Splash))
-        self.back_2_splash.grid(column=3, row=1,padx=35)
+        self.back_2_splash.grid(column=3, row=2,padx=35)
 
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
@@ -177,32 +177,54 @@ class DAQ_Extractor(tk.Frame):
 class Global_Interpreter(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.dumppath = os.getcwd()
         self.tepath, self.enhancedpath, self.dumppath = '', '', ''
         self.controller = controller
 
         self.guiTitle = tk.LabelFrame(self, text='File Selection')
         self.guiTitle.grid(column=0,row=0)
 
-        self.TEbutton = tk.Button(self.guiTitle, text="TE Global Analysis", command = lambda: self.filedialog(self.tepath, self.TEbutton))
+        self.TEbutton = tk.Button(self.guiTitle, text="TE Global Analysis", command = self.TEfiledialog)
         self.TEbutton.grid(column=0, row=0)
 
-        self.enhancedbutton = tk.Button(self.guiTitle, text='Enhanced Global Analysis', command = lambda: self.filedialog(self.enhancedpath,self.enhancedbutton))
+        self.enhancedbutton = tk.Button(self.guiTitle, text='Enhanced Global Analysis', command =self.ENfiledialog)
         self.enhancedbutton.grid(column=0, row=1)
 
+        self.dumppath_button = tk.Button(self.guiTitle, text="Results Path", command=self.dumpdialog)
+        self.dumppath_button.grid(column=0,row=2)
+
+        self.checkbutton = tk.StringVar(value=1)
+        self.deuteronCheck = tk.Checkbutton(self.guiTitle, text="Deuteron", onvalue='1', offvalue='0', variable=self.checkbutton)
+        self.deuteronCheck.grid(column=1, row=2)
+        #self.deuteronlabel = tk.Label(value="Deuteron")
         self.go = tk.Button(self.guiTitle, text="Start", command = self.summarize)
+        self.go.grid(column=0, row=3)
+
+        self.back = tk.Button(self.guiTitle, text="Back", command = lambda: self.controller.show_frame(cont=NMR_Splash))
+        self.back.grid(column=1,row=3)
+    
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
     def summarize(self):
-        global_interpreter.collator(self.)
-
+        deuteron = False if self.checkbutton.get() == '0' else True
+        constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.dumppath, deuteron=deuteron)
+        global_interpreter.collator(self.enhancedpath, home=self.dumppath, deuteron=deuteron, constant=constants, to_save=teinfo)
 
     def populate_toggleables(self):
         pass
 
-    def filedialog(self, variable, button):
-        variable = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
-        button.configure(text=variable)
+    def TEfiledialog(self):
+        self.tepath = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
+        self.TEbutton.configure(text=self.tepath)
+
+    def ENfiledialog(self):
+        self.enhancedpath = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
+        self.enhancedbutton.configure(text=self.tepath)
+
+    def dumpdialog(self):
+        self.dumppath = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
+        self.dumppath_button.configure(text=self.dumppath)
 
 class Directory_Sorter(tk.Frame):
     def __init__(self, parent, controller):
