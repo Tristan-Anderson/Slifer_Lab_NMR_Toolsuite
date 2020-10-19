@@ -9,6 +9,7 @@ import tkinter as tk
 import tkinter.scrolledtext as scrolledtext
 from tkinter import filedialog
 import NMR_Analyzer as v
+import daq_muncher
 from statistics import mode
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -35,9 +36,9 @@ class NMR_Visualizer(tk.Tk):                # Class
         window.grid_columnconfigure(0,weight=1)
 
         self.frames = {}                            # Attribute            
-        options = [DAQ_Extractor, Global_Interpreter,ta1_Directory_Sorter,
-                   Sweep_Averager,NMR_Splash,File_Selector, Data_Selector, 
-                   Fitting_Page]
+        options = [File_Selector, Data_Selector, Fitting_Page, 
+                   DAQ_Extractor, Global_Interpreter, ta1_Directory_Sorter,
+                   Sweep_Averager,NMR_Splash]
         for F in options:
             frame = F(window, self)
 
@@ -104,22 +105,32 @@ class DAQ_Extractor(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        self.guiTitle = tk.Label(self, text="NMR DAQ Extractor")
-        self.guiTitle.grid(column=1,row=1)
+        self.guiTitle = tk.LabelFrame(self, text="NMR DAQ Extractor")
+        self.guiTitle.grid(column=0,row=0,padx=35, pady=10)
 
-        self.daqFileSelectorButton = tk.Button(self, text = "Select Raw DAQ File", command = self.daqFileDialog)
-        self.daqFileSelectorButton.grid(column = 2, row = 2)
+        self.daqframe = tk.LabelFrame(self.guiTitle, text="DAQ File Selection")
+        self.daqframe.grid(column=0,row=1, pady=10)
+
+        self.dirFileStrvar = tk.StringVar(value='Directory')
+        tk.Radiobutton(self.daqframe, text="Directory", variable=self.dirFileStrvar, value="Directory").grid(column = 1, row = 0)
+        tk.Radiobutton(self.daqframe, text="File", variable=self.dirFileStrvar, value="File").grid(column = 1, row = 2)
+        #self.vnaVmeType.grid(column=1, row=1)
+        self.daqFileSelectorButton = tk.Button(self.daqframe, text = "Select Raw DAQ File/Directory", command = self.daqFileDialog)
+        self.daqFileSelectorButton.grid(column = 0, row = 1,padx=35)
         
 
-        self.bldataFileSelector = tk.LabelFrame(self, text = "Select Export Director")
-        self.bldataFileSelector.grid(column = 1, row = 2)
+        self.exportLF = tk.LabelFrame(self.guiTitle, text = "Select Export Directory")
+        self.exportLF.grid(column = 0, row = 2,padx=35)
+
+        self.exportButton = tk.Button(self.exportLF, text= "Select Export Destination", command=self.daqExportDialog)
+        self.exportButton.grid(column=0,row=0)
         
        
-        self.Switches = tk.Button(self, text = "Start")
-        self.Switches.grid(column = 2, row = 2)
+        self.start = tk.Button(self.guiTitle, text = "Start", command=self.execute)
+        self.start.grid(column = 3, row = 2,padx=35)
 
-        self.delimeter = tk.Button(self, text="Back")
-        self.delimeter.grid(column=2, row=1)
+        self.back_2_splash = tk.Button(self.guiTitle, text="Back to Splash", command= lambda:self.controller.show_frame(cont=NMR_Splash))
+        self.back_2_splash.grid(column=3, row=1,padx=35)
 
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
@@ -127,13 +138,38 @@ class DAQ_Extractor(tk.Frame):
     def populate_toggleables(self):
         # Nothing to pass (as of yet!)
         pass
+
+    def execute(self):
+        self.cwd = os.getcwd()+'/'
+        self.fdump = self.daqexportname+'/'
         
+        status = self.dirFileStrvar.get()
+        if status == "Directory":
+            self.filelocation = self.daqfilename+'/'
+            daq_muncher.directory(self.filelocation, self.fdump, self.cwd)
+        if status == "File":
+            self.filelocation = self.daqfilename
+            daq_muncher.single_file(self.filelocation, self.fdump)
+
+        #daq_muncher.file_muncher(self.)
+        #print(self.daqexportname)
+
     def daqFileDialog(self):
-        ftyps = (("All Files", "*.*"))
-        self.daqfilename = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File", filetypes = ftyps)
-        #self.bllabel = tk.Label(self.bldataFileSelector, text = "")
-        #self.bllabel.grid(column = 1, row = 2)
-        self.bllabel.configure(text = self.blfilename)
+        status = self.dirFileStrvar.get()
+        if status == "Directory":
+            
+            self.daqfilename = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")
+            self.daqFileSelectorButton.configure(text = self.daqfilename)
+            
+        elif status == "File":
+            
+            self.daqfilename = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
+            self.daqFileSelectorButton.configure(text = self.daqfilename)
+
+
+    def daqExportDialog(self):
+        self.daqexportname = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A Directory")
+        self.exportButton.configure(text=self.daqexportname)
 
 class Global_Interpreter(tk.Frame):
     def __init__(self, parent, controller):
