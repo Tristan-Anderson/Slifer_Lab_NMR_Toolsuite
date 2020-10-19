@@ -171,25 +171,26 @@ class Sweep_Averager(tk.Frame):
 class NMR_Splash(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        tk.Label(self, text="NMR Toolsuite").grid(column=0,row=0)
+        #tk.Label(self, text="NMR Toolsuite").grid(column=0,row=0)
         
         self.controller = controller
 
+        self.splashFrame = tk.LabelFrame(self, text="NMR Toolsuite")
+        self.splashFrame.grid(column=0, row=0, padx=120)
+        self.goto_analyser = tk.Button(self.splashFrame,text="NMR Signal Extractor", command= lambda: self.controller.show_frame(cont=File_Selector))
+        self.goto_analyser.grid(column=0, row=1, pady=10)
 
-        self.goto_analyser = tk.Button(self,text="NMR Signal Extractor", command= lambda: self.controller.show_frame(cont=File_Selector))
-        self.goto_analyser.grid(column=0, row=1,padx = 35)
+        self.goto_DAQ_extractor = tk.Button(self.splashFrame, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont=DAQ_Extractor))
+        self.goto_DAQ_extractor.grid(column=0,row=2, pady=10)
 
-        self.goto_DAQ_extractor = tk.Button(self, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont=DAQ_Extractor))
-        self.goto_DAQ_extractor.grid(column=0,row=2,padx = 35)
+        self.ta1DirSorter = tk.Button(self.splashFrame, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont=ta1_Directory_Sorter))
+        self.ta1DirSorter.grid(column=0,row=3, pady=10)
 
-        self.ta1DirSorter = tk.Button(self, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont=ta1_Directory_Sorter))
-        self.ta1DirSorter.grid(column=0,row=3,padx = 35)
+        self.sweepavgr = tk.Button(self.splashFrame, text="Sweep Averager", command=lambda:self.controller.show_frame(cont=Sweep_Averager))
+        self.sweepavgr.grid(column=0, row=4, pady=10)
 
-        self.sweepavgr = tk.Button(self, text="Sweep Averager", command=lambda:self.controller.show_frame(cont=Sweep_Averager))
-        self.sweepavgr.grid(column=0, row=4,padx = 35)
-
-        self.globalinterpreter = tk.Button(self, text="Global Interpreter", command = lambda:self.controller.show_frame(cont=Global_Interpreter))
-        self.globalinterpreter.grid(column=0,row=5,padx = 35)
+        self.globalinterpreter = tk.Button(self.splashFrame, text="Global Interpreter", command = lambda:self.controller.show_frame(cont=Global_Interpreter))
+        self.globalinterpreter.grid(column=0,row=5, pady=10)
 
     def fetch_kwargs(self, **kwargs):
         pass
