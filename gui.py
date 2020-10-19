@@ -177,14 +177,32 @@ class DAQ_Extractor(tk.Frame):
 class Global_Interpreter(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-
+        self.tepath, self.enhancedpath, self.dumppath = '', '', ''
         self.controller = controller
+
+        self.guiTitle = tk.LabelFrame(self, text='File Selection')
+        self.guiTitle.grid(column=0,row=0)
+
+        self.TEbutton = tk.Button(self.guiTitle, text="TE Global Analysis", command = lambda: self.filedialog(self.tepath, self.TEbutton))
+        self.TEbutton.grid(column=0, row=0)
+
+        self.enhancedbutton = tk.Button(self.guiTitle, text='Enhanced Global Analysis', command = lambda: self.filedialog(self.enhancedpath,self.enhancedbutton))
+        self.enhancedbutton.grid(column=0, row=1)
+
+        self.go = tk.Button(self.guiTitle, text="Start", command = self.summarize)
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
+
+    def summarize(self):
+        global_interpreter.collator(self.)
+
 
     def populate_toggleables(self):
         pass
 
+    def filedialog(self, variable, button):
+        variable = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
+        button.configure(text=variable)
 
 class Directory_Sorter(tk.Frame):
     def __init__(self, parent, controller):

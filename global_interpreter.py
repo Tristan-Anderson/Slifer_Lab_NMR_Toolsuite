@@ -414,6 +414,10 @@ def collator(datapath, d,m,y, te=False, constant=1, home=None, deuteron=False, t
 	return False
 
 
+def te(datapath, d,m,y, home, title, deuteron=True):
+	constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title=title, deuteron=deuteron)# N=5)
+
+
 """
 d="14"
 m="9"
