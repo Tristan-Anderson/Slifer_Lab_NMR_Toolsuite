@@ -18,6 +18,9 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 from statistics import mode
 
+global fig_size_x, fig_size_y
+fig_size_x,fig_size_y = 16,9
+
 font = {'size': 18}
 matplotlib.rc('font', **font)
 
@@ -916,7 +919,7 @@ def gff(df, start, finish, fitname, **kwargs):
             #print(f_name, var)
         except:  # If we failed fitting
             rawsigfit = {}
-            fig, ax = plt.subplots(figsize=(16, 9))
+            fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
             ax.scatter(xdata, ydata, c='black', s=2 * binning, label="Data")
             ax.scatter(
                 x_data_for_fit, y_data_for_fit, c='r', s=2 * binning,
@@ -939,7 +942,7 @@ def gff(df, start, finish, fitname, **kwargs):
 
         if savefit:
             # I can save the fit for you if you toggle this flag.
-            fig, ax = plt.subplots(figsize=(16, 9))
+            fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
             ax.set_title(plttitle + " " + fitname + " fit")
             ax.scatter(xdata, ydata, c='black', s=2 * binning, label="Data")
             # Plots all of the data regardless if it will be plotted
@@ -968,7 +971,7 @@ def gff(df, start, finish, fitname, **kwargs):
         if preview:
             # Allows the user to preview the data while they are fidgeting
             # with other parameters
-            fig, ax = plt.subplots(figsize=(16, 9))
+            fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
             # responsible for the fitting regions,
             # signal-highlighting (...etc)
             ax.set_title("Preview of " + fitname + " fit")
@@ -1028,7 +1031,7 @@ def gff(df, start, finish, fitname, **kwargs):
             yfit = numpy.concatenate(y_combined_fit_data)
 
             if savefit:
-                fig, ax = plt.subplots(figsize=(16, 9))
+                fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
                 ax.set_title(plttitle + " " + fitname + " fits")
                 ax.scatter(
                     xdata, ydata, c='black', s=2 * binning,
@@ -1068,7 +1071,7 @@ def gff(df, start, finish, fitname, **kwargs):
                 plt.savefig(filename + " " + fitname + " fits", dpi=600)
 
             if preview:
-                fig, ax = plt.subplots(figsize=(16, 9))
+                fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
                 ax.set_title("Preview of " + fitname + " fits")
                 ax.scatter(
                     xdata, ydata, c='black', s=2 * binning,
@@ -1106,7 +1109,7 @@ def gff(df, start, finish, fitname, **kwargs):
             rawsigfit = dict(zip(['f0', 'w', 'kmax', 'theta'],var))
         else:
             rawsigfit = {}
-        fig, ax = plt.subplots(figsize=(16, 9))
+        fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
         ax.set_title(plttitle + " " + fitname + " fit")
         ax.scatter(xdata, ydata, c='black', s=2 * binning, label="Data")
         # Plots all of the data regardless if it will be plotted
@@ -1247,7 +1250,7 @@ def ggf(master, s, f, **kwargs):
     
     guidict = {}
 
-    fig, ax = plt.subplots(figsize=(16, 9))
+    fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
     ax.set_title(plttitle)
 
     # Fancy graph text stuff
