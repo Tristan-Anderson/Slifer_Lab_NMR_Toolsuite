@@ -209,7 +209,9 @@ class Global_Interpreter(tk.Frame):
     def summarize(self):
         deuteron = False if self.checkbutton.get() == '0' else True
         constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.dumppath, deuteron=deuteron)
+        print("TE Global Analysis Complete. Applying calibration constant forward")
         global_interpreter.collator(self.enhancedpath, home=self.dumppath, deuteron=deuteron, constant=constants, to_save=teinfo)
+        print("Enhanced Global analysis complete.")
 
     def populate_toggleables(self):
         pass
@@ -378,23 +380,23 @@ class File_Selector(tk.Frame):
         self.guiTitle.grid(column=1,row=1)
 
         self.rawsigDataFileSelector = tk.LabelFrame(self, text = "Select Raw Data File")
-        self.rawsigDataFileSelector.grid(column = 2, row = 2, padx = 35, pady = 50)
+        self.rawsigDataFileSelector.grid(column = 2, row = 2, padx=10, pady=10)
         
 
         self.bldataFileSelector = tk.LabelFrame(self, text = "Select Baseline Data File")
-        self.bldataFileSelector.grid(column = 0, row = 2, padx = 35, pady = 50)
+        self.bldataFileSelector.grid(column = 0, row = 2, padx=10, pady=10)
 
         self.return_to_splash = tk.Button(self, text="Return to Splash", command= lambda: self.controller.show_frame(cont=NMR_Splash))
         self.return_to_splash.grid(column=1, row=3)
        
         self.Switches = tk.LabelFrame(self, text = "File Parsing Options")
-        self.Switches.grid(column = 0, row = 1, padx = 35, pady = 50)
+        self.Switches.grid(column = 0, row = 1, padx=10, pady=10)
 
         self.delimeter = tk.LabelFrame(self, text="Backslash/ASCII File Delimeter")
-        self.delimeter.grid(column=2, row=1, padx = 35, pady=50)
+        self.delimeter.grid(column=2, row=1, padx=10, pady=10)
 
         self.skipLines = tk.LabelFrame(self, text="Header Lines (Skip this # of lines)")
-        self.skipLines.grid(column=1, row=2, padx=35, pady=50)
+        self.skipLines.grid(column=1, row=2, padx=10, pady=10)
 
         self.continueButton = tk.LabelFrame(self, text="Next Step: Data Selection")
         self.continueButton.grid(column=3,row=4)
@@ -445,7 +447,7 @@ class File_Selector(tk.Frame):
 
     def blFilePreview(self):
         self.bldataFile = tk.LabelFrame(self, text='200-line Baseline Data Preview')
-        self.bldataFile.grid(column=0, row=3, padx=35, pady=20)
+        self.bldataFile.grid(column=0, row=3, pady=10, padx=10)
         delimeter = self.fileDelimeter.get()
         choice = self.vnaVmeType.get()
         self.bltxt = scrolledtext.ScrolledText(self.bldataFile)
@@ -504,7 +506,7 @@ class File_Selector(tk.Frame):
 
     def teFilePreview(self):
         self.rawsigDataFile = tk.LabelFrame(self, text='200-line Raw Data Preview')
-        self.rawsigDataFile.grid(column=2, row=3, padx=35, pady=20)
+        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
         delimeter = self.fileDelimeter.get()
         choice = self.vnaVmeType.get()
         self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)

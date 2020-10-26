@@ -88,6 +88,7 @@ def shelf(location, **ts):
 				shutil.move(actual_file, location+directoryname+actual_file_name)
 		prevstepalldates = stepalldates
 		stepalldates += timestep
+	print("Shelving complete.")
 
 def unshelf(location):
 	"""
@@ -110,3 +111,4 @@ def unshelf(location):
 		os.chdir(location)
 		os.rmdir(d)
 	os.chdir(home)
+	print("Unshelving Complete.")

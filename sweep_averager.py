@@ -237,11 +237,12 @@ def avg_nested_dirs(filesdir):
         break
     for dirname in dirnames:
         kc1(filesdir+dirname+'/', dn=dirname+'_', dump=filesdir, additive=additive)
+    print("Avering nested directories complete.")
 
 def avg_single_dir(filesdir):
     additive=''.join(filesdir.split('/')[-3])
     kc1(filesdir, dump=filesdir, additive=additive)
-
+    print("Avering single directory complete.")
 # A place where there are a bunch of child directories containing .ta1 files (organized by te_directory_sorter.py)
 # And averages each child directory into a single file which it writes in parent directory
 """bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"
