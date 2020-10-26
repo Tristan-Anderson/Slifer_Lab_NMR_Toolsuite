@@ -33,7 +33,7 @@ def nearest(test_val, iterable):
     return min(iterable, key=lambda x: abs(x - test_val))
 
 
-def add_entry(*rowvals, getdf=False):
+def add_entry(*rowvals,**kwargs):
     ##################    What it does     ####################
     # Adds a line to the persistence csv *if* it exists       #
     # If the csv does not exist, an empty one will be created #
@@ -70,15 +70,30 @@ def add_entry(*rowvals, getdf=False):
             except FileNotFoundError:   # If even THAT (^) fails,
                 print("Something went wrong in the add_entry function")
                 exit()  # Give up.
-
-
-    fname = "global_analysis.csv"
-    headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+    h_orig = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                        "xmax", "sigstart", "sigfinish", "blskiplines",
                        'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue", "data_area", "ltzian_area",
                        "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", "σ (Noise)", 
                        "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
+    headers=kwargs.pop("headers",h_orig)
+    getdf=kwargs.pop('getdf', False)
 
+
+    fname = "global_analysis.csv"
+    #headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+    #                   "xmax", "sigstart", "sigfinish", "blskiplines",
+    #                   'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue", "data_area", "ltzian_area",
+    #                   "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", "σ (Noise)", 
+    #                   "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
+
+    if len(headers) != len(rowvals):
+        if len(headers) > len(rowvals):
+            print("*Advisory: More headers than rowvalues in add_entry.")
+            print("             are you passing every header that you need?")
+        else:
+            print("***ERROR: More rowvals than headers in add_entry.")
+            print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
+            print("          RECHECK headers and rowvalues.")
     # Get the persistence df. Then add an entry to it passed to the function in *rowvals
     df = get_persistence(headers, fname).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
                                                 ignore_index=True)

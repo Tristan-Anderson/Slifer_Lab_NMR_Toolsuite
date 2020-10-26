@@ -1233,7 +1233,7 @@ class Fitting_Page(tk.Frame):
                        "lorentzian relative-chisquared (error)",
                        "Sweep Centroid", "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
         c = [self.pentry.get(),  self.material_type.get(), self.rawsigtime, self.vnavme, 
-            self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
+             self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
              self.signalstart.get(),self.signalend.get(), self.blskiplines, 
              self.rawsigskiplines, self.btext.get(),
              self.ttext.get(), self.cccst3_t, self.vapor_pressure_t, self.tevalue, 
@@ -1241,23 +1241,15 @@ class Fitting_Page(tk.Frame):
              self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0, 
              self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared, 
              self.klorentzian_chisquared, self.centroid, self.spread]
-        #self.ltzian_a = quirky.pop('a', None)
-        #self.ltzian_w = quirky.pop('w', None)
-        #self.ltzian_x0 = quirky.pop('x0', None)
-        """for index, val in enumerate(c):
-                                    try:
-                                        print(headers[index], val)
-                                    except IndexError:
-                                        print("index error in headers, heres the next c:", val)"""
         
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*k)
+            v.add_entry(*k, headers=headers)
         else:
             with open(self.pentry.get()+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*c)
+            v.add_entry(*c, headers=headers)
         
     def data_displayer(self):
         self.ConvertedDf = tk.LabelFrame(self, text="Data")
