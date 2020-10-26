@@ -236,7 +236,7 @@ def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, b
         - Returns Data
     """
     #print(len(impression))
-    if datatype == "VNA":
+    if vnavmetype == "VNA":
         return vna_frames(
             RAWSIG_Path, Baseline_Path,  impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
             binning=binning, rawsigskiplines=rawsigskiplines, blskiplines=blskiplines
@@ -1153,8 +1153,6 @@ def ggf(master, s, f, **kwargs):
     # Used in tandem with the above line to highlight green datapoints.
     fit_bounds = kwargs.pop('fit_bounds', [])
 
-    sf = kwargs.pop('sf', None)
-    ff = kwargs.pop('ff', None)
 
     # Do not show the graph before it is saved.
     noshow = kwargs.pop('noshow', True)
@@ -1415,6 +1413,7 @@ def ggf(master, s, f, **kwargs):
             #   It's drawing the polygon, but complaining that it can't
             #   draw the polygon... WAT?
             pass
+   
     try:
         if thermal_equalibrium_value:
             if b is not None and T is not None:
