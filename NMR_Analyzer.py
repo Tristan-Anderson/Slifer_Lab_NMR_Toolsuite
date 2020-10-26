@@ -130,9 +130,9 @@ def gui_bl_file_preview(filename, delimeter):
     return h2, header, tf_file, lines_to_skip
 
 
-def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
+def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
     h2, header, tf_file = [], [], []
-    with open(tefilename, 'r') as f:
+    with open(rawsigfilename, 'r') as f:
         for index, line in enumerate(f):
             ##########################################
             """
@@ -222,7 +222,7 @@ def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
     return header, h2, TE_DATE, I, T, cccst3_t, vapor_pressure_t, lines_to_skip, centroid, spread
 
 
-def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, blskiplines=4, datatype="", binning=1, rawsigskiplines=4):
+def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, blskiplines=4, binning=1, rawsigskiplines=4):
     # this provides a wrapper for the api you've
     #   developed here
     """
@@ -238,17 +238,17 @@ def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, b
     #print(len(impression))
     if datatype == "VNA":
         return vna_frames(
-            RAWSIG_Path, Baseline_Path, impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
+            RAWSIG_Path, Baseline_Path,  impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
             binning=binning, rawsigskiplines=rawsigskiplines, blskiplines=blskiplines
         )
     else:
         return vme_frames(
-            RAWSIG_Path, Baseline_Path, impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
+            RAWSIG_Path, Baseline_Path,
             binning=binning, rawsigskiplines=rawsigskiplines, blskiplines=blskiplines
         )
 
 
-def vme_frames(RAWSIG_Path, Baseline_Path, impression=False, title="", binning=1, blskiplines=4, rawsigskiplines=4):
+def vme_frames(RAWSIG_Path, Baseline_Path, binning=1, blskiplines=4, rawsigskiplines=4):
     te_df = vme_file_parser(RAWSIG_Path, rawsigskiplines)
     # Fetch TE-Data
     copy_tedf = te_df
@@ -298,40 +298,7 @@ def vme_frames(RAWSIG_Path, Baseline_Path, impression=False, title="", binning=1
     master2["Raw "+y] = te_df[y]
     master2["BL "+y] = baseline_df[y]
 
-    """import traceback
-                with open('a.txt', 'a') as f:
-                    traceback.print_stack(file=f)
-                    f.write("\n")"""
-    #print("Tristan must write an impression grapher for VME data.")
-    if False:
-        # Delivers impression of the data if the data is not
-        from matplotlib.gridspec import GridSpec
-
-        def vna_format_axes(fig, x):
-            for i, ax in enumerate(fig.axes):
-                ax.set_xlabel(x)
-                if i == 0:
-                    ax.set_ylabel("Re(S11)")
-                elif i == 1:
-                    ax.set_ylabel("Im(S11)")
-                elif i > 1:
-                    ax.set_ylabel("Re(Z): Impedence [Ω]")
-
-                ax.legend(loc='best')
-
-        #fig = plt.figure(constrained_layout=True, figsize=(32, 18))
-
-        #gs = GridSpec(3, 2, figure=fig)
-        #ax1 = fig.add_subplot(gs[0, 0])  # R s11
-        #ax2 = fig.add_subplot(gs[0, 1])  # I s11
-        
-        
-        
-        #now = datetime.now()
-        #date_time = now.strftime("%m_%d_%Y %H%M%S")
-        #plt.savefig(title + "_Impression_" + date_time, dpi=200)
-        #print(title + "_Impression_" + date_time + ".png", "Saved to current working\
-        #directory.")
+    
 
     return master2
 
@@ -819,14 +786,14 @@ def gff(df, start, finish, fitname, **kwargs):
     # If fiting without the signal, this is used to narrow the fit region
     # to the left of the peak.
     #
-    #            HERE
-    # is what sf  |   is defined by,
-    # where that  | not-fitting region is
-    # to the left | of the peak.
-    #             |                 --
-    #  not Fitting|  fitting   |  ------
-    #  (sf region)V             --    ---       fitting   not fitting
+    #     (sf index)  (start index)    (finish index)  (ff index)
+    #             |            |    --     |            |
+    #             |            |    --     |            |
+    #  not fitting|  fitting   |  ------   |  fitting   | not fitting
+    #             V            V --    --- V            V 
     # ------------|++++++++++++|-       ---|++++++++++++|-------------
+    #  sf region  |            |   SIGNAL  |            |  ff region   
+    
     sf = kwargs.pop('sf', None)  # (ff region)
 
     # If fiting without the signal, ff is used to narrow the fit region

@@ -522,7 +522,7 @@ class File_Selector(tk.Frame):
         header, h2, self.TE_DATE, self.I, self.T,\
         self.cccst3_t, self.vapor_pressure_t, \
         self.rawsigskiplines, self.centroid, \
-        self.spread = v.gui_te_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
+        self.spread = v.gui_rawsig_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
         
         
 
@@ -1220,7 +1220,7 @@ class Fitting_Page(tk.Frame):
         self.pentry = tk.Entry(self.persistenceframe, textvariable=self.ptext)
         self.pentry.grid(column=2,row=3)
 
-    def addentry(self, k=[]):
+    def addentry(self, k=[], h=None):
         # Arguments to be passed in the same order
         # as the headers list in vna_visualizer.py
         
@@ -1245,11 +1245,11 @@ class Fitting_Page(tk.Frame):
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*k, headers=headers)
+            v.add_entry(*k, headers=headers if h is not None else h)
         else:
             with open(self.pentry.get()+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*c, headers=headers)
+            v.add_entry(*c, headers=headers if h is not None else h)
         
     def data_displayer(self):
         self.ConvertedDf = tk.LabelFrame(self, text="Data")
@@ -1534,7 +1534,7 @@ class Fitting_Page(tk.Frame):
              self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
             os.chdir(graphdata)
             #print("Made it to line 1254")
-            self.addentry(k=c)
+            self.addentry(k=c, h =headers)
             # Say that we've done a thing
             os.chdir(home)
             self.item+=1
