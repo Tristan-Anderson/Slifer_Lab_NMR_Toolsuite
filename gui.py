@@ -806,7 +806,8 @@ class Data_Selector(tk.Frame):
         try:
             self.df = v.gui_file_fetcher(
                                         self.rawsigDataFile, self.bldataFile, 
-                                        self.vnavme, impression=impression,
+                                        self.vnavme, impression=impression, 
+                                        
                                         blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines, 
                                         binning=self.binning
                                      )
