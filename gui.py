@@ -1442,7 +1442,6 @@ class Fitting_Page(tk.Frame):
         # Fetch the fresh dataframe
         self.df = v.gui_file_fetcher(
                                 file, self.bldatapath, self.vnavme, impression=False, 
-                                datatype=self.vnavme,
                                 blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines, 
                                 binning=self.binning
                              )
