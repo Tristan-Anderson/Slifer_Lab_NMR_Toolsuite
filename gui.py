@@ -1374,7 +1374,7 @@ class Fitting_Page(tk.Frame):
         _, _, self.rawsigtime, self.I, self.T,\
         self.cccst3_t, self.vapor_pressure_t, \
         self.rawsigskiplines, self.centroid, \
-        self.spread = v.gui_te_file_preview(self.rawsigdatapath, delimeter, self.vnavme) 
+        self.spread = v.gui_rawsig_file_preview(self.rawsigdatapath, delimeter, self.vnavme) 
         #self.rawsigtime = self.TE_DATE
         #print(self.T)
         
