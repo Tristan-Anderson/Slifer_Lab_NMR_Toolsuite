@@ -187,6 +187,10 @@ class Global_Interpreter(tk.Frame):
         self.TEbutton = tk.Button(self.guiTitle, text="TE Global Analysis", command = self.TEfiledialog)
         self.TEbutton.grid(column=0, row=0)
 
+        self.teonlycheckbutton = tk.StringVar(value=0)
+        self.TEOnlyButton=tk.Checkbutton(self.guiTitle, text="Cal Only", onvalue='1', offvalue='0',variable=self.teonlycheckbutton)
+        self.TEOnlyButton.grid(column=1,row=0)
+
         self.enhancedbutton = tk.Button(self.guiTitle, text='Enhanced Global Analysis', command =self.ENfiledialog)
         self.enhancedbutton.grid(column=0, row=1)
 
@@ -202,11 +206,19 @@ class Global_Interpreter(tk.Frame):
 
         self.back = tk.Button(self.guiTitle, text="Back", command = lambda: self.controller.show_frame(cont=NMR_Splash))
         self.back.grid(column=1,row=3)
-    
+
+    def teonly(self):
+        deuteron = False if self.checkbutton.get() == '0' else True
+        constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.dumppath, deuteron=deuteron)
+        print("Done. Have a nice day.")
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
     def summarize(self):
+        techeckbutton = False if self.teonlycheckbutton.get() == '0' else True
+        if techeckbutton:
+            self.teonly()
+            return True
         deuteron = False if self.checkbutton.get() == '0' else True
         constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.dumppath, deuteron=deuteron)
         print("TE Global Analysis Complete. Applying calibration constant forward")
@@ -222,7 +234,7 @@ class Global_Interpreter(tk.Frame):
 
     def ENfiledialog(self):
         self.enhancedpath = filedialog.askopenfilename(initialdir =  "$HOME/raw_data", title = "Select A File")
-        self.enhancedbutton.configure(text=self.tepath)
+        self.enhancedbutton.configure(text=self.enhancedpath)
 
     def dumpdialog(self):
         self.dumppath = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'

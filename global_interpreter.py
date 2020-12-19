@@ -122,8 +122,30 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		y3 = df["ltzian_area"].values.astype(float)
 		y3a = df["data_area"].values.astype(float)
 		relative_error = df["lorentzian relative-chisquared (error)"].values.astype(float)
-		t3y = df["CCCCS.T3 (K)"].values.astype(float)
-		vpy = df["Vapor Pressure (K)"].values.astype(float)
+		
+		try:
+			vpy = df["Vapor Pressure (K)"].values.astype(float)
+			t3y = df["CCCCS.T3 (K)"].values.astype(float)
+		except ValueError as e:
+			if te:
+				vpy = df["Vapor Pressure (K)"].values.astype(float)
+				t3y = df["CCCCS.T3 (K)"].values.astype(float)
+				#If you got here, then you're missing some critical thermometry data
+				# in a global analysis csv.
+			else:
+				print(e)
+				print("WARNING: Using vapor pressure as failsafe.")
+				try:
+					vpy = df["Vapor Pressure (K)"].values.astype(float)
+					t3y = df["CCCCS.T3 (K)"].values.astype(float)
+				except:
+					print("\n***ERROR: Backup to the backup temperature failed")
+					print("ADVISORY: Setting all temperatures to 1K, hoping for the best\n")
+					t3y = numpy.array([1 for i in range(len(df["time"]))])
+					vpy=t3y
+
+
+		
 		sweep_centroids = df["Sweep Centroid"].values.astype(float)
 		sweep_width = df["Sweep Width"].values.astype(float)
 		teval = df["TEvalue"].values.astype(float) # unscaled
@@ -148,7 +170,15 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		sweep_width = df["sweep width"].values.astype(float)
 
 	df["time"] = pandas.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+	df.sort_values(by='time')
+
+
 	dt_for_dmy = df.loc[1, "time"]
+	
+	datemax,datemin = max(df["time"]), min(df["time"])
+	timedelta = (datemax-datemin).days/2
+	centertime = datemin+datetime.timedelta(timedelta)
+	material = df.loc[0,'material']
 
 	y,m,d = dt_for_dmy.strftime("%Y,%m,%d").split(',')
 	print(y,m,d, "Enhanced" if te == False else "")
@@ -192,7 +222,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			# 	and uncert propogation 
 			B_x0_BEST = numpy.mean((y1a+y1b)/2)
 			B_x0_UNCERT = numpy.std((y1a+y1b)/2)/(N)**.5
-			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
+			
 			T_BEST = numpy.mean((t3y+vpy)/2)
 			T_UNCERT = numpy.std((t3y+vpy)/2)/(N)**.5
 			T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
@@ -202,27 +232,34 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			if N < 10 and T_VAR/2 > T_UNCERT:
 				T_UNCERT = T_VAR/2
 
-			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = tpol(B_x0_BEST, T_BEST)*100
 			TE_UNCERT = (((pTtpol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBtpol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", report(TE_BEST),"±", TE_UNCERT)
 			A_BEST = numpy.mean((y3*0.7+y3a*.3))
 			A_UNCERT = numpy.std((y3*0.7+y3a*.3))/(N)**.5
-			print("Area", report(A_BEST),"±", report(A_UNCERT))
 			CAL_BEST = TE_BEST/A_BEST
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
 			
-			print("Cal", report(CAL_BEST),"±", report(CAL_UNCERT), "(% Polarization / (Volt-area))")
+			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))")
+			print(centertime.strftime("%Y-%m-%d %H:%M:%S"),end='\t')
+			print(material,end='\t')
+			print(report(T_BEST),"±", report(T_UNCERT),end='\t')
+			print(report(B_x0_BEST), "±", report(B_x0_UNCERT),end='\t')					
+			print(report(A_BEST),"±", report(A_UNCERT),end='\t')
+			print(report(TE_BEST),"±", TE_UNCERT,end='\t')
+			print(report(CAL_BEST),"±", report(CAL_UNCERT))
 			
 			# Save the data
 			results_df["B via x0 (T)"] = y1b
 			results_df["Integrated Data Area"] = y3a
 			results_df["Lorentzian Area"] = y3
-			results_df["Scaled Polarization (%)"] = y3*const
+			results_df["Scaled Polarization (%)"] = y3*CAL_BEST
 		
 		elif deuteron:
 			if mode(teval)[0] == 0: # tanh(x) = 0 iff x=0. Here, x = uB/(kT) ==> B = 0 (we didn't get I for some reason from PSU)
-				bviax0 = y1b
+				try:
+					bviax0 = y1b
+				except UnboundLocalError:
+					raise UnboundLocalError("You're trying to evaluate proton data with deuteron techniques. Don't do that.")
 				y1a = y1b
 				constants = deuterontepol(bviax0, y2a)/y3*100
 
@@ -233,7 +270,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			N = numpy.mean([len(y1a), len(t3y), len(y3a)])
 			B_x0_BEST = numpy.mean(y1a)
 			B_x0_UNCERT = numpy.std(y1a)/(N)**.5
-			print("B", report(B_x0_BEST), "±", report(B_x0_UNCERT))
+			
 			T_BEST = numpy.mean(t3y)
 			T_UNCERT = numpy.std(t3y)/(N)**.5
 			T_VAR = numpy.var((t3y+vpy)/2)/(N)**.5
@@ -242,18 +279,22 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			if N < 10 and T_VAR/2 > T_UNCERT:
 				T_UNCERT = T_VAR/2
 
-			print("T", report(T_BEST),"±", report(T_UNCERT))
 			TE_BEST = deuterontepol(B_x0_BEST, T_BEST)*100
-			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100
-			print("TE", report(TE_BEST),"±", report(TE_UNCERT))
+			TE_UNCERT = (((pTdeuterontepol(B_x0_BEST, T_BEST)*T_UNCERT)**2+(pBdeuterontepol(B_x0_BEST, T_BEST)*B_x0_UNCERT)**2)**.5)*100			
 			A_BEST = numpy.mean(y3a)
-			A_UNCERT = numpy.std(y3a)/(N)**.5
-			print("Area", report(A_BEST),"±", report(A_UNCERT))
+			A_UNCERT = numpy.std(y3a)/(N)**.5			
 			CAL_BEST = TE_BEST/A_BEST
-			
-
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
-			print("Cal", report(CAL_BEST),"±", report(CAL_UNCERT), "(% Polarization / (Volt-area))")
+
+			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))")
+			print(centertime.strftime("%Y-%m-%d %H:%M:%S"),end='\t')
+			print(material,end='\t')
+			print(report(T_BEST),"±", report(T_UNCERT),end='\t')
+			print(report(B_x0_BEST), "±", report(B_x0_UNCERT),end='\t')					
+			print(report(A_BEST),"±", report(A_UNCERT),end='\t')
+			print(report(TE_BEST),"±", TE_UNCERT,end='\t')
+			print(report(CAL_BEST),"±", report(CAL_UNCERT))
+			
 	
 
 		fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
@@ -285,21 +326,21 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		else:
 			fig, ax = plt.subplots(nrows=6, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
 
-			ax[5].grid(True)
-			ax[5].scatter(x,constants, label="Calibration Constants (Are Averaged)", color="peru")
-			ax[5].set_ylabel("Calibration Constants",color="peru")
+			#ax[5].grid(True)
+			#ax[5].scatter(x,constants, label="Calibration Constants (Are Averaged)", color="peru")
+			#ax[5].set_ylabel("Calibration Constants",color="peru")
 			tevaluesaxis = ax[5].twinx()
 			vix0 = tpol(y1b, y2)
 
 
-			tevaluesaxis.scatter(x, vix0, label="TE Value via x0", color="mediumpurple")
-			tevaluesaxis.errorbar(x, [TE_BEST for i in x], yerr=TE_UNCERT, color='hotpink', alpha=0.5, label="TE w/ Error")
-			tevaluesaxis.set_ylabel("TE Value",color="mediumpurple")
+			#tevaluesaxis.scatter(x, vix0, label="TE Value via x0", color="mediumpurple")
+			#tevaluesaxis.errorbar(x, [TE_BEST for i in x], yerr=TE_UNCERT, color='hotpink', alpha=0.5, label="TE w/ Error")
+			#tevaluesaxis.set_ylabel("TE Value",color="mediumpurple")
 			tevaluesaxis.legend(loc='best')
 			tevaluesaxis.set_yscale('symlog')
 
 			results_df['TE via x0'] = vix0
-			results_df["cal_constant"] = constants
+			#results_df["cal_constant"] = constants
 			results_df['TEvalue'] = teval
 			results_df["TE Best"] = TE_BEST
 			results_df["TE Uncert"] = TE_UNCERT
@@ -388,12 +429,16 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 
 		ax[3].scatter(x, relative_error, label="Reduced Relative Chi-Square", color='peru')
 		ax[3].set_yscale('logit')	# Not the BEST scale that I should be using. Please find an alternative.
-		
-		ax[4].scatter(x, y1, label="Lorentzian Centroid (x0)", color='green')
+		"""try:
+			ax[4].scatter(x, y1, label="Lorentzian Centroid (x0)", color='green')
+		except IndexError:
+			print("Hey, make sure you're in the right spin-species mode. You hit this, because you have data")
+			print("consistent with a deuteron, and this program planks when you use proton methods to evaluate deuteron data")
+			return False, False
 		ax[4].errorbar(x, sweep_centroids, yerr=sweep_width, label="Sweep Centroid + Width", alpha=0.45, color="orange")
 		ax[4].errorbar(x, sweep_centroids, alpha=.45, color='orange')
 		ax[4].grid(True)
-		ax[4].legend(loc='best')
+		ax[4].legend(loc='best')"""
 
 	ax[0].grid(True)
 	ax[1].grid(True)
