@@ -1,8 +1,8 @@
-import numpy, pandas, os
+import numpy, pandas, os, variablenames
 from datetime import datetime
 """
 Tristan Anderson
-tris31299@gmail.com
+tja1015@wildcats.unh.edu
 
 Proceed Formally.
 """
@@ -51,16 +51,16 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 #print(header) # You can print this but it's just a list.
                 for index, val in enumerate(header):
                     # Get the primary thermsitor
-                    if val == primary_thermometer_colname:
+                    if val == variablenames.primary_thermometer_colname:
                         cccst3i = index
                     # Get the time it was taken at
-                    if val == time_colname:
+                    if val == variablenames.time_colname:
                         timei=index
                     # Get a secondary thermistor
-                    if val == secondary_thermometer_colname:
+                    if val == variablenames.secondary_thermometer_colname:
                         vpti=index
                     # Get the magnet current
-                    if val == magnet_psu_amperage_colname:
+                    if val == variablenames.magnet_psu_amperage_colname:
                         mci = index
                     # Get the NMR data, and sometimes theres the '\n' at the end
                     #   Which can be problamatic.
@@ -68,24 +68,24 @@ def file_muncher(df_path, data, fdump, dulya=False):
                         nmri
                     except NameError:
                         try:
-                            if val == terminal_colname:
+                            if val == variablenames.terminal_colname:
                                 nmri = index 
                             nmri
                         except NameError:
-                            if val == terminal_colname+'\n':
+                            if val == variablenames.terminal_colname+'\n':
                                 nmri = index
                     # Terminal daq header, but specifies where NMR data starts 
-                    if val == terminal_colname:
+                    if val == variablenames.terminal_colname:
                         nmri = index 
                     # Where is the sweep centered at?
-                    if val == sweep_centroid_colname:
+                    if val == variablenames.sweep_centroid_colname:
                         cfi = index
                     # How wide is the fequency sweep?
-                    if val == sweep_width_colname:
+                    if val == variablenames.sweep_width_colname:
                         fqsi = index
                     # What is the DAQ doing right now?
                     #   "TE", "Baseline", "Enhanced", "---": no_nmr_status
-                    if val == system_status_colname:
+                    if val == variablenames.system_status_colname:
                         nmrsi = index
                 header = line.split('\t')[:-1]
                 continue
@@ -103,14 +103,14 @@ def file_muncher(df_path, data, fdump, dulya=False):
             
             # Saves each sweep as an entry in a dictonary structure
             daq_dict[index] = {
-                time_colname:datetime.strptime(l[timei],"%m/%d/%Y %I:%M:%S %p"),
-                secondary_thermometer_colname:l[vpti],               #### <- As should this.
-                magnet_psu_amperage_colname:l[mci],
-                terminal_colname:numpy.array(l[nmri:], dtype=numpy.float64),
-                primary_thermometer_colname:l[cccst3i],                                #### <- this should be user selected
-                sweep_centroid_colname:l[cfi],            
-                sweep_width_colname:l[fqsi],                              
-                system_status_colname:l[nmrsi]
+                variablenames.time_colname:datetime.strptime(l[timei],"%m/%d/%Y %I:%M:%S %p"),
+                variablenames.secondary_thermometer_colname:l[vpti],               #### <- As should this.
+                variablenames.magnet_psu_amperage_colname:l[mci],
+                variablenames.terminal_colname:numpy.array(l[nmri:], dtype=numpy.float64),
+                variablenames.primary_thermometer_colname:l[cccst3i],                                #### <- this should be user selected
+                variablenames.sweep_centroid_colname:l[cfi],            
+                variablenames.sweep_width_colname:l[fqsi],                              
+                variablenames.system_status_colname:l[nmrsi]
                             }
     # Backs out one level from the data directory        
     os.chdir('..')
@@ -129,53 +129,53 @@ def file_muncher(df_path, data, fdump, dulya=False):
         if i % ten_percent == 0:
             print(int(i*10/(ten_percent)), "precent completed writing.")
         # Finds the centroid
-        xc = float(daq_dict[key][sweep_centroid_colname])
+        xc = float(daq_dict[key][variablenames.sweep_centroid_colname])
         # Finds the span of the sweep
-        dx = float(daq_dict[key][sweep_width_colname])
+        dx = float(daq_dict[key][variablenames.sweep_width_colname])
         # creates x-min
         xm = xc-dx/2
         # creates x-max
         xM = xc+dx/2
         try:
             # Creates x by sweep width divided by entries in the nmr data array
-            x = numpy.arange(xm, xM, step=dx/len(daq_dict[key][terminal_colname]))
+            x = numpy.arange(xm, xM, step=dx/len(daq_dict[key][variablenames.terminal_colname]))
         except ZeroDivisionError:
             # If for some reason the NMR data array failed to be assigned NMR sweep values,
             # Then a zero division error happens.
             # If that happens, then bail on creating the file for this DAQ entry.
             continue
         # If the status is something important
-        if daq_dict[key][system_status_colname] not in system_status_nulls:
+        if daq_dict[key][variablenames.system_status_colname] not in variablenames.system_status_nulls:
             if dulya == True:
                 try:
                     os.chdir("dulya")
                 except:
                     os.mkdir("dulya")
                     os.chdir('dulya')
-                with open("VME_"+datetime.strftime(daq_dict[key][time_colname],"%Y_%m_%d_%H_%M_%S")+".cd1", 'w') as f:
+                with open("VME_"+datetime.strftime(daq_dict[key][variablenames.time_colname],"%Y_%m_%d_%H_%M_%S")+".cd1", 'w') as f:
                     filewriter(f, daq_dict, key, x, dulya=True)
                 os.chdir('..')
                 continue
             # Save the files in a directory called /fdump/ + whatever was important (TE/baseline/Polarization)
             try:
-                os.chdir(daq_dict[key][system_status_colname])
+                os.chdir(daq_dict[key][variablenames.system_status_colname])
             except FileNotFoundError:
                 # If the directory doesn't exist, then make it
-                os.mkdir(daq_dict[key][system_status_colname])
-                os.chdir(daq_dict[key][system_status_colname])
+                os.mkdir(daq_dict[key][variablenames.system_status_colname])
+                os.chdir(daq_dict[key][variablenames.system_status_colname])
 
-            with open("VME_"+datetime.strftime(daq_dict[key][time_colname],"%Y_%m_%d_%H_%M_%S")+".ta1", 'w') as f:
+            with open("VME_"+datetime.strftime(daq_dict[key][variablenames.time_colname],"%Y_%m_%d_%H_%M_%S")+".ta1", 'w') as f:
                 filewriter(f, daq_dict, key, x)
             # Hop back into the file dump directory
             os.chdir('..') 
         else:
             try:
-                os.chdir(system_null_status_directory)
+                os.chdir(variablenames.system_null_status_directory)
             except FileNotFoundError:
-                os.mkdir(system_null_status_directory)
-                os.chdir(system_null_status_directory)
+                os.mkdir(variablenames.system_null_status_directory)
+                os.chdir(variablenames.system_null_status_directory)
             
-            with open("VME_"+datetime.strftime(daq_dict[key][time_colname],"%Y_%m_%d_%H_%M_%S")+".ta1", 'w') as f:
+            with open("VME_"+datetime.strftime(daq_dict[key][variablenames.time_colname],"%Y_%m_%d_%H_%M_%S")+".ta1", 'w') as f:
                 filewriter(f, daq_dict, key, x)
             
             os.chdir('..')
@@ -187,20 +187,23 @@ def filewriter(f, daq_dict, key, x, dulya=False):
         return True
 
     # Write the header
-    f.write(time_colname+"\t"+str(daq_dict[key][time_colname])+'\t')
-    f.write(secondary_thermometer_colname+"\t"+str(daq_dict[key][secondary_thermometer_colname])+'\n')
-    f.write(magnet_psu_amperage_colname+"\t"+str(daq_dict[key][magnet_psu_amperage_colname])+'\t')
-    f.write(primary_thermometer_colname+"\t"+str(daq_dict[key][primary_thermometer_colname])+'\n')
-    f.write(sweep_centroid_colname+"\t"+str(daq_dict[key][sweep_centroid_colname])+'\t')
-    f.write(sweep_width_colname+"\t"+str(daq_dict[key][sweep_width_colname])+'\n')
-    f.write(system_status_colname+"\t"+str(daq_dict[key][system_status_colname])+'\n')
-    f.write("#\tMHz\t"+terminal_colname+"\n")
+    f.write(variablenames.time_colname+"\t"+str(daq_dict[key][variablenames.time_colname])+'\t')
+    f.write(variablenames.secondary_thermometer_colname+"\t"+str(daq_dict[key][variablenames.secondary_thermometer_colname])+'\n')
+    f.write(variablenames.magnet_psu_amperage_colname+"\t"+str(daq_dict[key][variablenames.magnet_psu_amperage_colname])+'\t')
+    f.write(variablenames.primary_thermometer_colname+"\t"+str(daq_dict[key][variablenames.primary_thermometer_colname])+'\n')
+    f.write(variablenames.sweep_centroid_colname+"\t"+str(daq_dict[key][variablenames.sweep_centroid_colname])+'\t')
+    f.write(variablenames.sweep_width_colname+"\t"+str(daq_dict[key][variablenames.sweep_width_colname])+'\n')
+    f.write(variablenames.system_status_colname+"\t"+str(daq_dict[key][variablenames.system_status_colname])+'\n')
+    f.write("#\tMHz\t"+variablenames.terminal_colname+"\n")
     # Write the rest of the file
-    for index, val in enumerate(daq_dict[key][terminal_colname]):
+    for index, val in enumerate(daq_dict[key][variablenames.terminal_colname]):
         f.write(str(x[index])+"\t"+ str(val)+"\n")
 
 
 def directory(datapath, filedump, cwd):
+    from multiprocessing import Pool, cpu_count
+    processes = int(8*cpu_count()/10)
+    print(processes, "Processing threads available, we're putting it to 80 %")
     raw_data = datapath # Expects a clean file structure with a few DAQ csv's in it
     fdump = filedump         # Expects a clean file directory where it can create folders called
                                 # The DAQ csv's name, and dump the appropriate data.
@@ -223,12 +226,11 @@ def directory(datapath, filedump, cwd):
             # FileExistsError (Im pretty sure)
             pass
     print("Parsing", len(raws), ".csv files.")
-    for index, file in enumerate(raws):
-        filestuff = ' '.join(["#File", file, "In progress.#"])
-        print('#'*len(filestuff))
-        print(filestuff)
-        print('#'*len(filestuff))
-        file_muncher(file, raw_data, fdump+dumps[index])
+    with Pool(processes=processes) as pool:
+        result_objects = [pool.apply_async(file_muncher, args=(file, raw_data, fdump+dumps[index])) for index, file in enumerate(raws)]
+        pool.close()
+        pool.join()
+    results = [r.get() for r in result_objects if r.get() != False]
     print("Complete.")
 
 def single_file(datafile, filedump):
@@ -255,20 +257,20 @@ def single_file(datafile, filedump):
         ########################
                
 """
-global time_colname, primary_thermometer_colname,secondary_thermometer_colname,\
-        magnet_psu_amperage_colname,sweep_centroid_colname,sweep_width_colname,\
-        system_status_colname,system_status_nulls,system_null_status_directory,\
-        terminal_colname
-time_colname = "Time"
-primary_thermometer_colname = "CCX.T3 (K)"
-secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
-magnet_psu_amperage_colname = "Magnet Current (A)"
-sweep_centroid_colname  = "Central Freq (MHz)"
-sweep_width_colname = "Freq Span (MHz)"
-system_status_colname = "NMR Status"
-system_status_nulls = ['---']
-system_null_status_directory = 'null_status'
-terminal_colname = 'NMR Data' # This is the column below, and after which sweep data
+global variablenames.time_colname, variablenames.primary_thermometer_colname,variablenames.secondary_thermometer_colname,\
+        variablenames.magnet_psu_amperage_colname,variablenames.sweep_centroid_colname,variablenames.sweep_width_colname,\
+        variablenames.system_status_colname,variablenames.system_status_nulls,variablenames.system_null_status_directory,\
+        variablenames.terminal_colname
+variablenames.time_colname = "Time"
+variablenames.primary_thermometer_colname = "CCX.T3 (K)"
+variablenames.secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
+variablenames.magnet_psu_amperage_colname = "Magnet Current (A)"
+variablenames.sweep_centroid_colname  = "Central Freq (MHz)"
+variablenames.sweep_width_colname = "Freq Span (MHz)"
+variablenames.system_status_colname = "NMR Status"
+variablenames.system_status_nulls = ['---']
+variablenames.system_null_status_directory = 'null_status'
+variablenames.terminal_colname = 'NMR Data' # This is the column below, and after which sweep data
                                 #   data accumulates.
 ######################################
 
