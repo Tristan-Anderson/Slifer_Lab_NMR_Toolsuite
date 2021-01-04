@@ -199,7 +199,6 @@ def filewriter(f, daq_dict, key, x, dulya=False):
     for index, val in enumerate(daq_dict[key][variablenames.terminal_colname]):
         f.write(str(x[index])+"\t"+ str(val)+"\n")
 
-
 def directory(datapath, filedump, cwd):
     from multiprocessing import Pool, cpu_count
     processes = int(8*cpu_count()/10)
@@ -238,71 +237,3 @@ def single_file(datafile, filedump):
     #print(datadir)
     file_muncher(datafile,datadir,filedump)
     print("Complete.")
-
-
-
-############ Column Names ############
-# Future work is to be done here to have
-# a master.ini files with a bunch of global declarations
-# to practice good string-variable softcoding, 
-# as opposed to the hardcoding that is downstream
-# from the execution of this program
-
-
-""" Psssst.... Hey you! user! Look here:
-        ########################
-        #     DO NOT MODIFY    #       
-        #  WITHOUT CONSULTING  #
-        #    DOCUMENTATION.    #
-        ########################
-               
-"""
-global variablenames.time_colname, variablenames.primary_thermometer_colname,variablenames.secondary_thermometer_colname,\
-        variablenames.magnet_psu_amperage_colname,variablenames.sweep_centroid_colname,variablenames.sweep_width_colname,\
-        variablenames.system_status_colname,variablenames.system_status_nulls,variablenames.system_null_status_directory,\
-        variablenames.terminal_colname
-variablenames.time_colname = "Time"
-variablenames.primary_thermometer_colname = "CCX.T3 (K)"
-variablenames.secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
-variablenames.magnet_psu_amperage_colname = "Magnet Current (A)"
-variablenames.sweep_centroid_colname  = "Central Freq (MHz)"
-variablenames.sweep_width_colname = "Freq Span (MHz)"
-variablenames.system_status_colname = "NMR Status"
-variablenames.system_status_nulls = ['---']
-variablenames.system_null_status_directory = 'null_status'
-variablenames.terminal_colname = 'NMR Data' # This is the column below, and after which sweep data
-                                #   data accumulates.
-######################################
-
-"""
-cwd = os.getcwd()+'/'
-raw_data = cwd+"raw_data/" # Expects a clean file structure with a few DAQ csv's in it
-fdump = cwd+"vme/"         # Expects a clean file directory where it can create folders called
-                            # The DAQ csv's name, and dump the appropriate data.
-home = cwd              # For returning to home, but probably not useful. (it's very useful)
-
-# home
-raws = []
-for file in os.listdir(raw_data):   # Get all of the files
-    if file.endswith('.csv'):       # That end in csv
-        raws.append(file)           # Append daq csv to a list
-# file dump
-os.chdir(fdump)                     # chdir into file dump
-dumps = []
-for st in raws:                     # Get name of daq csv
-    f = st.split('.')[0]            # Split the daq into its file name and extension, and just take its file name
-    dumps.append(f)                 # Save the filename to a list
-    try:
-        os.mkdir(f)                 # Turn the filename into a directory
-    except:
-        # FileExistsError (Im pretty sure)
-        pass
-print("Parsing", len(raws), ".csv files.")
-for index, file in enumerate(raws):
-    filestuff = ' '.join(["#File", file, "In progress.#"])
-    print('#'*len(filestuff))
-    print(filestuff)
-    print('#'*len(filestuff))
-    file_muncher(file, raw_data, fdump+dumps[index])
-                                # This ^^^^^^^^^^^^ Is possible because the dumps list and raws are parralelly indexable (:
-"""
