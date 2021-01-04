@@ -19,33 +19,33 @@ If you want to edit the primary and secondary thermistors - edit them here.
 
 """
 # In the DAQ csv, what is the time column labeled?
-time_colname = "Time"
+dm_time_colname = "Time"
  
 # What is the primary thermistor? 
-primary_thermometer_colname = "CCX.T3 (K)"
+dm_primary_thermometer_colname = "CCX.T3 (K)"
 
 # What is the secondary thermistor?
-secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
+dm_secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
 
 # What is the magnet PSU reading?
-magnet_psu_amperage_colname = "Magnet Current (A)"
+dm_magnet_psu_amperage_colname = "Magnet Current (A)"
 
 # What is the DAQ NMR Sweep centroid?
-sweep_centroid_colname  = "Central Freq (MHz)"
+dm_sweep_centroid_colname  = "Central Freq (MHz)"
 
 # What is the DAQ NMR Sweep span?
-sweep_width_colname = "Freq Span (MHz)"
+dm_sweep_width_colname = "Freq Span (MHz)"
 
 # What is the NMR Status column?
-system_status_colname = "NMR Status"
+dm_system_status_colname = "NMR Status"
 
 # What are the NMR Status entries that dont pertain to interesting
 #	physics per the lab operator?
-system_status_nulls = ['---']
+dm_system_status_nulls = ['---']
 
 # What directory do you want to place the status entries that dont matter? per line 44
-system_null_status_directory = 'null_status'
+dm_system_null_status_directory = 'null_status'
 
 # What column should I look for to be the terminal column to DAQ data, and begin searching for NMR
 #	data? 
-terminal_colname = 'NMR Data'
+dm_terminal_colname = 'NMR Data'
