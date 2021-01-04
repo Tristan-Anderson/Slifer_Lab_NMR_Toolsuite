@@ -193,6 +193,14 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			y1a[index] = 0
 		else:
 			y1a[index] = float(val)
+		if "Off" == vpy[index] or "Off\n" == vpy[index]:
+			vpy[index] = 0
+		else:
+			vpy[index] = float(vpy[index])
+		if "Off" == t3y[index] or "Off\n" == t3y[index]:
+			t3y[index] = 0
+		else:
+			t3y[index] = float(t3y[index])
 
 	if enforce_T3:
 		print("Enforcing T3 Value.")
@@ -239,14 +247,15 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			CAL_BEST = TE_BEST/A_BEST
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
 			
-			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))")
+			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))\tN_TE")
 			print(centertime.strftime("%Y-%m-%d %H:%M:%S"),end='\t')
 			print(material,end='\t')
 			print(report(T_BEST),"±", report(T_UNCERT),end='\t')
 			print(report(B_x0_BEST), "±", report(B_x0_UNCERT),end='\t')					
 			print(report(A_BEST),"±", report(A_UNCERT),end='\t')
 			print(report(TE_BEST),"±", TE_UNCERT,end='\t')
-			print(report(CAL_BEST),"±", report(CAL_UNCERT))
+			print(report(CAL_BEST),"±", report(CAL_UNCERT),end='\t')
+			print(N)
 			
 			# Save the data
 			results_df["B via x0 (T)"] = y1b
@@ -286,14 +295,15 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			CAL_BEST = TE_BEST/A_BEST
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
 
-			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))")
+			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))\nN_TE")
 			print(centertime.strftime("%Y-%m-%d %H:%M:%S"),end='\t')
 			print(material,end='\t')
 			print(report(T_BEST),"±", report(T_UNCERT),end='\t')
 			print(report(B_x0_BEST), "±", report(B_x0_UNCERT),end='\t')					
 			print(report(A_BEST),"±", report(A_UNCERT),end='\t')
 			print(report(TE_BEST),"±", TE_UNCERT,end='\t')
-			print(report(CAL_BEST),"±", report(CAL_UNCERT))
+			print(report(CAL_BEST),"±", report(CAL_UNCERT),end='\t')
+			print(N)
 			
 	
 
@@ -312,9 +322,12 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		const = numpy.mean(constant) # This is passed to the function
 
 		if deuteron:
+
 			fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
 			print("Max Pol", report(max(y3a)*CAL_BEST), "±", report(max(y3a)*CAL_UNCERT))
 			print("Min Pol", report(min(y3a)*CAL_BEST), "±", report(min(y3a)*CAL_UNCERT))
+			N = len(y3a)
+			print("N",N)
 
 			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
 			ax[2].scatter(x,y3a*CAL_BEST, color='blue',zorder=2, s=2)
@@ -351,7 +364,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			ax[2].errorbar(x, y3*CAL_BEST, yerr=y3*CAL_UNCERT, color="green")
 			print("Max Pol", report(max(y3)*CAL_BEST), "±", report(max(y3)*CAL_UNCERT))
 			print("Min Pol", report(min(y3)*CAL_BEST), "±", report(min(y3)*CAL_UNCERT))
-
+			N = len(y3a)
+			print("N",N)
 			# This draws the green uncertainty-band for our polarization. It is generally
 			#	Too thin to see without cranking up the chart's DPI.
 			ax[2].errorbar(x,y3*(CAL_BEST-CAL_UNCERT), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
