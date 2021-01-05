@@ -79,8 +79,8 @@ class NMR_Visualizer(tk.Tk):                # Class
 
         startcolumn = kwargs.pop("startcolumn", None)
 
-        vapor_pressure_t = kwargs.pop("vapor_pressure_t",None)
-        cccst3_t = kwargs.pop("cccst3_t", None)
+        secondary_thermistor = kwargs.pop("secondary_thermistor",None)
+        primary_thermistor = kwargs.pop("primary_thermistor", None)
 
         spread=kwargs.pop('spread', None)
         centroid=kwargs.pop('centroid',None)
@@ -95,8 +95,8 @@ class NMR_Visualizer(tk.Tk):                # Class
                                     xname=xname, binning=binning, xlabel=xlabel, ylabel=ylabel,
                                     xmin=xmin, xmax=xmax, signalstart=signalstart, signalend=signalend,
                                     impression=impression, rawsigtime=rawsigtime, mag_current=mag_current,
-                                    temperature=temperature, vapor_pressure_t=vapor_pressure_t,
-                                    cccst3_t=cccst3_t, spread=spread,centroid=centroid, startcolumn=startcolumn
+                                    temperature=temperature, secondary_thermistor=secondary_thermistor,
+                                    primary_thermistor=primary_thermistor, spread=spread,centroid=centroid, startcolumn=startcolumn
                                   )
         
         frame.tkraise()
@@ -241,6 +241,7 @@ class Global_Interpreter(tk.Frame):
         self.dumppath_button.configure(text=self.dumppath)
 
 class Directory_Sorter(tk.Frame):
+    
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
@@ -293,6 +294,7 @@ class Directory_Sorter(tk.Frame):
 
         self.backbutton = tk.Button(self, text="Back", command=lambda: self.controller.show_frame(cont=NMR_Splash))
         self.backbutton.grid(column=0,row=1)
+    
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
@@ -334,6 +336,7 @@ class Sweep_Averager(tk.Frame):
         
         self.backbutton = tk.Button(self.guiTitle, text="Back", command = lambda: self.controller.show_frame(cont=NMR_Splash))
         self.backbutton.grid(column=2, row=3)
+    
     def fetch_kwargs(self, **kwargs):
         #
         self.populate_toggleables()
@@ -379,8 +382,8 @@ class NMR_Splash(tk.Frame):
         self.globalinterpreter.grid(column=0,row=5, pady=10)
 
     def fetch_kwargs(self, **kwargs):
+        #
         pass
-### Future tkinter Windows time permitting ###
 
 class File_Selector(tk.Frame):
     def __init__(self, parent, controller):
@@ -420,8 +423,6 @@ class File_Selector(tk.Frame):
         self.fileDelimeter()
         self.goTransition()
 
-
-
     def vnaneRadioButton(self):
         self.vnaVmeType = tk.StringVar(self.Switches)
         self.vnaVmeType.set('VNA')
@@ -459,18 +460,20 @@ class File_Selector(tk.Frame):
         self.blFilePreview()
 
     def blFilePreview(self):
-        self.bldataFile = tk.LabelFrame(self, text='200-line Baseline Data Preview')
-        self.bldataFile.grid(column=0, row=3, pady=10, padx=10)
+        
         delimeter = self.fileDelimeter.get()
         choice = self.vnaVmeType.get()
-        self.bltxt = scrolledtext.ScrolledText(self.bldataFile)
-        #txt['font'] = ('Noto Sans Gothic', '12')
-        self.bltxt.pack(expand=True, fill='both')
+
         if delimeter == '\\t':
             delimeter ='\t'
 
         h2, header, tf_file, lines_to_skip = v.gui_bl_file_preview(self.blfilename, delimeter)
 
+        self.bldataFile = tk.LabelFrame(self, text='200-line Baseline Data Preview')
+        self.bldataFile.grid(column=0, row=3, pady=10, padx=10)
+        self.bltxt = scrolledtext.ScrolledText(self.bldataFile)
+        
+        self.bltxt.pack(expand=True, fill='both')
         for r, row in enumerate(h2):
             line = ""
             for c, col in enumerate(h2[r].split(delimeter)):
@@ -514,17 +517,14 @@ class File_Selector(tk.Frame):
         self.rawsiglabel = tk.Label(self.rawsigDataFileSelector, text = "")
         self.rawsiglabel.grid(column = 1, row = 1)
         self.rawsiglabel.configure(text = self.rawsigfilename)
-        #print("".join(list(self.rawsigfilename.split('/')[-1])[:-4]))
+
         self.teFilePreview()
 
     def teFilePreview(self):
-        self.rawsigDataFile = tk.LabelFrame(self, text='200-line Raw Data Preview')
-        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
+        
         delimeter = self.fileDelimeter.get()
         choice = self.vnaVmeType.get()
-        self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)
-        #txt['font'] = ('Noto Sans Gothic', '12')
-        self.rawtext.pack(expand=True, fill='both')
+        
         if delimeter == '\\t':
             delimeter ='\t'
         header = []
@@ -533,12 +533,16 @@ class File_Selector(tk.Frame):
 
         # Get the info
         header, h2, self.TE_DATE, self.I, self.T,\
-        self.cccst3_t, self.vapor_pressure_t, \
+        self.primary_thermistor, self.secondary_thermistor, \
         self.rawsigskiplines, self.centroid, \
         self.spread = v.gui_rawsig_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
-        
-        
 
+
+        self.rawsigDataFile = tk.LabelFrame(self, text='200-line Raw Data Preview')
+        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
+        self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)
+
+        self.rawtext.pack(expand=True, fill='both')
         for r, row in enumerate(h2):
             line = ''
             for c, col in enumerate(h2[r].split(delimeter)):
@@ -562,8 +566,8 @@ class File_Selector(tk.Frame):
                                         impression=True,
                                         rawsigtime=self.TE_DATE, mag_current = self.I,
                                         temperature=self.T,
-                                        vapor_pressure_t=self.vapor_pressure_t,
-                                        cccst3_t=self.cccst3_t,
+                                        secondary_thermistor=self.secondary_thermistor,
+                                        primary_thermistor=self.primary_thermistor,
                                         signalstart=self.signalstart,
                                         signalend=self.signalend,
                                         xmin=self.xmin,
@@ -617,8 +621,8 @@ class Data_Selector(tk.Frame):
             xlabel=self.xaxlabel, ylabel=self.yaxlabel,
             xmin=self.xmin, xmax=self.xmax, signalstart=self.signalstart,
             signalend=self.signalend, rawsigtime=self.rawsigtime, temperature=self.T,
-            mag_current=self.I, vapor_pressure_t=self.vapor_pressure_t,
-            cccst3_t=self.cccst3_t, centroid=self.centroid, 
+            mag_current=self.I, secondary_thermistor=self.secondary_thermistor,
+            primary_thermistor=self.primary_thermistor, centroid=self.centroid, 
             spread=self.spread, startcolumn=self.startcolumn
                                     )
 
@@ -782,8 +786,8 @@ class Data_Selector(tk.Frame):
         self.I = kwargs.pop("mag_current", None)
         self.T = kwargs.pop("temperature", None)
         self.binning = 1
-        self.vapor_pressure_t = kwargs.pop("vapor_pressure_t",None)
-        self.cccst3_t = kwargs.pop("cccst3_t", None)
+        self.secondary_thermistor = kwargs.pop("secondary_thermistor",None)
+        self.primary_thermistor = kwargs.pop("primary_thermistor", None)
         #print(impression)
         self.update_dataframe(impression=impression)
         self.start_index = 0
@@ -860,6 +864,7 @@ class Data_Selector(tk.Frame):
 
 class Fitting_Page(tk.Frame):
     def __init__(self,parent, controller):
+        import variablenames
         tk.Frame.__init__(self,parent)
         self.controller = controller
         self.automatefits = []
@@ -895,8 +900,8 @@ class Fitting_Page(tk.Frame):
         self.bldatapath = kwargs.pop('bldatapath', None)
         self.blskiplines = kwargs.pop('blskiplines', None)
         self.rawsigskiplines = kwargs.pop('rawsigskiplines', None)
-        self.vapor_pressure_t = kwargs.pop("vapor_pressure_t",None)
-        self.cccst3_t = kwargs.pop("cccst3_t", None)
+        self.secondary_thermistor = kwargs.pop("secondary_thermistor",None)
+        self.primary_thermistor = kwargs.pop("primary_thermistor", None)
         self.isautomated = kwargs.pop('isautomated',False)
         self.centroid = kwargs.pop('centroid', None)
         self.spread = kwargs.pop('spread', None) 
@@ -1239,7 +1244,8 @@ class Fitting_Page(tk.Frame):
         
         headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                        "xmax", "sigstart", "sigfinish", "blskiplines",
-                       'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", 
+                       'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name+" (K)", 
+                       variablenames.gui_secondary_thermistor_name+" (K)", 
                        "TEvalue", "data_area", "ltzian_area",
                        "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', 
                        "lorentzian chisquared (distribution)", "σ (Noise)", "σ (Error Bar)", 
@@ -1249,7 +1255,7 @@ class Fitting_Page(tk.Frame):
              self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
              self.signalstart.get(),self.signalend.get(), self.blskiplines, 
              self.rawsigskiplines, self.btext.get(),
-             self.ttext.get(), self.cccst3_t, self.vapor_pressure_t, self.tevalue, 
+             self.ttext.get(), self.primary_thermistor, self.secondary_thermistor, self.tevalue, 
              self.dataarea, self.ltzian_integration, self.data_cal_constant,
              self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0, 
              self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared, 
@@ -1358,8 +1364,8 @@ class Fitting_Page(tk.Frame):
                                         rawsigtime=self.rawsigtime, 
                                         temperature=self.T,
                                         mag_current=self.I,
-                                        vapor_pressure_t=self.vapor_pressure_t,
-                                        cccst3_t=self.cccst3_t,
+                                        secondary_thermistor=self.secondary_thermistor,
+                                        primary_thermistor=self.primary_thermistor,
                                         signalstart=self.signalstart,
                                         signalend=self.signalend,
                                         xmin=self.xmin,
@@ -1385,7 +1391,7 @@ class Fitting_Page(tk.Frame):
         # Get the info
         delimeter = '\t'
         _, _, self.rawsigtime, self.I, self.T,\
-        self.cccst3_t, self.vapor_pressure_t, \
+        self.primary_thermistor, self.secondary_thermistor, \
         self.rawsigskiplines, self.centroid, \
         self.spread = v.gui_rawsig_file_preview(self.rawsigdatapath, delimeter, self.vnavme) 
         #self.rawsigtime = self.TE_DATE
@@ -1528,7 +1534,8 @@ class Fitting_Page(tk.Frame):
 
             headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                    "xmax", "sigstart", "sigfinish", "blskiplines",
-                   'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", 
+                   'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name+" (K)", 
+                    variablenames.gui_secondary_thermistor_name+" (K)", 
                    "TEvalue", "data_area", "ltzian_area",
                    "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', 
                    "lorentzian chisquared", "σ (Noise)","σ (Error Bar)", 
@@ -1539,7 +1546,7 @@ class Fitting_Page(tk.Frame):
              self.rawsigtime, self.vnavme, self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
              self.signalstart.get(),self.signalend.get(), self.blskiplines, 
              self.rawsigskiplines, str(self.B),
-             str(self.T), self.cccst3_t, self.vapor_pressure_t, self.tevalue, 
+             str(self.T), self.primary_thermistor, self.secondary_thermistor, self.tevalue, 
              self.dataarea, self.ltzian_integration, self.data_cal_constant,
              self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
              self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared, 

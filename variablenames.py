@@ -76,3 +76,6 @@ dmsa_terminal_colname = 'NMR Data'
 					--m-m---------m-m--
 """
 ####################################################################
+gui_primary_thermistor_name = dmsa_primary_thermometer_colname
+
+gui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
