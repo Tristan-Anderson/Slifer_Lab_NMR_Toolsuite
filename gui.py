@@ -4,6 +4,7 @@ tja1015@wildats.unh.edu
 
 Proceed Formally.
 """
+import variablenames
 import gc, time # garbage
 import tkinter as tk
 import tkinter.scrolledtext as scrolledtext
@@ -864,7 +865,6 @@ class Data_Selector(tk.Frame):
 
 class Fitting_Page(tk.Frame):
     def __init__(self,parent, controller):
-        import variablenames
         tk.Frame.__init__(self,parent)
         self.controller = controller
         self.automatefits = []
@@ -1472,6 +1472,7 @@ class Fitting_Page(tk.Frame):
         # If the user fit more than one function to the dataframe
         # this is how it works
         if not failed:
+            a = time.time()
             for index, tupp in enumerate(self.automatefits):
                 """
                 if index == 0, npriev is predefined to be the default y-axis to try and fit with gff
@@ -1501,9 +1502,13 @@ class Fitting_Page(tk.Frame):
                 npriev = tupp[1]
             # Save the figure
             os.chdir(graphs)
+            b = time.time()
+            print(b-a, "seconds plotting")
             
+            a=time.time()
             self.savefig(automated=True, p_title=originalplottitle+" S"+str(self.item)) # UNCOMMENT TO SAVE EVERYTHING.
-            
+            b=time.time()
+            print(b-a, "seconds saving")
             """#######################################
             # A section dedicated to second-time-arrounders.
             if type(self.tlorentzian_chisquared) == float:
@@ -1534,8 +1539,8 @@ class Fitting_Page(tk.Frame):
 
             headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                    "xmax", "sigstart", "sigfinish", "blskiplines",
-                   'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name+" (K)", 
-                    variablenames.gui_secondary_thermistor_name+" (K)", 
+                   'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name, 
+                    variablenames.gui_secondary_thermistor_name, 
                    "TEvalue", "data_area", "ltzian_area",
                    "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', 
                    "lorentzian chisquared", "σ (Noise)","σ (Error Bar)", 
