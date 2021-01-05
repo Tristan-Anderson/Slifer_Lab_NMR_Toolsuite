@@ -102,7 +102,8 @@ class NMR_Visualizer(tk.Tk):                # Class
         
         frame.tkraise()
 
-### Future tkinter Windows time permitting ###
+
+
 class DAQ_Extractor(tk.Frame):
     def __init__(self,parent, controller):
         tk.Frame.__init__(self, parent)
@@ -240,6 +241,7 @@ class Global_Interpreter(tk.Frame):
     def dumpdialog(self):
         self.dumppath = filedialog.askdirectory(initialdir =  "$HOME/raw_data", title = "Select A File")+'/'
         self.dumppath_button.configure(text=self.dumppath)
+
 
 class Directory_Sorter(tk.Frame):
     
@@ -385,6 +387,7 @@ class NMR_Splash(tk.Frame):
     def fetch_kwargs(self, **kwargs):
         #
         pass
+
 
 class File_Selector(tk.Frame):
     def __init__(self, parent, controller):
