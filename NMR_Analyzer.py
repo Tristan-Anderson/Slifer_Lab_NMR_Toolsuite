@@ -12,6 +12,7 @@ formally for this toolsuite has not been optimized.
 
 If future maintenance is needed, see documentation in UNH-NPG>lab_work>students_ugrad>Tristan Anderson>TE Extraction
 """
+import variablenames
 import pandas, numpy, datetime, matplotlib, math, traceback
 from scipy.optimize import curve_fit as fit
 from matplotlib import pyplot as plt
@@ -72,19 +73,14 @@ def add_entry(*rowvals,**kwargs):
                 exit()  # Give up.
     h_orig = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                        "xmax", "sigstart", "sigfinish", "blskiplines",
-                       'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue", "data_area", "ltzian_area",
-                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", "σ (Noise)", 
-                       "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
+                       'rawsigskiplines', "B", "T", variablenames.na_primary_thermistor_name, 
+                       variablenames.na_secondary_thermistor_name, "TEvalue", "data_area", "ltzian_area",
+                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", 
+                       "σ (Noise)", "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
     headers=kwargs.pop("headers",h_orig)
     getdf=kwargs.pop('getdf', False)
 
-
     fname = "global_analysis.csv"
-    #headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
-    #                   "xmax", "sigstart", "sigfinish", "blskiplines",
-    #                   'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue", "data_area", "ltzian_area",
-    #                   "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", "σ (Noise)", 
-    #                   "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
 
     if len(headers) != len(rowvals):
         if len(headers) > len(rowvals):
@@ -125,7 +121,6 @@ def gui_bl_file_preview(filename, delimeter):
             lines_to_skip = 0
             while any(tf_file[lines_to_skip:]):  # While any values are true, iterate through it, deleting the first occurance
                 lines_to_skip += 1
-            #lines_to_skip -= 1 # Python indexing; will grab the last line in the header if you do this. Which probably not be properly formtted...
             h2 = h2[:lines_to_skip+200] 
     return h2, header, tf_file, lines_to_skip
 
@@ -148,8 +143,6 @@ def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
                     dateline = list(line)
                     #! Date: 12/17/2019 11:17:25 AM
                     #&&&&&&& mm/dd/YYYY II:MM:SS %p"
-                    #print("".join(dateline[7:]))
-                    #print("".join(dateline[8:]))
                     TE_DATE = datetime.datetime.strptime("".join(dateline[8:]),"%m/%d/%Y %I:%M:%S %p\n")
                     I = None
                     T = None
@@ -218,7 +211,6 @@ def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
         lines_to_skip += 1
     #lines_to_skip -= 1 # Python indexing; will grab the last line in the header if you do this. Which probably not be properly formtted...
     h2 = h2[:lines_to_skip+200]
-
     return header, h2, TE_DATE, I, T, cccst3_t, vapor_pressure_t, lines_to_skip, centroid, spread
 
 
@@ -235,7 +227,6 @@ def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, b
             - Changes S11 parameter basis to Re(Z)
         - Returns Data
     """
-    #print(len(impression))
     if vnavmetype == "VNA":
         return vna_frames(
             RAWSIG_Path, Baseline_Path,  impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
@@ -287,13 +278,13 @@ def vme_frames(RAWSIG_Path, Baseline_Path, binning=1, blskiplines=4, rawsigskipl
         baseline_df = baseline_df_binned
 
     
-    y = "Potential (V)"
-    x = "MHz"
+    y = variablenames.na_vme_yaxis_default
+    x = variablenames.na_vme_xaxis_default
     
 
     master2 = te_df.subtract(baseline_df, axis='index')
     # SUBTRACT AFTER CONVERSION
-    master2["MHz"] = te_df[x]
+    master2[x] = te_df[x]
     # Correct the X-Axis
     master2["Raw "+y] = te_df[y]
     master2["BL "+y] = baseline_df[y]

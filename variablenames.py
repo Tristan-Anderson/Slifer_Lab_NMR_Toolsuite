@@ -62,13 +62,20 @@ dmsa_system_null_status_directory = 'null_status'
 dmsa_terminal_colname = 'NMR Data'
 ####################################################################
 """
-			 / \--------------------------, 
-			 \_,|                         | 
-			    |    global_interpreter   | 
-			    |  ,------------------------
-			    \_/_______________________/ 
+			 / \---------------------, 
+			 \_,|                    | 
+			    |     NMR_Analyzer   | 
+			    |  ,------------------
+			    \_/__________________/ 
 """
 ####################################################################
+na_primary_thermistor_name = dmsa_primary_thermometer_colname
+
+na_secondary_thermistor_name = dmsa_secondary_thermometer_colname
+
+na_vme_yaxis_default = "Potential (V)"
+
+na_vme_xaxis_default = "MHz"
 
 ####################################################################
 """
