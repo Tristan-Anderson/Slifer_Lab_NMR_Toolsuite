@@ -39,15 +39,15 @@ class NMR_Visualizer(tk.Tk):                # Class
         window.grid_columnconfigure(0,weight=1)
 
         self.frames = {}                            # Attribute            
-        options = [NMR_Splash, File_Selector, Data_Selector, Fitting_Page, 
+        options = [Data_Selector, Fitting_Page, 
                    DAQ_Extractor, Global_Interpreter, Directory_Sorter,
-                   Sweep_Averager]
+                   Sweep_Averager, NMR_Splash, File_Selector]
         #friendly_name = ['NMR_Splash', 'File_Selector','Data_Selector', 'Fitting_Page', 
         #           'DAQ_Extractor', 'Global_Interpreter', 'Directory_Sorter',
         #           'Sweep_Averager']
         for F in options:
             f_name = F.__name__
-            print(f_name)
+            #print(type(f_name))
             frame = F(window, self)
 
             self.frames[f_name] = frame
@@ -91,7 +91,8 @@ class NMR_Visualizer(tk.Tk):                # Class
         spread=kwargs.pop('spread', None)
         centroid=kwargs.pop('centroid',None)
 
-
+        k = [i for i in self.frames]
+        print(k)
         frame = self.frames[cont]
 
         frame.fetch_kwargs(
@@ -375,7 +376,7 @@ class NMR_Splash(tk.Frame):
 
         self.splashFrame = tk.LabelFrame(self, text="NMR Toolsuite")
         self.splashFrame.grid(column=0, row=0, padx=120)
-        self.goto_analyser = tk.Button(self.splashFrame,text="NMR Signal Extractor", command= lambda: self.controller.show_frame(cont="File_Selector"))
+        self.goto_analyser = tk.Button(self.splashFrame,text="NMR Signal Extractor", command= self.gotofileselector)
         self.goto_analyser.grid(column=0, row=1, pady=10)
 
         self.goto_DAQ_extractor = tk.Button(self.splashFrame, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont="DAQ_Extractor"))
@@ -394,6 +395,8 @@ class NMR_Splash(tk.Frame):
         #
         pass
 
+    def gotofileselector(self):
+        self.controller.show_frame(cont="File_Selector")
 
 class File_Selector(tk.Frame):
     def __init__(self, parent, controller):
@@ -401,7 +404,6 @@ class File_Selector(tk.Frame):
         
 
         self.controller = controller
-        self.controller.mainloop()
         #self.wm_iconbitmap('icon.ico')
         self.guiTitle = tk.Label(self, text="NMR Data Analyser")
         self.guiTitle.grid(column=1,row=1)
