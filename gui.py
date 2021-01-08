@@ -3,6 +3,13 @@ Tristan Anderson
 tja1015@wildats.unh.edu
 
 Proceed Formally.
+
+Weird behaivor in .mainloop() root in gui.py - instantly closes after tkraise()ing in showframe
+on the hunt now for what's causing it. This commit changes the method in 
+which pages of the gui are being called.
+https://stackoverflow.com/questions/45064732/refresh-a-tkinter-frame-on-button-press
+https://stackoverflow.com/questions/7546050/switch-between-two-frames-in-tkinter/7557028#7557028
+https://stackoverflow.com/questions/49460212/pycharm-process-finished-with-exit-code-0
 """
 import variablenames
 import gc, time # garbage
@@ -11,9 +18,8 @@ import tkinter.scrolledtext as scrolledtext
 from tkinter import filedialog
 import NMR_Analyzer as v
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter
-from statistics import mode
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import datetime, pandas, os, numpy
 # Implement the default Matplotlib key bindings.
 """
@@ -39,15 +45,10 @@ class NMR_Visualizer(tk.Tk):                # Class
         window.grid_columnconfigure(0,weight=1)
 
         self.frames = {}                            # Attribute            
-        options = [Data_Selector, Fitting_Page, 
-                   DAQ_Extractor, Global_Interpreter, Directory_Sorter,
-                   Sweep_Averager, NMR_Splash, File_Selector]
-        #friendly_name = ['NMR_Splash', 'File_Selector','Data_Selector', 'Fitting_Page', 
-        #           'DAQ_Extractor', 'Global_Interpreter', 'Directory_Sorter',
-        #           'Sweep_Averager']
+        options = [DAQ_Extractor, Global_Interpreter, Directory_Sorter, Sweep_Averager, NMR_Splash,
+                   File_Selector, Data_Selector, Fitting_Page]
         for F in options:
             f_name = F.__name__
-            #print(type(f_name))
             frame = F(window, self)
 
             self.frames[f_name] = frame
@@ -91,24 +92,20 @@ class NMR_Visualizer(tk.Tk):                # Class
         spread=kwargs.pop('spread', None)
         centroid=kwargs.pop('centroid',None)
 
-        k = [i for i in self.frames]
-        print(k)
         frame = self.frames[cont]
 
         frame.fetch_kwargs(
-                                    vnavme=vnavme, rawsigdatapath=rawsigdatapath, bldatapath=bldatapath,
-                                    blskiplines=blskiplines, rawsigskiplines=rawsigskiplines, df=df,
-                                    start_index=start_index, end_index=end_index, yname=yname,
-                                    xname=xname, binning=binning, xlabel=xlabel, ylabel=ylabel,
-                                    xmin=xmin, xmax=xmax, signalstart=signalstart, signalend=signalend,
-                                    impression=impression, rawsigtime=rawsigtime, mag_current=mag_current,
-                                    temperature=temperature, secondary_thermistor=secondary_thermistor,
-                                    primary_thermistor=primary_thermistor, spread=spread,centroid=centroid,
-                                    startcolumn=startcolumn
-                                  )
+                            vnavme=vnavme, rawsigdatapath=rawsigdatapath, bldatapath=bldatapath,
+                            blskiplines=blskiplines, rawsigskiplines=rawsigskiplines, df=df,
+                            start_index=start_index, end_index=end_index, yname=yname,
+                            xname=xname, binning=binning, xlabel=xlabel, ylabel=ylabel,
+                            xmin=xmin, xmax=xmax, signalstart=signalstart, signalend=signalend,
+                            impression=impression, rawsigtime=rawsigtime, mag_current=mag_current,
+                            temperature=temperature, secondary_thermistor=secondary_thermistor,
+                            primary_thermistor=primary_thermistor, spread=spread,centroid=centroid,
+                            startcolumn=startcolumn)
         
         frame.tkraise()
-
 
 
 class DAQ_Extractor(tk.Frame):
@@ -141,6 +138,7 @@ class DAQ_Extractor(tk.Frame):
         self.start.grid(column = 3, row = 1,padx=35)
 
         self.back_2_splash = tk.Button(self.guiTitle, text="Back to Splash", command= lambda:self.controller.show_frame(cont="NMR_Splash"))
+
         self.back_2_splash.grid(column=3, row=2,padx=35)
 
     def fetch_kwargs(self, **kwargs):
@@ -220,6 +218,7 @@ class Global_Interpreter(tk.Frame):
         deuteron = False if self.checkbutton.get() == '0' else True
         constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.dumppath, deuteron=deuteron)
         print("Done. Have a nice day.")
+    
     def fetch_kwargs(self, **kwargs):
         self.populate_toggleables()
 
@@ -379,7 +378,7 @@ class NMR_Splash(tk.Frame):
         self.goto_analyser = tk.Button(self.splashFrame,text="NMR Signal Extractor", command= self.gotofileselector)
         self.goto_analyser.grid(column=0, row=1, pady=10)
 
-        self.goto_DAQ_extractor = tk.Button(self.splashFrame, text="DAQ Extractor", command = lambda: self.controller.show_frame(cont="DAQ_Extractor"))
+        self.goto_DAQ_extractor = tk.Button(self.splashFrame, text="DAQ Extractor", command= lambda: self.controller.show_frame(cont="DAQ_Extractor"))
         self.goto_DAQ_extractor.grid(column=0,row=2, pady=10)
 
         self.ta1DirSorter = tk.Button(self.splashFrame, text="Sweep Sorter", command=lambda: self.controller.show_frame(cont="Directory_Sorter"))
@@ -398,44 +397,11 @@ class NMR_Splash(tk.Frame):
     def gotofileselector(self):
         self.controller.show_frame(cont="File_Selector")
 
+
 class File_Selector(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        
-
         self.controller = controller
-        #self.wm_iconbitmap('icon.ico')
-        self.guiTitle = tk.Label(self, text="NMR Data Analyser")
-        self.guiTitle.grid(column=1,row=1)
-
-        self.rawsigDataFileSelector = tk.LabelFrame(self, text = "Select Raw Data File")
-        self.rawsigDataFileSelector.grid(column = 2, row = 2, padx=10, pady=10)
-        
-
-        self.bldataFileSelector = tk.LabelFrame(self, text = "Select Baseline Data File")
-        self.bldataFileSelector.grid(column = 0, row = 2, padx=10, pady=10)
-
-        self.return_to_splash = tk.Button(self, text="Return to Splash", command= lambda: \
-                                                                            self.controller.show_frame(cont="NMR_Splash"))
-        self.return_to_splash.grid(column=1, row=3)
-       
-        self.Switches = tk.LabelFrame(self, text = "File Parsing Options")
-        self.Switches.grid(column = 0, row = 1, padx=10, pady=10)
-
-        self.delimeter = tk.LabelFrame(self, text="Backslash/ASCII File Delimeter")
-        self.delimeter.grid(column=2, row=1, padx=10, pady=10)
-
-        self.skipLines = tk.LabelFrame(self, text="Header Lines (Skip this # of lines)")
-        self.skipLines.grid(column=1, row=2, padx=10, pady=10)
-
-        self.continueButton = tk.LabelFrame(self, text="Next Step: Data Selection")
-        self.continueButton.grid(column=3,row=4)
-
-        self.rawsigbutton()
-        self.baselinebutton()
-        self.vnaneRadioButton()
-        self.fileDelimeter()
-        self.goTransition()
 
     def vnaneRadioButton(self):
         self.vnaVmeType = tk.StringVar(self.Switches)
@@ -444,7 +410,7 @@ class File_Selector(tk.Frame):
         tk.Radiobutton(self.Switches, text="VME", variable=self.vnaVmeType, value="VME").pack()
         #self.vnaVmeType.grid(column=1, row=1)
 
-    def fileDelimeter(self):
+    def fileDelimeter_function(self):
         self.fileDelimeter = tk.StringVar()
         e = tk.Entry(self.delimeter, textvariable=self.fileDelimeter)
         e.pack()
@@ -458,19 +424,19 @@ class File_Selector(tk.Frame):
         self.skiplinesPulldown = tk.OptionMenu(self.skipLines, tkvar, *skip)
         self.skiplinesPulldown.grid(column=1, row=2)
  
-    def baselinebutton(self):
-        self.baselinebutton = tk.Button(self.bldataFileSelector, text = "Select Baseline",command = self.baselinefileDialog)
-        self.baselinebutton.grid(column = 1, row = 2)
+    def baselinebutton_function(self):
+        self.baselinebutton=tk.Button(self.bldataFileSelector, text="Select Baseline", command=self.baselinefileDialog)
+        self.baselinebutton.grid(column=1, row=2)
  
     def baselinefileDialog(self):
         if self.vnaVmeType.get() == "VNA":
             ftyps = (('VNA File', "*.s1p"),("all files","*.*"))
         elif self.vnaVmeType.get() == "VME":
             ftyps = (("VME File", "*.ta1"),("all files","*.*"))
-        self.blfilename = filedialog.askopenfilename(initialdir =  "$HOME", title = "Select A File", filetypes = ftyps)
-        self.bllabel = tk.Label(self.bldataFileSelector, text = "")
-        self.bllabel.grid(column = 1, row = 2)
-        self.bllabel.configure(text = self.blfilename)
+        self.blfilename = filedialog.askopenfilename(initialdir = "$HOME", title = "Select A File", filetypes= ftyps)
+        self.bllabel = tk.Label(self.bldataFileSelector, text="")
+        self.bllabel.grid(column=1,row=2)
+        self.bllabel.configure(text=self.blfilename)
         self.blFilePreview()
 
     def blFilePreview(self):
@@ -502,11 +468,41 @@ class File_Selector(tk.Frame):
         self.blskiplines = lines_to_skip
 
     def fetch_kwargs(self, **kwargs):
+        self.guiTitle = tk.Label(self, text="NMR Data Analyser")
+        self.guiTitle.grid(column=1, row=1)
+
+        self.rawsigDataFileSelector = tk.LabelFrame(self, text="Select Raw Data File")
+        self.rawsigDataFileSelector.grid(column=2, row=2, padx=10, pady=10)
+
+        self.bldataFileSelector = tk.LabelFrame(self, text="Select Baseline Data File")
+        self.bldataFileSelector.grid(column=0, row=2, padx=10, pady=10)
+
+        self.return_to_splash = tk.Button(self, text="Return to Splash", command=lambda: self.controller.show_frame(cont="NMR_Splash"))
+        self.return_to_splash.grid(column=1, row=3)
+
+        self.Switches = tk.LabelFrame(self, text="File Parsing Options")
+        self.Switches.grid(column=0, row=1, padx=10, pady=10)
+
+        self.delimeter = tk.LabelFrame(self, text="Backslash/ASCII File Delimeter")
+        self.delimeter.grid(column=2, row=1, padx=10, pady=10)
+
+        self.skipLines = tk.LabelFrame(self, text="Header Lines (Skip this # of lines)")
+        self.skipLines.grid(column=1, row=2, padx=10, pady=10)
+
+        self.continueButton = tk.LabelFrame(self, text="Next Step: Data Selection")
+        self.continueButton.grid(column=3, row=4)
+
         self.signalstart = kwargs.pop("signalstart", tk.StringVar())
         self.signalend = kwargs.pop("signalend", tk.StringVar())
 
         self.xmin = kwargs.pop('xmin', tk.StringVar(value="-∞"))
         self.xmax = kwargs.pop('xmax', tk.StringVar(value="∞"))
+
+        self.rawsigbutton_function()
+        self.baselinebutton_function()
+        self.vnaneRadioButton()
+        self.fileDelimeter_function()
+        self.goTransition()
 
         try:
             self.xmin.get()
@@ -517,7 +513,7 @@ class File_Selector(tk.Frame):
         except AttributeError:
             self.xmax.set("-∞")
 
-    def rawsigbutton(self):
+    def rawsigbutton_function(self):
         self.rawsigbutton = tk.Button(self.rawsigDataFileSelector, text = "Select Signal",command = self.rawsigfileDialog)
         self.rawsigbutton.grid(column = 1, row = 1)
  
@@ -569,48 +565,42 @@ class File_Selector(tk.Frame):
                 self.rawtext.insert(tk.END, line)
         
     def goTransition(self):
-        self.gotransition = tk.Button(
+        self.gotransition_button = tk.Button(
                                         self.continueButton, text = "Continue",
-                                        command = lambda: self.controller.show_frame(cont="Data_Selector", 
-                                        vnavme=self.vnaVmeType.get(), 
-                                        rawsigdatapath=self.rawsigfilename, 
-                                        bldatapath=self.blfilename,
-                                        rawsigskiplines=self.rawsigskiplines,
-                                        blskiplines=self.blskiplines,
-                                        impression=True,
-                                        rawsigtime=self.TE_DATE, mag_current = self.I,
-                                        temperature=self.T,
-                                        secondary_thermistor=self.secondary_thermistor,
-                                        primary_thermistor=self.primary_thermistor,
-                                        signalstart=self.signalstart,
-                                        signalend=self.signalend,
-                                        xmin=self.xmin,
-                                        xmax = self.xmax,
-                                        centroid=self.centroid,
-                                        spread=self.spread
-                                        )
+                                        command = self.onwards_FileSelector
                                       )
-        self.gotransition.grid(column = 1, row = 1)
+        self.gotransition_button.grid(column = 1, row = 1)
         
     def get_dataframe(self):
-        return v.gui_file_fetcher(
-                                    self.rawsigfilename, self.blfilename, self.vnaVmeType.get(), impression=False, datatype=self.vnaVmeType.get(),
-                                    blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines
+        return v.gui_file_fetcher(self.rawsigfilename, self.blfilename, self.vnaVmeType.get(), impression=False,
+                                  blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines
                                  )
 
+    def onwards_FileSelector(self):
+        self.controller.show_frame(cont="Data_Selector", 
+                                    vnavme=self.vnaVmeType.get(), 
+                                    rawsigdatapath=self.rawsigfilename, 
+                                    bldatapath=self.blfilename,
+                                    rawsigskiplines=self.rawsigskiplines,
+                                    blskiplines=self.blskiplines,
+                                    impression=True,
+                                    rawsigtime=self.TE_DATE, mag_current = self.I,
+                                    temperature=self.T,
+                                    secondary_thermistor=self.secondary_thermistor,
+                                    primary_thermistor=self.primary_thermistor,
+                                    signalstart=self.signalstart,
+                                    signalend=self.signalend,
+                                    xmin=self.xmin,
+                                    xmax = self.xmax,
+                                    centroid=self.centroid,
+                                    spread=self.spread
+                                    )
 
 class Data_Selector(tk.Frame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self,parent)
-        
+        tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        self.guiTitle = tk.Frame(self)#, text="Options")
-        self.guiTitle.grid(column=1,row=0)
-
-        self.toggleables = tk.LabelFrame(self.guiTitle, text="Data Selection")
-        self.toggleables.grid(column=1, row=2)
-    
     def update_everything(self, impression=False, usertriggered=False):
         self.binning = int(self.binningvalue.get())
         self.update_dataframe(impression=impression)
@@ -622,15 +612,13 @@ class Data_Selector(tk.Frame):
         self.backforth()
 
     def onwards(self):
-        #self.update_dataframe(impression=False)
-        #self.trim_data()
         self.update_everything_ut()
         self.startcolumn = self.yname.get()
-        self.controller.show_frame(
-            cont="Fitting_Page", vnavme=self.vnavme,
-            rawsigdatapath=self.rawsigDataFile, bldatapath=self.bldataFile,
-            blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
-            df=self.df, start_index=self.start_index, end_index=self.end_index,
+        self.controller.show_frame(cont="Fitting_Page", 
+            vnavme=self.vnavme, rawsigdatapath=self.rawsigDataFile, 
+            bldatapath=self.bldataFile, blskiplines=self.blskiplines, 
+            rawsigskiplines=self.rawsigskiplines, df=self.df, 
+            start_index=self.start_index, end_index=self.end_index,
             xname = self.xname, yname = self.yname, binning=self.binningvalue,
             xlabel=self.xaxlabel, ylabel=self.yaxlabel,
             xmin=self.xmin, xmax=self.xmax, signalstart=self.signalstart,
@@ -646,21 +634,22 @@ class Data_Selector(tk.Frame):
         self.onwardsframe.grid(column=1, row=1)
         self.onwardsbutton = tk.Button(
                                         self.onwardsframe, text="Continue",
-                                        command=lambda: self.onwards()
+                                        command=self.onwards
                                        )
         self.onwardsbutton.pack()
         self.reselectframe = tk.LabelFrame(self.backforthframe, text="Back to Data Selection")
         self.reselectframe.grid(column=1, row=2)
         self.reselectbutton = tk.Button(self.reselectframe,text="Data Selection", 
-                                        command=lambda: self.controller.show_frame(
-                                        cont="File_Selector",
-                                        signalstart=self.signalstart,
-                                        signalend=self.signalend,
-                                        xmin=self.xmin,
-                                        xmax = self.xmax)
-                                        )
+                                        command=self.dataselector_to_fileselector)
         self.reselectbutton.pack()
 
+    def dataselector_to_fileselector(self):
+        self.controller.show_frame(
+                                cont="File_Selector",
+                                signalstart=self.signalstart,
+                                signalend=self.signalend,
+                                xmin=self.xmin,
+                                xmax = self.xmax)
     def update_indecies(self):
         try:
             self.start_index = self.df.index[self.df[self.xname.get()] == \
@@ -675,11 +664,8 @@ class Data_Selector(tk.Frame):
             print("Error in index finding. Signal highlighting failed - Ignore on first appearance", e)
 
     def trim_data(self):
-        """                     self.xmin.set("-∞")
-                                self.xmax.set("∞")
+        """
             What needs to be found
-        
-
         """
 
         inf = "∞"
@@ -787,7 +773,10 @@ class Data_Selector(tk.Frame):
         self.update_everything(usertriggered=True)
 
     def fetch_kwargs(self, **kwargs):
-        #kwargs
+        self.guiTitle = tk.Frame(self)#, text="Options")
+        self.guiTitle.grid(column=1,row=0)
+        self.toggleables = tk.LabelFrame(self.guiTitle, text="Data Selection")
+        self.toggleables.grid(column=1, row=2)
         self.startcolumn = kwargs.pop('startcolumn', None)
         self.vnavme = kwargs.pop('vnavme', None)
         self.rawsigDataFile = kwargs.pop('rawsigdatapath', None)
@@ -837,7 +826,6 @@ class Data_Selector(tk.Frame):
             self.df = v.gui_file_fetcher(
                                         self.rawsigDataFile, self.bldataFile, 
                                         self.vnavme, impression=impression, 
-                                        
                                         blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines, 
                                         binning=self.binning
                                      )
@@ -1359,14 +1347,8 @@ class Fitting_Page(tk.Frame):
         else:
             self.figure.savefig(self.pentry.get())
 
-    def reverse_reverse(self):
-        # Cha-cha real smooth back to the data trimming stage.
-        self.reverseframe = tk.LabelFrame(self.major_buttons_frame, text="Back to Data Trimming")
-        self.reverseframe.grid(column=1, row=2)
-
-        self.gotransition = tk.Button(
-                                        self.reverseframe, text = "Data Trimming",
-                                        command = lambda: self.controller.show_frame(cont="Data_Selector", 
+    def gotodata_trimming(self):
+        self.controller.show_frame(cont="Data_Selector", 
                                         vnavme=self.vnavme, 
                                         rawsigdatapath=self.rawsigdatapath, 
                                         bldatapath=self.bldatapath,
@@ -1384,20 +1366,29 @@ class Fitting_Page(tk.Frame):
                                         xmax = self.xmax,
                                         startcolumn=self.startcolumn
                                         )
-                                      )
+    def reverse_reverse(self):
+        # Cha-cha real smooth back to the data trimming stage.
+        self.reverseframe = tk.LabelFrame(self.major_buttons_frame, text="Back to Data Trimming")
+        self.reverseframe.grid(column=1, row=2)
+
+        self.gotransition = tk.Button(
+                                        self.reverseframe, text = "Data Trimming",
+                                        command = self.gotodata_trimming)
         self.gotransition.pack()
 
         self.back_to_beginning = tk.LabelFrame(self.major_buttons_frame, text="Back to Beginning")
         self.back_to_beginning.grid(column=2,row=2)
         self.bbl = tk.Button(self.back_to_beginning, text="Start Over", 
-            command = lambda: self.controller.show_frame(cont="File_Selector",
+            command = self.goto_beginning)
+        self.bbl.pack()
+
+    def goto_beginning(self):
+        self.controller.show_frame(cont="File_Selector",
                                         signalstart=self.signalstart,
                                         signalend=self.signalend,
                                         xmin=self.xmin,
                                         xmax = self.xmax
                                         )
-                                      )
-        self.bbl.pack()
 
     def update_te(self):
         # Get the info
@@ -1407,7 +1398,6 @@ class Fitting_Page(tk.Frame):
         self.rawsigskiplines, self.centroid, \
         self.spread = v.gui_rawsig_file_preview(self.rawsigdatapath, delimeter, self.vnavme) 
         #self.rawsigtime = self.TE_DATE
-        
         
     def update_indecies(self):
         try:
@@ -1655,8 +1645,8 @@ class Fitting_Page(tk.Frame):
             self.automator(file[0], originalplottitle, originalentryname, extension, tedirectory, graphs, graphdata, home, failed=True, failedno=failed[1])
             print("User has corrected issue.")
         for file in self.failedfiles:
-            self.userinput(file)
-
+            pass
+            #self.userinput(file)
 
 
 root = NMR_Visualizer()
