@@ -403,19 +403,6 @@ class File_Selector(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-    def vnaneRadioButton(self):
-        self.vnaVmeType = tk.StringVar(self.Switches)
-        self.vnaVmeType.set('VNA')
-        tk.Radiobutton(self.Switches, text="VNA", variable=self.vnaVmeType, value="VNA").pack()
-        tk.Radiobutton(self.Switches, text="VME", variable=self.vnaVmeType, value="VME").pack()
-        #self.vnaVmeType.grid(column=1, row=1)
-
-    def fileDelimeter_function(self):
-        self.fileDelimeter = tk.StringVar()
-        e = tk.Entry(self.delimeter, textvariable=self.fileDelimeter)
-        e.pack()
-        self.fileDelimeter.set("\\t")
-
     def skipLinesPulldown(self):
         #Future proof headroom
         skip = [str(i) for i in range(1,21)]
@@ -436,19 +423,14 @@ class File_Selector(tk.Frame):
         self.blFilePreview()
 
     def blFilePreview(self):
-        
         delimeter = self.fileDelimeter.get()
         choice = self.vnaVmeType.get()
-
         if delimeter == '\\t':
             delimeter ='\t'
-
         h2, header, tf_file, lines_to_skip = v.gui_bl_file_preview(self.blfilename, delimeter)
-
         self.bldataFile = tk.LabelFrame(self, text='200-line Baseline Data Preview')
         self.bldataFile.grid(column=0, row=3, pady=10, padx=10)
         self.bltxt = scrolledtext.ScrolledText(self.bldataFile)
-        
         self.bltxt.pack(expand=True, fill='both')
         for r, row in enumerate(h2):
             line = ""
@@ -464,6 +446,14 @@ class File_Selector(tk.Frame):
         self.blskiplines = lines_to_skip
 
     def fetch_kwargs(self, **kwargs):
+        self.signalstart = kwargs.pop("signalstart", tk.StringVar())
+        self.signalend = kwargs.pop("signalend", tk.StringVar())
+        self.xmin = kwargs.pop('xmin', tk.StringVar(value="-∞"))
+        self.xmax = kwargs.pop('xmax', tk.StringVar(value="∞"))
+
+        self.populate_toggleables()
+
+    def populate_toggleables(self):
         self.guiTitle = tk.Label(self, text="NMR Data Analyser")
         self.guiTitle.grid(column=1, row=1)
 
@@ -483,10 +473,18 @@ class File_Selector(tk.Frame):
 
         self.Switches = tk.LabelFrame(self, text="File Parsing Options")
         self.Switches.grid(column=0, row=1, padx=10, pady=10)
+        self.vnaVmeType = tk.StringVar(self.Switches)
+        self.vnaVmeType.set('VNA')
+        tk.Radiobutton(self.Switches, text="VNA", variable=self.vnaVmeType, value="VNA").pack()
+        tk.Radiobutton(self.Switches, text="VME", variable=self.vnaVmeType, value="VME").pack()
 
         self.delimeter = tk.LabelFrame(self, text="Backslash/ASCII File Delimeter")
         self.delimeter.grid(column=2, row=1, padx=10, pady=10)
+        self.fileDelimeter = tk.StringVar()
+        e = tk.Entry(self.delimeter, textvariable=self.fileDelimeter)
+        e.pack()
 
+        self.fileDelimeter.set("\\t")
         self.skipLines = tk.LabelFrame(self, text="Header Lines (Skip this # of lines)")
         self.skipLines.grid(column=1, row=2, padx=10, pady=10)
 
@@ -496,16 +494,7 @@ class File_Selector(tk.Frame):
         self.gotransition_button = tk.Button(self.continueButton, text = "Continue",
                                             command = self.onwards_FileSelector)
         self.gotransition_button.grid(column = 1, row = 1)
-
-        self.signalstart = kwargs.pop("signalstart", tk.StringVar())
-        self.signalend = kwargs.pop("signalend", tk.StringVar())
-
-        self.xmin = kwargs.pop('xmin', tk.StringVar(value="-∞"))
-        self.xmax = kwargs.pop('xmax', tk.StringVar(value="∞"))
-
-        self.vnaneRadioButton()
-        self.fileDelimeter_function()
-
+        
         try:
             self.xmin.get()
         except AttributeError:
@@ -592,6 +581,11 @@ class Data_Selector(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        
+        self.guiTitle = tk.Frame(self)#, text="Options")
+        self.guiTitle.grid(column=1,row=0)
+        self.toggleables = tk.LabelFrame(self.guiTitle, text="Data Selection")
+        self.toggleables.grid(column=1, row=2)
 
     def update_everything(self, impression=False, usertriggered=False):
         self.binning = int(self.binningvalue.get())
@@ -599,9 +593,8 @@ class Data_Selector(tk.Frame):
         if usertriggered:
             self.trim_data()
         self.data_displayer()
-        self.populatetoggleables()
+        #self.populatetoggleables()
         self.update_graph()
-        self.backforth()
 
     def onwards(self):
         self.update_everything_ut()
@@ -619,22 +612,6 @@ class Data_Selector(tk.Frame):
             primary_thermistor=self.primary_thermistor, centroid=self.centroid, 
             spread=self.spread, startcolumn=self.startcolumn)
 
-    def backforth(self):
-        self.backforthframe = tk.LabelFrame(self.guiTitle, text="Stage Controller")
-        self.backforthframe.grid(column=1, row=3)
-        self.onwardsframe = tk.LabelFrame(self.backforthframe, text="Continue to Fitting")
-        self.onwardsframe.grid(column=1, row=1)
-        self.onwardsbutton = tk.Button(
-                                        self.onwardsframe, text="Continue",
-                                        command=self.onwards
-                                       )
-        self.onwardsbutton.pack()
-        self.reselectframe = tk.LabelFrame(self.backforthframe, text="Back to Data Selection")
-        self.reselectframe.grid(column=1, row=2)
-        self.reselectbutton = tk.Button(self.reselectframe,text="Data Selection", 
-                                        command=self.dataselector_to_fileselector)
-        self.reselectbutton.pack()
-
     def dataselector_to_fileselector(self):
         self.controller.show_frame(
                                 cont="File_Selector",
@@ -642,6 +619,7 @@ class Data_Selector(tk.Frame):
                                 signalend=self.signalend,
                                 xmin=self.xmin,
                                 xmax = self.xmax)
+
     def update_indecies(self):
         try:
             self.start_index = self.df.index[self.df[self.xname.get()] == \
@@ -695,6 +673,9 @@ class Data_Selector(tk.Frame):
             stage of the class, but with tkinter's framework, that proves to be
             difficult to overcome.
         """
+        #
+        
+
         # Handles the X/Y axis selector & label
         columns = self.df.columns.to_list()
         self.xaxpulldownframe = tk.LabelFrame(self.toggleables, text="X-Axis Column")
@@ -753,22 +734,33 @@ class Data_Selector(tk.Frame):
 
 
 
-        # Lastly, the Update-Button
+        # Lastly, the Update-Buttons
         self.updateframe = tk.LabelFrame(self.toggleables, text="Update Data")
         self.updateframe.grid(column=2, row=6)
         self.updatebutton = tk.Button(self.updateframe, text ="Apply Settings", 
                                       command = self.update_everything_ut)
         self.updatebutton.pack()
 
+        self.backforthframe = tk.LabelFrame(self.guiTitle, text="Stage Controller")
+        self.backforthframe.grid(column=1, row=3)
+        self.onwardsframe = tk.LabelFrame(self.backforthframe, text="Continue to Fitting")
+        self.onwardsframe.grid(column=1, row=1)
+        self.onwardsbutton = tk.Button(
+                                        self.onwardsframe, text="Continue",
+                                        command=self.onwards
+                                       )
+        self.onwardsbutton.pack()
+        self.reselectframe = tk.LabelFrame(self.backforthframe, text="Back to Data Selection")
+        self.reselectframe.grid(column=1, row=2)
+        self.reselectbutton = tk.Button(self.reselectframe,text="Data Selection", 
+                                        command=self.dataselector_to_fileselector)
+        self.reselectbutton.pack()
+
     def update_everything_ut(self):
         # A the User triggered version of updating everything
         self.update_everything(usertriggered=True)
 
     def fetch_kwargs(self, **kwargs):
-        self.guiTitle = tk.Frame(self)#, text="Options")
-        self.guiTitle.grid(column=1,row=0)
-        self.toggleables = tk.LabelFrame(self.guiTitle, text="Data Selection")
-        self.toggleables.grid(column=1, row=2)
         self.startcolumn = kwargs.pop('startcolumn', None)
         self.vnavme = kwargs.pop('vnavme', None)
         self.rawsigDataFile = kwargs.pop('rawsigdatapath', None)
@@ -782,7 +774,6 @@ class Data_Selector(tk.Frame):
         self.binning = 1
         self.secondary_thermistor = kwargs.pop("secondary_thermistor",None)
         self.primary_thermistor = kwargs.pop("primary_thermistor", None)
-        #print(impression)
         self.update_dataframe(impression=impression)
         self.start_index = 0
         self.end_index = len(self.df)
@@ -811,7 +802,10 @@ class Data_Selector(tk.Frame):
         cols = self.df.columns.to_list()
         self.xname.set(cols[0])
         self.yname.set(cols[1])
-        self.update_everything()
+        self.update_dataframe(impression=impression)
+        self.data_displayer()
+        self.populatetoggleables()
+        self.update_graph()
 
     def update_dataframe(self, impression=False):
         try:
@@ -828,16 +822,13 @@ class Data_Selector(tk.Frame):
         self.graph=tk.LabelFrame(self, text="Graph")
         self.graph.grid(column=2, row=0)
         self.update_indecies()
-        #print("Start index:", self.start_index, "\nEnd Index:", self.end_index)
-        #print("Redsig Status:", False if [self.start_index, self.end_index] == [0, len(self.df)] else True)
         quirky = v.ggf(
                 self.df, self.start_index, self.end_index, gui=True, 
                 binning=int(self.binningvalue.get()),
                 plttitle="Converted Data", x=self.xname.get(), y=self.yname.get(),
                 xlabel=self.xaxlabel.get(), ylabel=self.yaxlabel.get(), 
                 redsig=False if [self.start_index, self.end_index] == [0, len(self.df)] else True,
-                clearfigs=True
-                            )
+                clearfigs=True)
 
         self.figure = quirky['fig']
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph)
@@ -848,11 +839,10 @@ class Data_Selector(tk.Frame):
         self.ConvertedDf = tk.LabelFrame(self.guiTitle, text="Data")
         self.ConvertedDf.grid(column = 1, row = 1, padx=15)
         self.dftxt = scrolledtext.ScrolledText(self.ConvertedDf, width=95)
-        #txt['font'] = ('Noto Sans Gothic', '12')
         self.dftxt.pack(fill='both')
-        #print("Tab Delimited\n", self.df.to_string().split('\n')[0])
         for index, line in enumerate(self.df.to_string().split('\n')):
             self.dftxt.insert(tk.END, line+'\n')
+
 
 
 class Fitting_Page(tk.Frame):
