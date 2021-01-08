@@ -424,10 +424,6 @@ class File_Selector(tk.Frame):
         self.skiplinesPulldown = tk.OptionMenu(self.skipLines, tkvar, *skip)
         self.skiplinesPulldown.grid(column=1, row=2)
  
-    def baselinebutton_function(self):
-        self.baselinebutton=tk.Button(self.bldataFileSelector, text="Select Baseline", command=self.baselinefileDialog)
-        self.baselinebutton.grid(column=1, row=2)
- 
     def baselinefileDialog(self):
         if self.vnaVmeType.get() == "VNA":
             ftyps = (('VNA File', "*.s1p"),("all files","*.*"))
@@ -473,12 +469,17 @@ class File_Selector(tk.Frame):
 
         self.rawsigDataFileSelector = tk.LabelFrame(self, text="Select Raw Data File")
         self.rawsigDataFileSelector.grid(column=2, row=2, padx=10, pady=10)
+        self.rawsigbutton = tk.Button(self.rawsigDataFileSelector, text = "Select Signal",command = self.rawsigfileDialog)
+        self.rawsigbutton.grid(column = 1, row = 1)
 
         self.bldataFileSelector = tk.LabelFrame(self, text="Select Baseline Data File")
         self.bldataFileSelector.grid(column=0, row=2, padx=10, pady=10)
+        self.baselinebutton=tk.Button(self.bldataFileSelector, text="Select Baseline", command=self.baselinefileDialog)
+        self.baselinebutton.grid(column=1, row=2)
 
         self.return_to_splash = tk.Button(self, text="Return to Splash", command=lambda: self.controller.show_frame(cont="NMR_Splash"))
         self.return_to_splash.grid(column=1, row=3)
+        
 
         self.Switches = tk.LabelFrame(self, text="File Parsing Options")
         self.Switches.grid(column=0, row=1, padx=10, pady=10)
@@ -492,17 +493,18 @@ class File_Selector(tk.Frame):
         self.continueButton = tk.LabelFrame(self, text="Next Step: Data Selection")
         self.continueButton.grid(column=3, row=4)
 
+        self.gotransition_button = tk.Button(self.continueButton, text = "Continue",
+                                            command = self.onwards_FileSelector)
+        self.gotransition_button.grid(column = 1, row = 1)
+
         self.signalstart = kwargs.pop("signalstart", tk.StringVar())
         self.signalend = kwargs.pop("signalend", tk.StringVar())
 
         self.xmin = kwargs.pop('xmin', tk.StringVar(value="-∞"))
         self.xmax = kwargs.pop('xmax', tk.StringVar(value="∞"))
 
-        self.rawsigbutton_function()
-        self.baselinebutton_function()
         self.vnaneRadioButton()
         self.fileDelimeter_function()
-        self.goTransition()
 
         try:
             self.xmin.get()
@@ -513,10 +515,6 @@ class File_Selector(tk.Frame):
         except AttributeError:
             self.xmax.set("-∞")
 
-    def rawsigbutton_function(self):
-        self.rawsigbutton = tk.Button(self.rawsigDataFileSelector, text = "Select Signal",command = self.rawsigfileDialog)
-        self.rawsigbutton.grid(column = 1, row = 1)
- 
     def rawsigfileDialog(self):
         if self.vnaVmeType.get() == "VNA":
             ftyps = (('VNA File', "*.s1p"),("all files","*.*"))
@@ -564,13 +562,6 @@ class File_Selector(tk.Frame):
             if r == 99:
                 self.rawtext.insert(tk.END, line)
         
-    def goTransition(self):
-        self.gotransition_button = tk.Button(
-                                        self.continueButton, text = "Continue",
-                                        command = self.onwards_FileSelector
-                                      )
-        self.gotransition_button.grid(column = 1, row = 1)
-        
     def get_dataframe(self):
         return v.gui_file_fetcher(self.rawsigfilename, self.blfilename, self.vnaVmeType.get(), impression=False,
                                   blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines
@@ -595,6 +586,7 @@ class File_Selector(tk.Frame):
                                     centroid=self.centroid,
                                     spread=self.spread
                                     )
+
 
 class Data_Selector(tk.Frame):
     def __init__(self, parent, controller):
