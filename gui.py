@@ -71,7 +71,7 @@ class NMR_Visualizer(tk.Tk):                # Class
         end_index=kwargs.pop('end_index', None)
         xname = kwargs.pop('xname',None)
         yname = kwargs.pop('yname',None)
-        binning=kwargs.pop('binning',None)
+        binning=kwargs.pop('binning',1)
 
         xlabel=kwargs.pop('xlabel',None)
         ylabel=kwargs.pop('ylabel',None)                            
@@ -492,7 +492,7 @@ class File_Selector(tk.Frame):
         self.continueButton.grid(column=3, row=4)
 
         self.gotransition_button = tk.Button(self.continueButton, text = "Continue",
-                                            command = self.onwards_FileSelector)
+                                            command = self.onwards_DataSelector)
         self.gotransition_button.grid(column = 1, row = 1)
         
         try:
@@ -556,8 +556,8 @@ class File_Selector(tk.Frame):
                                   blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines
                                  )
 
-    def onwards_FileSelector(self):
-        self.controller.show_frame(cont="Data_Selector", 
+    def onwards_DataSelector(self):
+        self.controller.show_frame(cont="Fitting_Page",
                                     vnavme=self.vnaVmeType.get(), 
                                     rawsigdatapath=self.rawsigfilename, 
                                     bldatapath=self.blfilename,
@@ -573,8 +573,7 @@ class File_Selector(tk.Frame):
                                     xmin=self.xmin,
                                     xmax = self.xmax,
                                     centroid=self.centroid,
-                                    spread=self.spread
-                                    )
+                                    spread=self.spread)
 
 
 class Data_Selector(tk.Frame):
@@ -782,8 +781,8 @@ class Data_Selector(tk.Frame):
         self.binningvalue = tk.StringVar()
         self.binningvalue.set('1')
         self.centroid = kwargs.pop('centroid', None)
-        self.spread = kwargs.pop('spread', None) 
-        
+        self.spread = kwargs.pop('spread', None)
+
         self.xaxlabel = tk.StringVar()
         self.yaxlabel = tk.StringVar()
         self.xaxlabel.set("Frequency (MHZ)")
@@ -792,7 +791,7 @@ class Data_Selector(tk.Frame):
             self.yaxlabel.set("Re(Z) Impedence [Ω]")
         elif self.vnavme == "VME":
             self.yaxlabel.set("Potential [V]")
-        
+
         self.signalstart = kwargs.pop("signalstart", tk.StringVar())
         self.signalend = kwargs.pop("signalend", tk.StringVar())
 
@@ -810,11 +809,11 @@ class Data_Selector(tk.Frame):
     def update_dataframe(self, impression=False):
         try:
             self.df = v.gui_file_fetcher(
-                                        self.rawsigDataFile, self.bldataFile, 
-                                        self.vnavme, impression=impression, 
-                                        blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines, 
-                                        binning=self.binning
-                                     )
+                self.rawsigDataFile, self.bldataFile,
+                self.vnavme, impression=impression,
+                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                binning=self.binning
+            )
         except ValueError:
             pass
 
@@ -882,21 +881,27 @@ class Fitting_Page(tk.Frame):
         self.bldatapath = kwargs.pop('bldatapath', None)
         self.blskiplines = kwargs.pop('blskiplines', None)
         self.rawsigskiplines = kwargs.pop('rawsigskiplines', None)
+
         self.secondary_thermistor = kwargs.pop("secondary_thermistor",None)
         self.primary_thermistor = kwargs.pop("primary_thermistor", None)
         self.isautomated = kwargs.pop('isautomated',False)
         self.centroid = kwargs.pop('centroid', None)
-        self.spread = kwargs.pop('spread', None) 
+        self.spread = kwargs.pop('spread', None)
 
 
-       
+
+        self.centroid = kwargs.pop('centroid', None)
+        self.spread = kwargs.pop('spread', None)
+        self.xmin = kwargs.pop('xmin', tk.StringVar())
+        self.xmax = kwargs.pop('xmax', tk.StringVar())
         self.df=kwargs.pop('df', None)
         self.start_index=kwargs.pop('start_index', None)
         self.end_index=kwargs.pop('end_index', None)
         self.xname = kwargs.pop('xname',None)
         self.yname = kwargs.pop('yname',None)
-        self.binningvalue=kwargs.pop('binning',None)
-        self.xaxlabel = kwargs.pop('xlabel', None)
+        self.xaxlabel = kwargs.pop('xlabel', "Frequency")
+        self.binning=kwargs.pop('binning',1)
+        self.update_dataframe()
         self.yaxlabel = kwargs.pop('ylabel', None)
         self.xmin=kwargs.pop('xmin',None)
         self.xmax=kwargs.pop('xmax',None)
@@ -1016,6 +1021,17 @@ class Fitting_Page(tk.Frame):
             self.canvas.get_tk_widget().pack()
         else:
             return quirky
+
+    def update_dataframe(self, impression=False):
+        try:
+            self.df = v.gui_file_fetcher(
+                self.rawsigdatapath, self.bldatapath,
+                self.vnavme, impression=impression,
+                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                binning=self.binning
+            )
+        except ValueError:
+            pass
 
     def updatexy_selector(self):
         columns = self.df.columns.to_list()
@@ -1314,12 +1330,35 @@ class Fitting_Page(tk.Frame):
         self.updatexy_selector()
 
     def init_one(self, failed=False):
-        self.binning = int(self.binningvalue.get())
+        #self.binning = int(self.binningvalue.get())
+
         # The cooler version of this class' __init__ called after __init__
         #       This needs to be convoluded due to tkinter's oblique-ness
         #       that makes it really uncomfortable to do class-inheritance.
         self.populatetoggleables()
         self.reverse_reverse()
+
+        self.start_index = 0
+        self.end_index = len(self.df)
+        self.xname = tk.StringVar()
+        self.yname = tk.StringVar()
+        self.binningvalue = tk.StringVar()
+        self.binningvalue.set('1')
+
+        self.xaxlabel = tk.StringVar()
+        self.yaxlabel = tk.StringVar()
+        self.xaxlabel.set("Frequency (MHZ)")
+
+        if self.vnavme == "VNA":
+            self.yaxlabel.set("Re(Z) Impedence [Ω]")
+        elif self.vnavme == "VME":
+            self.yaxlabel.set("Potential [V]")
+
+
+        cols = self.df.columns.to_list()
+        self.xname.set(cols[0])
+        self.yname.set(cols[1])
+
         self.update_graph()
 
     def savefig(self, automated=False, p_title=None):
@@ -1348,6 +1387,7 @@ class Fitting_Page(tk.Frame):
                                         xmax = self.xmax,
                                         startcolumn=self.startcolumn
                                         )
+
     def reverse_reverse(self):
         # Cha-cha real smooth back to the data trimming stage.
         self.reverseframe = tk.LabelFrame(self.major_buttons_frame, text="Back to Data Trimming")
