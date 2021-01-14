@@ -395,7 +395,7 @@ class NMR_Splash(tk.Frame):
         pass
 
     def gotofileselector(self):
-        self.controller.show_frame(cont="File_Selector")
+        self.controller.show_frame(cont="Fitting_Page")
 
 
 class File_Selector(tk.Frame):
@@ -444,6 +444,50 @@ class File_Selector(tk.Frame):
                 self.bltxt.insert(tk.END, line)
 
         self.blskiplines = lines_to_skip
+
+    def rawsigfileDialog(self):
+        ftyps = (("VME File", "*.ta1"),('VNA File', "*.s1p"),("all files","*.*"))
+        self.rawsigfilename = filedialog.askopenfilename(initialdir =  "$HOME", title = "Select A File", filetypes =
+        ftyps)
+        self.rawsiglabel = tk.Label(self.rawsigDataFileSelector, text = "")
+        self.rawsiglabel.grid(column = 1, row = 1)
+        self.rawsiglabel.configure(text = self.rawsigfilename)
+
+        self.teFilePreview()
+
+    def teFilePreview(self):
+        
+        delimeter = self.fileDelimeter.get()
+        choice = self.vnaVmeType.get()
+        
+        if delimeter == '\\t':
+            delimeter ='\t'
+        header = []
+        h2 = []
+        
+
+        # Get the info
+        header, h2, self.TE_DATE, self.I, self.T,\
+        self.primary_thermistor, self.secondary_thermistor, \
+        self.rawsigskiplines, self.centroid, \
+        self.spread = v.gui_rawsig_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
+
+
+        self.rawsigDataFile = tk.LabelFrame(self, text='200-line Raw Data Preview')
+        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
+        self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)
+
+        self.rawtext.pack(expand=True, fill='both')
+        for r, row in enumerate(h2):
+            line = ''
+            for c, col in enumerate(h2[r].split(delimeter)):
+                line += col
+            if r == self.rawsigskiplines:
+                self.rawtext.insert(tk.END, "#"*5+" WHERE THE PROGRAM DETECTS THE DATA BEGINNING "+"#"*5+'\n')
+            if r<99:
+                self.rawtext.insert(tk.END, line)
+            if r == 99:
+                self.rawtext.insert(tk.END, line)
 
     def fetch_kwargs(self, **kwargs):
         self.signalstart = kwargs.pop("signalstart", tk.StringVar())
@@ -504,53 +548,6 @@ class File_Selector(tk.Frame):
         except AttributeError:
             self.xmax.set("-∞")
 
-    def rawsigfileDialog(self):
-        if self.vnaVmeType.get() == "VNA":
-            ftyps = (('VNA File', "*.s1p"),("all files","*.*"))
-        elif self.vnaVmeType.get() == "VME":
-            ftyps = (("VME File", "*.ta1"),("all files","*.*"))
-        self.rawsigfilename = filedialog.askopenfilename(initialdir =  "$HOME", title = "Select A File", filetypes =
-        ftyps)
-        self.rawsiglabel = tk.Label(self.rawsigDataFileSelector, text = "")
-        self.rawsiglabel.grid(column = 1, row = 1)
-        self.rawsiglabel.configure(text = self.rawsigfilename)
-
-        self.teFilePreview()
-
-    def teFilePreview(self):
-        
-        delimeter = self.fileDelimeter.get()
-        choice = self.vnaVmeType.get()
-        
-        if delimeter == '\\t':
-            delimeter ='\t'
-        header = []
-        h2 = []
-        
-
-        # Get the info
-        header, h2, self.TE_DATE, self.I, self.T,\
-        self.primary_thermistor, self.secondary_thermistor, \
-        self.rawsigskiplines, self.centroid, \
-        self.spread = v.gui_rawsig_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
-
-
-        self.rawsigDataFile = tk.LabelFrame(self, text='200-line Raw Data Preview')
-        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
-        self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)
-
-        self.rawtext.pack(expand=True, fill='both')
-        for r, row in enumerate(h2):
-            line = ''
-            for c, col in enumerate(h2[r].split(delimeter)):
-                line += col
-            if r == self.rawsigskiplines:
-                self.rawtext.insert(tk.END, "#"*5+" WHERE THE PROGRAM DETECTS THE DATA BEGINNING "+"#"*5+'\n')
-            if r<99:
-                self.rawtext.insert(tk.END, line)
-            if r == 99:
-                self.rawtext.insert(tk.END, line)
-        
     def get_dataframe(self):
         return v.gui_file_fetcher(self.rawsigfilename, self.blfilename, self.vnaVmeType.get(), impression=False,
                                   blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines
@@ -850,10 +847,45 @@ class Fitting_Page(tk.Frame):
         self.controller = controller
         self.automatefits = []
         
-        self.fitpageframe = tk.LabelFrame(self, text="Fitting Page")
-        self.fitpageframe.grid(column=1, row=1)
-        self.toggleables = tk.LabelFrame(self.fitpageframe, text="Fit Settings")
-        self.toggleables.grid(column=1, row=1)
+
+        self.fileselector = tk.LabelFrame(self, text="Select Files")
+        self.fileselector.grid(column=2,row=1)
+
+        self.rawsigDataFileSelector = tk.LabelFrame(self.fileselector, text="Select Raw Data File")
+        self.rawsigDataFileSelector.grid(column=2, row=2, padx=10, pady=10)
+        self.rawsigbutton = tk.Button(self.rawsigDataFileSelector, text = "Select Signal",command = self.rawsigfileDialog)
+        self.rawsigbutton.grid(column = 1, row = 1)
+
+        self.bldataFileSelector = tk.LabelFrame(self.fileselector, text="Select Baseline Data File")
+        self.bldataFileSelector.grid(column=0, row=2, padx=10, pady=10)
+        self.baselinebutton=tk.Button(self.bldataFileSelector, text="Select Baseline", command=self.baselinefileDialog)
+        self.baselinebutton.grid(column=1, row=2)
+
+        self.Switches = tk.LabelFrame(self.fileselector, text="File Parsing Options")
+        self.Switches.grid(column=0, row=1, padx=10, pady=10)
+        self.vnaVmeType = tk.StringVar(self.Switches)
+        self.vnaVmeType.set('VNA')
+        tk.Radiobutton(self.Switches, text="VNA", variable=self.vnaVmeType, value="VNA").pack()
+        tk.Radiobutton(self.Switches, text="VME", variable=self.vnaVmeType, value="VME").pack()
+
+        self.delimeter = tk.LabelFrame(self.fileselector, text="Backslash/ASCII File Delimeter")
+        self.delimeter.grid(column=2, row=1, padx=10, pady=10)
+        self.fileDelimeter = tk.StringVar()
+        e = tk.Entry(self.delimeter, textvariable=self.fileDelimeter)
+        e.pack()
+
+        self.fileDelimeter.set("\\t")
+
+    def update_dataframe(self, impression=False):
+        try:
+            self.df = v.gui_file_fetcher(
+                self.rawsigDataFile, self.bldataFile,
+                self.vnavme, impression=impression,
+                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                binning=self.binning
+            )
+        except ValueError:
+            pass 
 
     def update_indicies(self):
         try:
@@ -872,6 +904,87 @@ class Fitting_Page(tk.Frame):
             print("Could be due to malformed signal range. Please recheck your inputs.")
         except:
             print("Error in index finding. Signal highlighting failed.")
+
+    def baselinefileDialog(self):
+        if self.vnaVmeType.get() == "VNA":
+            ftyps = (('VNA File', "*.s1p"),("all files","*.*"))
+        elif self.vnaVmeType.get() == "VME":
+            ftyps = (("VME File", "*.ta1"),("all files","*.*"))
+        self.blfilename = filedialog.askopenfilename(initialdir = "$HOME", title = "Select A File", filetypes= ftyps)
+        self.bllabel = tk.Label(self.bldataFileSelector, text="")
+        self.bllabel.grid(column=1,row=2)
+        self.bllabel.configure(text=self.blfilename)
+        self.blFilePreview()
+
+    def blFilePreview(self):
+        delimeter = self.fileDelimeter.get()
+        choice = self.vnaVmeType.get()
+        if delimeter == '\\t':
+            delimeter ='\t'
+        h2, header, tf_file, lines_to_skip = v.gui_bl_file_preview(self.blfilename, delimeter)
+        self.bldataFile = tk.LabelFrame(self.fileselector, text='200-line Baseline Data Preview')
+        self.bldataFile.grid(column=0, row=3, pady=10, padx=10)
+        self.bltxt = scrolledtext.ScrolledText(self.bldataFile)
+        self.bltxt.pack(expand=True, fill='both')
+        for r, row in enumerate(h2):
+            line = ""
+            for c, col in enumerate(h2[r].split(delimeter)):
+                line += col
+            if r == lines_to_skip:
+                self.bltxt.insert(tk.END, "#"*5+" WHERE THE PROGRAM DETECTS THE DATA BEGINNING "+"#"*5+'\n')
+            if r<99:
+                self.bltxt.insert(tk.END, line)
+            if r == 99:
+                self.bltxt.insert(tk.END, line)
+
+        self.blskiplines = lines_to_skip
+
+    def rawsigfileDialog(self):
+        ftyps = (("VME File", "*.ta1"),('VNA File', "*.s1p"),("all files","*.*"))
+        self.rawsigfilename = filedialog.askopenfilename(initialdir =  "$HOME", title = "Select A File", filetypes =
+        ftyps)
+        self.rawsiglabel = tk.Label(self.rawsigDataFileSelector, text = "")
+        self.rawsiglabel.grid(column = 1, row = 1)
+        self.rawsiglabel.configure(text = self.rawsigfilename)
+
+        self.graphbutton = tk.Button(self.fileselector, text="Start Fitting", command=self.init_one)
+        self.graphbutton.grid(column=1, row=1)
+
+        self.teFilePreview()
+
+    def teFilePreview(self):
+        
+        delimeter = self.fileDelimeter.get()
+        choice = self.vnaVmeType.get()
+        
+        if delimeter == '\\t':
+            delimeter ='\t'
+        header = []
+        h2 = []
+        
+
+        # Get the info
+        header, h2, self.TE_DATE, self.I, self.T,\
+        self.primary_thermistor, self.secondary_thermistor, \
+        self.rawsigskiplines, self.centroid, \
+        self.spread = v.gui_rawsig_file_preview(self.rawsigfilename, delimeter, self.vnaVmeType.get())
+
+
+        self.rawsigDataFile = tk.LabelFrame(self.fileselector, text='200-line Raw Data Preview')
+        self.rawsigDataFile.grid(column=2, row=3, padx=10, pady=10)
+        self.rawtext = scrolledtext.ScrolledText(self.rawsigDataFile)
+
+        self.rawtext.pack(expand=True, fill='both')
+        for r, row in enumerate(h2):
+            line = ''
+            for c, col in enumerate(h2[r].split(delimeter)):
+                line += col
+            if r == self.rawsigskiplines:
+                self.rawtext.insert(tk.END, "#"*5+" WHERE THE PROGRAM DETECTS THE DATA BEGINNING "+"#"*5+'\n')
+            if r<99:
+                self.rawtext.insert(tk.END, line)
+            if r == 99:
+                self.rawtext.insert(tk.END, line)
 
     def fetch_kwargs(self, **kwargs):
         self.startcolumn = kwargs.pop('startcolumn', None)
@@ -901,7 +1014,6 @@ class Fitting_Page(tk.Frame):
         self.yname = kwargs.pop('yname',None)
         self.xaxlabel = kwargs.pop('xlabel', "Frequency")
         self.binning=kwargs.pop('binning',1)
-        self.update_dataframe()
         self.yaxlabel = kwargs.pop('ylabel', None)
         self.xmin=kwargs.pop('xmin',None)
         self.xmax=kwargs.pop('xmax',None)
@@ -922,7 +1034,6 @@ class Fitting_Page(tk.Frame):
         self.checkboxstatus = tk.StringVar(value="0")
         self.material_type.set("TEMPO Doped Araldite")
         self.plottitle=tk.StringVar()
-        self.plottitle.set("".join(list(self.rawsigdatapath.split('/')[-1])[:-4]))
         self.integrate = tk.StringVar()
         self.integrate.set('0')
         self.fitlorentzian = tk.StringVar()
@@ -932,12 +1043,6 @@ class Fitting_Page(tk.Frame):
         self.btext = tk.StringVar()
         self.ttext = tk.StringVar()
         self.ttext.set(str(self.T))
-        try:
-            self.btext.set(str(round(self.I/9.7332,4)))
-        except TypeError:
-            print("WARNING: No Magnet current exists in", self.rawsigdatapath.split('/')[-1], 
-                "TE-Value will NOT be calculated")
-            self.btext.set(self.I)
 
         self.ptext = tk.StringVar()
         self.ptext.set(datetime.datetime.now().strftime("%Y_%m_%d_%H:%M:%S")+"_Visualizer_Instance")
@@ -945,8 +1050,6 @@ class Fitting_Page(tk.Frame):
         self.xmaxentry = tk.StringVar()
         self.xminentry.set('')
         self.xmaxentry.set('')
-
-        self.init_one()
 
     def update_graph(self, graph=None, repeat=False, p_title=None, automated=False):
         self.update_indicies()
@@ -1022,17 +1125,6 @@ class Fitting_Page(tk.Frame):
         else:
             return quirky
 
-    def update_dataframe(self, impression=False):
-        try:
-            self.df = v.gui_file_fetcher(
-                self.rawsigdatapath, self.bldatapath,
-                self.vnavme, impression=impression,
-                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
-                binning=self.binning
-            )
-        except ValueError:
-            pass
-
     def updatexy_selector(self):
         columns = self.df.columns.to_list()
         self.xaxpulldownframe = tk.LabelFrame(self.plotsettingsframe, text="X-Axis Column")
@@ -1071,6 +1163,29 @@ class Fitting_Page(tk.Frame):
 
             self.enabled = True
 
+    def load_files(self):
+        self.update_dataframe()
+        try:
+            self.btext.set(str(round(self.I/9.7332,4)))
+        except TypeError:
+            print("WARNING: No Magnet current exists in", self.rawsigdatapath.split('/')[-1], 
+                "TE-Value will NOT be calculated")
+            self.btext.set(self.I)
+        self.init_one()
+        self.plottitle.set("".join(list(self.rawsigdatapath.split('/')[-1])[:-4]))
+        self.updatexy_selector()
+
+    def update_dataframe(self):
+        try:
+            self.df = v.gui_file_fetcher(
+                self.rawsigfilename, self.blfilename,
+                self.vnavme,
+                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                binning=self.binning
+            )
+        except ValueError:
+            pass
+    
     def populatetoggleables(self):
         """
         Populates the self.toggleables tk.LabelFrame created in the __init__
@@ -1115,7 +1230,7 @@ class Fitting_Page(tk.Frame):
         self.graphxeentry = tk.Entry(self.graphxendframe, textvariable=self.xmaxentry)
         self.graphxeentry.pack()
 
-        self.updatexy_selector()
+        #self.updatexy_selector()
 
 
         # Radio button for fit type
@@ -1267,16 +1382,6 @@ class Fitting_Page(tk.Frame):
             with open(self.pentry.get()+'.csv', 'w') as f:
                 self.df.to_csv(f)
             v.add_entry(*c, headers=headers if h is not None else h)
-        
-    def data_displayer(self):
-        self.ConvertedDf = tk.LabelFrame(self, text="Data")
-        self.ConvertedDf.grid(column = 1, row = 1, padx = 35, pady = 50)
-        self.dftxt = scrolledtext.ScrolledText(self.ConvertedDf)
-        #txt['font'] = ('Noto Sans Gothic', '12')
-        self.dftxt.pack(expand=True, fill='both')
-        #print("Tab Delimited\n", self.df.to_string().split('\n')[0])
-        for index, line in enumerate(self.df.to_string().split('\n')):
-            self.dftxt.insert(tk.END, line+'\n')
 
     def addfit(self):
         """
@@ -1335,6 +1440,12 @@ class Fitting_Page(tk.Frame):
         # The cooler version of this class' __init__ called after __init__
         #       This needs to be convoluded due to tkinter's oblique-ness
         #       that makes it really uncomfortable to do class-inheritance.
+        self.vnavme = self.vnaVmeType.get()
+        self.update_dataframe() 
+        self.fitpageframe = tk.LabelFrame(self, text="Fitting Page")
+        self.fitpageframe.grid(column=1, row=1)
+        self.toggleables = tk.LabelFrame(self.fitpageframe, text="Fit Settings")
+        self.toggleables.grid(column=1, row=1)
         self.populatetoggleables()
         self.reverse_reverse()
 
@@ -1368,44 +1479,17 @@ class Fitting_Page(tk.Frame):
         else:
             self.figure.savefig(self.pentry.get())
 
-    def gotodata_trimming(self):
-        self.controller.show_frame(cont="Data_Selector", 
-                                        vnavme=self.vnavme, 
-                                        rawsigdatapath=self.rawsigdatapath, 
-                                        bldatapath=self.bldatapath,
-                                        rawsigskiplines=self.rawsigskiplines,
-                                        blskiplines=self.blskiplines,
-                                        impression=False, 
-                                        rawsigtime=self.rawsigtime, 
-                                        temperature=self.T,
-                                        mag_current=self.I,
-                                        secondary_thermistor=self.secondary_thermistor,
-                                        primary_thermistor=self.primary_thermistor,
-                                        signalstart=self.signalstart,
-                                        signalend=self.signalend,
-                                        xmin=self.xmin,
-                                        xmax = self.xmax,
-                                        startcolumn=self.startcolumn
-                                        )
-
     def reverse_reverse(self):
         # Cha-cha real smooth back to the data trimming stage.
-        self.reverseframe = tk.LabelFrame(self.major_buttons_frame, text="Back to Data Trimming")
-        self.reverseframe.grid(column=1, row=2)
-
-        self.gotransition = tk.Button(
-                                        self.reverseframe, text = "Data Trimming",
-                                        command = self.gotodata_trimming)
-        self.gotransition.pack()
 
         self.back_to_beginning = tk.LabelFrame(self.major_buttons_frame, text="Back to Beginning")
         self.back_to_beginning.grid(column=2,row=2)
-        self.bbl = tk.Button(self.back_to_beginning, text="Start Over", 
+        self.bbl = tk.Button(self.back_to_beginning, text="Return to Splash", 
             command = self.goto_beginning)
         self.bbl.pack()
 
     def goto_beginning(self):
-        self.controller.show_frame(cont="File_Selector",
+        self.controller.show_frame(cont="NMR_Splash",
                                         signalstart=self.signalstart,
                                         signalend=self.signalend,
                                         xmin=self.xmin,
