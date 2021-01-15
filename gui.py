@@ -677,7 +677,7 @@ class Fitting_Page(tk.Frame):
             self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph)
 
             self.canvas.draw()
-            self.canvas.get_tk_widget().pack()
+            self.canvas.get_tk_widget().grid(column=1, row=1)
         else:
             return quirky
 
