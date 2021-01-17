@@ -88,3 +88,16 @@ na_vme_xaxis_default = "MHz"
 gui_primary_thermistor_name = dmsa_primary_thermometer_colname
 
 gui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
+####################################################################
+"""
+					  ___              ___  
+					 (o o)            (o o) 
+					(  V  ) asciigui (  V  )
+					--m-m--------------m-m--
+"""
+####################################################################
+agui_primary_thermistor_name = dmsa_primary_thermometer_colname
+
+agui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
+
+agui_allowable_file_extensions = ['.ta1', '.s1p']
