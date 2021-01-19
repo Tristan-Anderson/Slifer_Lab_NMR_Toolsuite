@@ -103,7 +103,7 @@ def DAQExtractor():
     pass
 def DirSorter():
     pass
-def SweepAerager():
+def SweepAverager():
     pass
 def GlobalInterpreter():
     pass
@@ -111,12 +111,21 @@ def GlobalInterpreter():
 
 def main():
     def options():
+        optionstr = "@"+" "*10+"OPTIONS"+" "*10+"@"
+        print("@"*len(optionstr))
+        print(optionstr)
+        print(len(optionstr))
+        print("@"*len(optionstr))
         functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
-        functionalities = ["NMRAnalyzer","DAQExtractor","DirSorter","SweepAverage","GoalInterpreter"]
+        functionalities = ["NMRAnalyzer","DAQExtractor","DirSorter","SweepAverage","GlobalInterpreter"]
 
-        print(str("{0:1}{2:^7}{0:1}{1:"+max([len(i) for i in functionalities])+"}{0:1}").format('#',value,"Mode"))
+        print('#'*(12+max([len(i) for i in functionalities])))
+        print(str("{0:1}{2:^7}{0:1}{1:^"+str(2+max([len(i) for i in functionalities]))+"}{0:1}").format('#','Functionality',"Mode"))
+        print('#'*(12+max([len(i) for i in functionalities])))
         for index,value in enumerate(functionalities):
-            print(str("{0:1:}{2:1}{0:1}{1:"+max([len(i) for i in functionalities])+"}{0:1}").format('#',value,index))
+            print(str("{0:^1}{2:^7}{0:^1}{1:^"+str(2+max([len(i) for i in functionalities]))+"}{0:1}").format('#',value,index))
+        
+        print('#'*(12+max([len(i) for i in functionalities])))
         print("What mode do you want the GUI in?")
         c = input("Enter number in table above: ")
     
