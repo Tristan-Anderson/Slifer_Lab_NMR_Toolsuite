@@ -432,17 +432,6 @@ class Fitting_Page(tk.Frame):
 
         self.fileDelimeter.set("\\t")
 
-    def update_dataframe(self, impression=False):
-        try:
-            self.df = v.gui_file_fetcher(
-                self.rawsigDataFile, self.bldataFile,
-                self.vnavme, impression=impression,
-                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
-                binning=self.binning
-            )
-        except ValueError:
-            pass
-
     def update_indicies(self):
         try:
             self.start_index = self.df.index[self.df[self.xname.get()] == \
@@ -908,8 +897,7 @@ class Fitting_Page(tk.Frame):
         self.pentry.grid(column=2,row=3)
 
     def addentry(self, k=[], h=None):
-        # Arguments to be passed in the same order
-        # as the headers list in vna_visualizer.py
+       # as the headers list in vna_visualizer.py
 
         headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
                        "xmax", "sigstart", "sigfinish", "blskiplines",
@@ -1060,17 +1048,6 @@ class Fitting_Page(tk.Frame):
         self.rawsigskiplines, self.centroid, \
         self.spread = v.gui_rawsig_file_preview(self.rawsigdatapath, delimeter, self.vnavme)
         #self.rawsigtime = self.TE_DATE
-
-    def update_indecies(self):
-        try:
-            self.start_index = self.df.index[self.df[self.xname.get()] == \
-            v.nearest(float(self.signalstart.get()), self.df[self.xname.get()])][0]-self.df.index[0]
-            self.end_index = self.df.index[self.df[self.xname.get()] == \
-            v.nearest(float(self.signalend.get()), self.df[self.xname.get()])][0]-self.df.index[0]
-        except IndexError:
-            print("ERROR: index error at the index finding of the dataframe.  CHECK YOUR INPUTS.")
-        except:
-            print("IGNORE: Signal highlighting failed.")
 
     def trim_data(self):
         """
