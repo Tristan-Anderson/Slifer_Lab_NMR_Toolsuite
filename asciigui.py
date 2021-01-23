@@ -117,6 +117,7 @@ def selectit():
         status, path = choice(fixeddirs, fixedfiles)
         announcement(cwd)
         cwd = path
+    return path
 
 
 def choice(fixeddirs, fixedfiles):
@@ -146,18 +147,20 @@ def NMRAnalyzer():
     header("NMR Analyser")
     print('\n'*3,'Please select baseline file')
     print("#"*30)
-    instance = nmrAnalyser()
+    instance = nmrAnalyser(hardinit=True)
+
 
 
 class nmrAnalyser():
-    def __init__(self):
-       self.rootdir = os.getcwd()
-       self.getBaseline()
-       print('/'.join(self.baselinepath.split('/')[:-1]))
-       print('Thats it')
-       os.chdir(self.baselinepath)
-       os.chdir('..')
-       self.getRawsig()
+    def __init__(self, hardinit=False):
+        self.rootdir = os.getcwd()
+        if hardinit:
+           self.getBaseline()
+           print('/'.join(self.baselinepath.split('/')))
+           print('Thats it')
+           os.chdir(self.baselinepath)
+           os.chdir('..')
+           self.getRawsig()
 
     def getBaseline(self):
         self.baselinepath = selectit()
