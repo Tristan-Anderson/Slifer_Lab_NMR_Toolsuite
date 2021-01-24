@@ -101,3 +101,11 @@ agui_primary_thermistor_name = dmsa_primary_thermometer_colname
 agui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
 
 agui_allowable_file_extensions = ['.ta1', '.s1p']
+
+agui_vnavme_default = 'vme'
+
+agui_xname_default = na_vme_xaxis_default
+
+agui_yname_default = na_vme_yaxis_default
+
+agui_impression = False

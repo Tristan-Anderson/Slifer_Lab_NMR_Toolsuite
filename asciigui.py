@@ -29,7 +29,6 @@ def header(mystr):
     print(str("{0:1}{2:^"+str(s)+"}{1:^"+str(lstr)+"}{2:^"+str(s)+"}{0:1}").format("@",mystr, ' '*s))
     print("@"*width)
 
-
 def getdir(cwd):
     # Get the items in a directory
     for subdir, dirs, files in os.walk(cwd):
@@ -107,6 +106,52 @@ def getdir(cwd):
         print("Printing exceeded 100 lines.")
     return fixeddirs, fixedfiles
 
+def dict_selector(dic):
+    """
+    expects a key:tupple unorganized dictionary where
+        tuple = [String, Function]
+    such that the string describes the properties of the function.
+
+    the "key"
+    has the function of not only being the ouput choice of this selector
+    function, but it also is the key to the tuple.
+    """
+    def tableformatter(keys, strs):
+        len_keys = [len(key) for key in keys]
+        maxlen_keys = max(len_keys)+2
+
+        keydescribers = [dic[k][0] for k in keys]
+        len_keydescribers = [len(k) for k in keydescribers]
+        maxlen_key_descrbers = max(len_keydescribers)+2
+        xbar = maxlen_keys + maxlen_key_descrbers +4+8+1
+
+        print('#'*xbar)
+        print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#','option#','name','describers'))
+        print('#'*xbar)
+        for index,value in enumerate(keys):
+            print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#',index,value,keydescribers[index]))
+        print('#'*xbar)
+        return True
+
+    keys = dic.keys()
+    options = [i for i in range(len(keys))]
+    reconsile = dict(zip(options, keys))
+    keydescribers = [dic[k][0] for k in keys]
+    tableformatter(keys,keydescribers)
+
+    choice = 'hey'
+    while type(choice) != int:
+        try:
+            choice = int(input("Enter option number: "))
+            print("Your choice was", reconsile[choice], 'returning...')
+        except KeyboardInterrupt:
+            print('keyboard inturrupt recived. Breaking.')
+            return False
+        except ValueError as e:
+            print("Invalid input. Try again.", '\n'*2)
+        except KeyError:
+            print("Incorrect Key. Make sure option number matches that which is in the table of options.")
+    return reconsile[choice]
 
 def selectit():
     cwd = os.getcwd()
@@ -148,17 +193,19 @@ def NMRAnalyzer():
     print('\n'*3,'Please select baseline file')
     print("#"*30)
     instance = nmrAnalyser(hardinit=True)
-
+    instance.fetchArgs()
+    #instance.showgraph()
+    instance.mainloop()
 
 
 class nmrAnalyser():
     def __init__(self, hardinit=False):
         self.rootdir = os.getcwd()
+        self.delimeter = '\t'
         if hardinit:
            self.getBaseline()
-           print('/'.join(self.baselinepath.split('/')))
-           print('Thats it')
-           os.chdir(self.baselinepath)
+           them = '/'.join(self.baselinepath.split('/')[:-1])
+           os.chdir(them)
            os.chdir('..')
            self.getRawsig()
 
@@ -168,47 +215,255 @@ class nmrAnalyser():
         announcement("Baseline path achieved")
 
     def getRawsig(self):
+        print("Current working directory:",os.getcwd())
         self.rawsigpath = selectit()
         os.chdir(self.rootdir)
 
+    def fetchArgs(self, **kwargs):
+        self.mutouse= 'proton'
+        self.binning= 1
+        self.integrate= True
+        self.vnavme= variablenames.agui_vnavme_default
+        self.startindex= 0
+        self.signalstart= 0
+        self.signalend= 0
+        self.endindex= 1
+        self.fitlorentzian = False 
+        self.xname= variablenames.agui_xname_default
+        self.xaxlabel= self.xname
+        self.yname= variablenames.agui_yname_default
+        self.yaxlabel= self.yname
+        self.impression= variablenames.agui_impression
+        self.xmin= ''
+        self.xmax= ''
+        self.plottitle= self.rawsigpath.split('/')[-1]
+        self.blSkipLinesGetter()
+        self.rawsigSkipLinesGetter()
+        self.updateDataFrame()
+        self.updateGraph()
 
-    def updateDataframe(self):
-        pass
+    def blSkipLinesGetter(self):
+        delimeter = self.delimeter
+        choice = self.vnavme
+        _, _, _, self.blskiplines = v.gui_bl_file_preview(self.baselinepath, self.delimeter)
+
+    def rawsigSkipLinesGetter(self):
+        _, _, self.te_date, self.I, self.T, self.primary_thermistor,\
+        self.secondary_thermistor, self.rawsigskiplines, self.centroid,\
+        self.spread = v.gui_rawsig_file_preview(self.rawsigpath,self.delimeter,self.vnavme)
+        try:
+            self.B = round(self.I/9.7332,4)
+        except ValueError:
+            print("WARNING: No Magnet current exists in", self.rawsigpath.split('/')[-1],
+                "TE-Value will NOT be calculated")
+
+    def updateDataFrame(self):
+        self.df = v.gui_file_fetcher(
+                self.rawsigpath, self.baselinepath,
+                self.vnavme,
+                blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                binning=self.binning
+                )
+
+    def changeSignalStartEnd(self):
+        announcement("Changing start / end of signal boundaries. Use current x-coordinates.")
+        print("To skip changing value for a particular entry, please hit ENTER")
+        startsignal = input("Signal Start X-value: ")
+        if startsignal == '':
+            pass
+        else:
+            self.startsignal = float(startsignal)
+
+        endsignal = input("Signal End X-Value: ")
+        if endsignal == '':
+            pass
+        else:
+            self.endsignal = float(endsignal)
 
     def updateIndecies(self):
-        pass
+        try:
+            self.start_index = self.df.index[self.df[self.xname] == \
+            v.nearest(float(self.signalstart),
+            self.df[self.xname])][0]-\
+            self.df.index[0]
+            self.end_index = self.df.index[self.df[self.xname] == \
+            v.nearest(float(self.signalend),
+              self.df[self.xname])][0]-\
+              self.df.index[0]
+        except IndexError:
+            print("Some index error was raised at the index finding for" 
+                  "the pandas dataframe when you entered the "
+                  "signal start and end information")
+            print("Could be due to malformed signal range. Please recheck your inputs.")
+        except:
+            print("Error in index finding. Signal highlighting failed.")
 
-    def updateGraph(self):
-        pass
+    def updateGraph(self, graph=None, repeat=False, p_title=None, automated=False):
+        self.updateIndecies()
+        if graph is None:
+            plt.clf()
+            plt.close('all')
+            b = self.B
+            T = self.T
+            try:
+                xmin = float(self.xmin)
+                xmax = float(self.xmax)
+            except ValueError:
+                xmin =self.xmin
+                xmax = self.xmax
 
-    def updateXYSelector(self):
-        pass
+            try:
+                fls, fle = float(self.signalstart), float(self.signalend)
+            except ValueError:
+                fls, fle =0,0
+                pass  # It doesn't even matter if this fails because of fltest.
+            # Get that plot title during automation
+            plot_title = p_title if p_title is not None else self.plottitle
+            fltest = True if self.fitlorentzian == '1' else False
+            ub = 9.274009994*10**(-24) # Bohr Magnetron
+            up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
+            ud = 0.307012207*up        # doi.org/10.1016/j.physleta.2003.09.030
 
-    def addEntry(self):
-        pass
+            temuval = up if self.mutouse == "proton" else ud
+            #print(self.mutouse)
+            quirky = v.ggf(
+                                self.df, self.start_index, self.end_index, gui=True,
+                                plttitle=plot_title, x=self.xname, y=self.yname,
+                                xlabel=self.xaxlabel, ylabel=self.yaxlabel,
+                                redsig=True if [self.start_index, self.end_index] != [0, len(self.df)]\
+                                else False,
+                                binning=int(self.binning),
+                                integrate=self.integrate,
+                                fitlorentzian=fltest, fitlorentziancenter_bounds=[fls,fle],
+                                b=b, T=T,   # Its okay if type isnt right, because below line ensures type
+                                thermal_equalibrium_value=True if type(b) == float and type (T) == float\
+                                 else False,
+                                xmin=xmin if type(xmin) == float else None, xmax=xmax if type(xmax) ==\
+                                 float else None,filename=self.rawsigpath,
+                                clearfigs=True, automated=automated, temu=temuval
+                                )
+            self.tlorentzian_chisquared = quirky.pop('tristan lorentzian chisquared',None)
+            self.klorentzian_chisquared = quirky.pop('karl chisquared', None)
+            self.sigmaforchisquared = quirky.pop("karl sigma", None)
+            self.figure = quirky['fig']
+            self.data_cal_constant = quirky.pop("data_cal_constant", None)
+            self.fit_cal_constant = quirky.pop("fit_cal_constant", None)
+            self.tevalue = quirky.pop("TE_Value", None)
+            self.dataarea = quirky.pop('data_area', None)
+            self.ltzian_integration = quirky.pop('ltzian_integration', None)
+            self.df = quirky.pop('df', None)
+            self.ltzian_a = quirky.pop('a', None)
+            self.ltzian_w = quirky.pop('w', None)
+            self.ltzian_x0 = quirky.pop('x0',None)
+            self.sigma_error = quirky.pop('noisesigma', None)
 
-    def addFit(self):
-        pass
+    def mainloop(self):
+        try:
+            while True:
+                print(self.df.head(3))
+                self.allchoices()
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt recieved in mainloop. Exiting.")
+            exit(True)
 
-    def initOne(self):
-        pass
+    def allchoices(self):
+        self.figure.show()
+        mumsg= 'Toggles between two available mu values for the TE equation'
+        binningmsg = 'Bin width for the data'
+        integratemsg = 'Shade region below signal selection on graph. Useful for conceptualizing signal area'
+        signalstartendmsg = 'Update start and end x-axis values to mark signal region'
+        xnamemsg = 'Select different x-axis for plot'
+        ynamemsg = 'Select different y-axis for plot'
+        xaxlabelmsg = 'Set x-axis label'
+        yaxlabelmsg = 'Set y-axis label'
+        fit_subtractionmsg = 'Fit subtract current-data'
+        noisemsg = 'Display noise estimate'
+        titlemsg = 'Change the plot title'
+        automatemsg = 'Take all previous settings and apply them to the rawsignal directory'
+        savefigmsg = 'Save the current figure as is.'
+        savedatamsg ='Save the current data as is'
+        savefiganddatamsg ='Save the current figure and data as is'
+        choices = {"binning":[binningmsg, self.setBinning],
+                'togglemu':[mumsg, self.adjustmu],
+                'toggleintegrate':[integratemsg, self.toggleIntegrate],
+                'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
+                'x-data':[xnamemsg, self.changexname],
+                'y-data':[ynamemsg, self.changeyname],
+                'xlabel':[xaxlabelmsg, self.changexlabel],
+                'ylabel':[yaxlabelmsg, self.changeylabel],
+                'fit subtraction':[fit_subtractionmsg, self.fitsubtract],
+                'noise quantification':[noisemsg, self.displaynoise],
+                'plottitle':[titlemsg, self.changetitle],
+                'automate':[automatemsg, self.automate],
+                'savefiganddata':[savefiganddatamsg,self.saveboth]}
+        key = dict_selector(choices)
+        f = choices[key][1]
+        f()
 
-    def saveFig(self):
-        pass
+    def setBinning(self):
+        announce('Current binning is '+str(self.binning)+'.')
+        print('Please select new binning')
+        choice = 'hey'
+        while type(choice) != int:
+            try:
+                choice = int(input("Enter bin width: "))
+            except KeyboardInterrupt:
+                print('keyboard inturrupt recived. Breaking.')
+                return False
+            except ValueError as e:
+                print("Invalid input. Try again.", '\n'*2)
+        self.binning = choice
 
-    def gotoBeginning(self):
-        pass
+    def adjustmu(self):
+        allowable_mus = ['proton', 'deuteron']
+        print("Current mu is", self.mutouse)
+        protonmsg = 'Proton Mu'
+        deuteronmsg = 'Deuteron Mu'
+        messages = [protonmsg, deuteronmsg]
 
-    def updateRawSig(self):
-        pass
+        choices = dict(zip(allowable_mus, messages))
+        self.mutouse = dict_selector()
+        print("Mu is now: ", self.mutouse)
 
-    def trimData(self):
-        pass
+    def toggleIntegrate(self):
+        self.integrate = not self.integrate
+        print("Shading toggle is now", 'on' if self.integrate else 'off')
 
-    def automator(self):
-        pass
+    def changexname(self):
+        announcement("Current X name "+str(self.xname))
+        columns = self.df.cols.tolist()
+        columnmsg = "Column in dataframe."
+        print("available columns:") 
+        nice = [columnmsg for i in range(len(columns))]
+        choices = dict(zip(columns, nice))
+        self.xname = dict_choice(choices)
+    
+    def changeyname(self):
+        announcement("Current Y name "+str(self.yname))
+        columns = self.df.cols.tolist()
+        columnmsg = "Column in dataframe."
+        print("available columns:") 
+        nice = [columnmsg for i in range(len(columns))]
+        choices = dict(zip(columns, nice))
+        self.yname = dict_choice(choices)
 
-    def repeatAdNauseum(self):
+    def changexlabel(self):
+        announcement("Current xlabel "+str(self.xlabel))
+        self.xlabel = input("Input xlabel: ")
+
+    def changeylabel(self):
+        announcement("Current ylabel "+str(self.ylabel))
+        self.ylabel = input("Input xlabel: ")
+
+    def fitsubtract(self):
+        pass
+    def displaynoise(self):
+        pass
+    def changetitle(self):
+        pass
+    def automate(self):
+        pass
+    def saveboth(self):
         pass
 
 def DAQExtractor():
