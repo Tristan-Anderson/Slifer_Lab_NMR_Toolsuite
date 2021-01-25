@@ -1,3 +1,4 @@
+# PYTHON 3.9.1
 """
 Tristan Anderson
 tja1015@wildats.unh.edu
@@ -10,8 +11,8 @@ Proceed Formally.
 
 import variablenames
 import gc, time # garbage
-from tkinter import filedialog
 import NMR_Analyzer as v
+from tkinter import filedialog
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -120,9 +121,10 @@ def dict_selector(dic):
         len_keys = [len(key) for key in keys]
         maxlen_keys = max(len_keys)+2
 
-        keydescribers = [dic[k][0] for k in keys]
+        keydescribers = strs
         len_keydescribers = [len(k) for k in keydescribers]
         maxlen_key_descrbers = max(len_keydescribers)+2
+        maxlen_key_descrbers = 10 if maxlen_key_descrbers < 10 else maxlen_key_descrbers
         xbar = maxlen_keys + maxlen_key_descrbers +4+8+1
 
         print('#'*xbar)
@@ -136,14 +138,20 @@ def dict_selector(dic):
     keys = dic.keys()
     options = [i for i in range(len(keys))]
     reconsile = dict(zip(options, keys))
-    keydescribers = [dic[k][0] for k in keys]
+    keydescribers = []
+    for k in keys:
+        value = dic[k]
+        if type(value) == list:
+            keydescribers.append(dic[k][0])
+        else:
+            keydescribers.append(dic[k])
     tableformatter(keys,keydescribers)
 
-    choice = 'hey'
-    while type(choice) != int:
+    choices = 'hey'
+    while type(choices) != int:
         try:
-            choice = int(input("Enter option number: "))
-            print("Your choice was", reconsile[choice], 'returning...')
+            choices = int(input("Enter option number: "))
+            print("Your choice was", reconsile[choices], 'returning...')
         except KeyboardInterrupt:
             print('keyboard inturrupt recived. Breaking.')
             return False
@@ -151,7 +159,7 @@ def dict_selector(dic):
             print("Invalid input. Try again.", '\n'*2)
         except KeyError:
             print("Incorrect Key. Make sure option number matches that which is in the table of options.")
-    return reconsile[choice]
+    return reconsile[choices]
 
 def selectit():
     cwd = os.getcwd()
@@ -220,13 +228,14 @@ class nmrAnalyser():
         os.chdir(self.rootdir)
 
     def fetchArgs(self, **kwargs):
+        self.automatefits = []
         self.mutouse= 'proton'
         self.binning= 1
-        self.integrate= True
+        self.integrate= False
         self.vnavme= variablenames.agui_vnavme_default
         self.startindex= 0
         self.signalstart= 0
-        self.signalend= 0
+        self.signalend=0
         self.endindex= 1
         self.fitlorentzian = False 
         self.xname= variablenames.agui_xname_default
@@ -244,7 +253,7 @@ class nmrAnalyser():
 
     def blSkipLinesGetter(self):
         delimeter = self.delimeter
-        choice = self.vnavme
+        choices = self.vnavme
         _, _, _, self.blskiplines = v.gui_bl_file_preview(self.baselinepath, self.delimeter)
 
     def rawsigSkipLinesGetter(self):
@@ -272,13 +281,14 @@ class nmrAnalyser():
         if startsignal == '':
             pass
         else:
-            self.startsignal = float(startsignal)
+            self.signalstart = float(startsignal)
 
         endsignal = input("Signal End X-Value: ")
         if endsignal == '':
             pass
         else:
-            self.endsignal = float(endsignal)
+            self.signalend = float(endsignal)
+        self.updateGraph()
 
     def updateIndecies(self):
         try:
@@ -356,10 +366,13 @@ class nmrAnalyser():
             self.ltzian_w = quirky.pop('w', None)
             self.ltzian_x0 = quirky.pop('x0',None)
             self.sigma_error = quirky.pop('noisesigma', None)
+        else:
+            self.figure = graph
 
     def mainloop(self):
         try:
             while True:
+                self.figure.show()
                 print(self.df.head(3))
                 self.allchoices()
         except KeyboardInterrupt:
@@ -367,7 +380,6 @@ class nmrAnalyser():
             exit(True)
 
     def allchoices(self):
-        self.figure.show()
         mumsg= 'Toggles between two available mu values for the TE equation'
         binningmsg = 'Bin width for the data'
         integratemsg = 'Shade region below signal selection on graph. Useful for conceptualizing signal area'
@@ -401,18 +413,21 @@ class nmrAnalyser():
         f()
 
     def setBinning(self):
-        announce('Current binning is '+str(self.binning)+'.')
+        announcement('Current binning is '+str(self.binning)+'.')
         print('Please select new binning')
-        choice = 'hey'
-        while type(choice) != int:
+        choices = 'hey'
+        while type(choices) != int:
             try:
-                choice = int(input("Enter bin width: "))
+                choices = int(input("Enter bin width: "))
             except KeyboardInterrupt:
                 print('keyboard inturrupt recived. Breaking.')
                 return False
             except ValueError as e:
                 print("Invalid input. Try again.", '\n'*2)
-        self.binning = choice
+        self.binning = choices
+        self.updateDataFrame()
+        self.updateGraph()
+        
 
     def adjustmu(self):
         allowable_mus = ['proton', 'deuteron']
@@ -422,41 +437,111 @@ class nmrAnalyser():
         messages = [protonmsg, deuteronmsg]
 
         choices = dict(zip(allowable_mus, messages))
-        self.mutouse = dict_selector()
+        self.mutouse = dict_selector(choices)
         print("Mu is now: ", self.mutouse)
+        self.updateGraph()
 
     def toggleIntegrate(self):
         self.integrate = not self.integrate
         print("Shading toggle is now", 'on' if self.integrate else 'off')
+        self.updateGraph()
 
     def changexname(self):
         announcement("Current X name "+str(self.xname))
-        columns = self.df.cols.tolist()
+        columns = self.df.columns.tolist()
         columnmsg = "Column in dataframe."
         print("available columns:") 
-        nice = [columnmsg for i in range(len(columns))]
+        nice = [columnmsg for _ in range(len(columns))]
         choices = dict(zip(columns, nice))
-        self.xname = dict_choice(choices)
+        self.xname = dict_selector(choices)
+        self.xaxlabel = self.xname
+        self.updateGraph()
     
     def changeyname(self):
         announcement("Current Y name "+str(self.yname))
-        columns = self.df.cols.tolist()
+        columns = self.df.columns.tolist()
         columnmsg = "Column in dataframe."
         print("available columns:") 
         nice = [columnmsg for i in range(len(columns))]
         choices = dict(zip(columns, nice))
-        self.yname = dict_choice(choices)
+        self.yname = dict_selector(choices)
+        self.yaxlabel = self.yname
+        self.updateGraph()
 
     def changexlabel(self):
-        announcement("Current xlabel "+str(self.xlabel))
-        self.xlabel = input("Input xlabel: ")
+        announcement("Current xlabel "+str(self.xaxlabel))
+        self.xaxlabel = input("Input xlabel: ")
+        self.updateGraph()
 
     def changeylabel(self):
-        announcement("Current ylabel "+str(self.ylabel))
-        self.ylabel = input("Input xlabel: ")
+        announcement("Current ylabel "+str(self.yaxlabel))
+        self.yaxlabel = input("Input xlabel: ")
+        self.updateGraph()
 
-    def fitsubtract(self):
-        pass
+    def fitsubtract(self,automated=False):
+        keys = ['Sin', 'Third order Polynomial', 'Fourth order Polynomial',
+                'Fifth Order Polynomial', 'Sixth Order Polynomial', 
+                'True Lorentzian',"Lorentzian (absorbtion/dispersion)"]
+        values = ['sin', 'third_order', 'fourth_order', 'fifth_order',
+                'sixth_order','lorentzian_ellie','absorbtion_dispersion_ellie']
+        choices = dict(zip(keys,values))
+        reverse = dict(zip(values,keys))
+        self.fitname = dict_selector(choices)
+        self.type_of_fit = choices[self.fitname]
+
+        if not automated:
+            plt.clf()
+            plt.close('all')
+        test = len(self.automatefits)-1
+        if test >= 0:
+            if self.automatefits[test][1] == self.fitname:
+                print("\nWARNING: Previous fit named:", self.automatefits[test][1],
+                    "was overridden.\nChange fit name if you are doing multiple subtraction\n")
+                self.automatefits[test] = [self.type_of_fit, self.fitname]
+            else:
+                self.automatefits.append([self.type_of_fit, self.fitname])
+        else:
+            self.automatefits.append([self.type_of_fit, self.fitname])
+        self.updateIndecies()
+        try:
+            p0 = [float(self.lorentzian_x0), float(self.lorentzian_w),
+                    float(self.lorentzian_A), float(self.lorentzian_B)]\
+                            if self.fitname == "lorentzian_ellie" else None
+            bounds = [[float(self.lorentzian_x0)-.1, -numpy.inf, 
+                float(self.lorentzian_A)-.05, -numpy.inf],
+                [float(self.lorentzian_x0)+.1, numpy.inf, float(self.lorentzian_A)+\
+                        .05, numpy.inf]] if self.fitname == "lorentzian_ellie" else \
+                        [[-numpy.inf, -numpy.inf, -numpy.inf, -numpy.inf ],
+                                [numpy.inf,numpy.inf,numpy.inf,numpy.inf]]
+        except ValueError:
+            print("***WARNING: Error in type conversion for RAWSIGNAL fit \
+                    coersion. p0 WILL NOT be passed.")
+            p0 = None
+        self.df, fig, chsq, rawsigfit = v.gff(
+                            self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                            function=[self.type_of_fit], fitname=self.fitname,
+                            binning=self.binning, gui=True, redsig=True, x=self.xname,
+                            y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds
+                        )
+
+        #'e_f0', 'e_w', 'e_kmax', 'e_theta'
+        self.e_f0, self.e_w, \
+        self.e_kmax, self.e_theta = rawsigfit.pop('e_f0', None), \
+            rawsigfit.pop("e_w", None), \
+            rawsigfit.pop('e_kmax', None), \
+            rawsigfit.pop("e_theta", None)
+
+        print(" "*15, "CHI SQUARED VALUES FOR EACH FIT")
+        print("#"*65)
+
+        for key in chsq:
+            val = chsq[key]
+            print("{0:<1s}{1:^5s}{0:1s}{2:^31s}{0:1s}{3:^25s}{0:1s}"\
+                    .format("#","Fit", key, str(val)))
+            #print("#Fit #\t", key, " #\t Chisquared:", val, " #")
+        print("#" * 65)
+        self.updateGraph(graph=fig)
+
     def displaynoise(self):
         pass
     def changetitle(self):
@@ -524,11 +609,16 @@ def main():
     optdict = dict(zip([i for i in range(len(functions))],functions))
     while True:
         c= options()
+        f = optdict[c]
+        f()
+        """
         try:
             f = optdict[c]
             f()
-        except KeyError:
+        except KeyError as e:
+            print("Something went wrong:",e)
             print("Invalid Option")
+        """ 
     #print("NMR Toolsuite ASCII-GUI")
     #rootdir=os.getcwd()
     #cwd=rootdir
