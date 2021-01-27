@@ -148,17 +148,20 @@ def dict_selector(dic):
     tableformatter(keys,keydescribers)
 
     choices = 'hey'
-    while type(choices) != int:
+    while True:
         try:
             choices = int(input("Enter option number: "))
             print("Your choice was", reconsile[choices], 'returning...')
+            break
         except KeyboardInterrupt:
             print('keyboard inturrupt recived. Breaking.')
-            return False
+            raise KeyboardInterrupt
         except ValueError as e:
             print("Invalid input. Try again.", '\n'*2)
+            continue
         except KeyError:
             print("Incorrect Key. Make sure option number matches that which is in the table of options.")
+            continue
     return reconsile[choices]
 
 def selectit():
@@ -331,7 +334,7 @@ class nmrAnalyser():
                 pass  # It doesn't even matter if this fails because of fltest.
             # Get that plot title during automation
             plot_title = p_title if p_title is not None else self.plottitle
-            fltest = True if self.fitlorentzian == '1' else False
+            fltest = self.fitlorentzian 
             ub = 9.274009994*10**(-24) # Bohr Magnetron
             up = 1.521*10**(-3)*ub     # Proton Magnetic Moment
             ud = 0.307012207*up        # doi.org/10.1016/j.physleta.2003.09.030
@@ -384,36 +387,40 @@ class nmrAnalyser():
     def allchoices(self):
         mumsg= 'Toggles between two available mu values for the TE equation'
         binningmsg = 'Bin width for the data'
-        integratemsg = 'Shade region below signal selection on graph. Useful for conceptualizing signal area'
         signalstartendmsg = 'Update start and end x-axis values to mark signal region'
+        fit_subtractionmsg = 'Fit subtract current-data'
+        integratemsg = 'Shade region below signal selection on graph. Useful for conceptualizing signal area'
+        lorentzian_rawfitmsg = 'Fit lorentzian to current data selection.'
         xnamemsg = 'Select different x-axis for plot'
         ynamemsg = 'Select different y-axis for plot'
         xaxlabelmsg = 'Set x-axis label'
         yaxlabelmsg = 'Set y-axis label'
-        fit_subtractionmsg = 'Fit subtract current-data'
-        noisemsg = 'Display noise estimate'
         titlemsg = 'Change the plot title'
         automatemsg = 'Take all previous settings and apply them to the rawsignal directory'
         savefigmsg = 'Save the current figure as is.'
         savedatamsg ='Save the current data as is'
         savefiganddatamsg ='Save the current figure and data as is'
         choices = {"binning":[binningmsg, self.setBinning],
-                'togglemu':[mumsg, self.adjustmu],
-                'toggleintegrate':[integratemsg, self.toggleIntegrate],
                 'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
+                'fit subtraction':[fit_subtractionmsg, self.fitsubtract],
+                'toggleintegrate':[integratemsg, self.toggleIntegrate],
+                'fitlorentziancurve':[lorentzian_rawfitmsg, self.toggleLorentzian],
                 'x-data':[xnamemsg, self.changexname],
                 'y-data':[ynamemsg, self.changeyname],
                 'xlabel':[xaxlabelmsg, self.changexlabel],
                 'ylabel':[yaxlabelmsg, self.changeylabel],
-                'fit subtraction':[fit_subtractionmsg, self.fitsubtract],
-                'noise quantification':[noisemsg, self.displaynoise],
                 'plottitle':[titlemsg, self.changetitle],
-                'automate':[automatemsg, self.automate],
-                'savefiganddata':[savefiganddatamsg,self.saveboth]}
+                'togglemu':[mumsg, self.adjustmu],
+                'savefiganddata':[savefiganddatamsg,self.saveboth],
+                'automate':[automatemsg, self.automate]}
         key = dict_selector(choices)
         f = choices[key][1]
         f()
 
+    def toggleLorentzian(self):
+        self.fitlorentzian = not self.fitlorentzian
+        self.updateGraph()
+    
     def setBinning(self):
         announcement('Current binning is '+str(self.binning)+'.')
         print('Please select new binning')
@@ -526,7 +533,10 @@ class nmrAnalyser():
                 binning=self.binning, gui=True, redsig=True, x=self.xname,
                 y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds
                 )
-
+        if self.didfailfit and not automated:
+            print('Fit failed broh, try something else man.')
+            self.disapprovePlot()
+            return True
         #'e_f0', 'e_w', 'e_kmax', 'e_theta'
         self.e_f0, self.e_w, \
                 self.e_kmax, self.e_theta = rawsigfit.pop('e_f0', None), \
@@ -568,10 +578,11 @@ class nmrAnalyser():
         if not manual:
             print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
         self.fitsubtract()
-    def displaynoise(self):
-        pass
     def changetitle(self):
-        pass
+        c = input("Input new plot title: ")
+        self.plottitle = c
+        self.updateGraph()
+
     def automate(self):
         pass
     def saveboth(self):
