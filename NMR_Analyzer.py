@@ -138,7 +138,7 @@ def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
                 the data for later on.
             """
             l = line.split(delimeter)
-            if vnaVmeType == "VNA":
+            if vnaVmeType.upper() == "VNA":
                 if index == 1: # dateline for vna
                     dateline = list(line)
                     #! Date: 12/17/2019 11:17:25 AM
@@ -150,7 +150,7 @@ def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
                     vapor_pressure_t = None
                     centroid = None
                     spread = None
-            elif vnaVmeType == "VME":
+            elif vnaVmeType.upper() == "VME":
                 if index == 0:
                     dateish = l[1]
                     #2019-12-19 23:59:47
@@ -902,7 +902,7 @@ def gff(df, start, finish, fitname, **kwargs):
             fig.suptitle(plttitle)
             if gui:
                 print("***ERROR: Main fit subtraction failed for", f_name, '\n')
-                return df, fig, chsq, rawsigfit
+                return df, fig, chsq, rawsigfit, True
 
             plt.show()
             print("ERROR: Fitting failed on function: " + str(function[0]))
@@ -1107,7 +1107,7 @@ def gff(df, start, finish, fitname, **kwargs):
         ax.set_xlabel(x)
         ax.legend(loc='best')
         #print("Made it here")
-        return df, fig, chsq, rawsigfit
+        return df, fig, chsq, rawsigfit, False
 
     else:
         print("Fitting data needs to be reshaped.")
