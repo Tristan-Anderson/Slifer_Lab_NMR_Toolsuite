@@ -174,6 +174,7 @@ def selectit():
 
 
 def choice(fixeddirs, fixedfiles):
+    
     c = input("Enter Choice: ")
     if 'd' in c.lower():
         newpath = fixeddirs[int(c.split('d')[0])]
@@ -228,6 +229,7 @@ class nmrAnalyser():
         os.chdir(self.rootdir)
 
     def fetchArgs(self, **kwargs):
+        self.fitnumber = 0
         self.automatefits = []
         self.mutouse= 'proton'
         self.binning= 1
@@ -427,7 +429,7 @@ class nmrAnalyser():
         self.binning = choices
         self.updateDataFrame()
         self.updateGraph()
-        
+
 
     def adjustmu(self):
         allowable_mus = ['proton', 'deuteron']
@@ -456,7 +458,7 @@ class nmrAnalyser():
         self.xname = dict_selector(choices)
         self.xaxlabel = self.xname
         self.updateGraph()
-    
+
     def changeyname(self):
         announcement("Current Y name "+str(self.yname))
         columns = self.df.columns.tolist()
@@ -488,6 +490,7 @@ class nmrAnalyser():
         reverse = dict(zip(values,keys))
         self.fitname = dict_selector(choices)
         self.type_of_fit = choices[self.fitname]
+        print(self.fitname, self.type_of_fit)
 
         if not automated:
             plt.clf()
@@ -496,12 +499,12 @@ class nmrAnalyser():
         if test >= 0:
             if self.automatefits[test][1] == self.fitname:
                 print("\nWARNING: Previous fit named:", self.automatefits[test][1],
-                    "was overridden.\nChange fit name if you are doing multiple subtraction\n")
+                        "was overridden.\nChange fit name if you are doing multiple subtraction\n")
                 self.automatefits[test] = [self.type_of_fit, self.fitname]
             else:
-                self.automatefits.append([self.type_of_fit, self.fitname])
+                self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
         else:
-            self.automatefits.append([self.type_of_fit, self.fitname])
+            self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
         self.updateIndecies()
         try:
             p0 = [float(self.lorentzian_x0), float(self.lorentzian_w),
@@ -517,19 +520,19 @@ class nmrAnalyser():
             print("***WARNING: Error in type conversion for RAWSIGNAL fit \
                     coersion. p0 WILL NOT be passed.")
             p0 = None
-        self.df, fig, chsq, rawsigfit = v.gff(
-                            self.df, self.start_index, self.end_index, fit_sans_signal=True,
-                            function=[self.type_of_fit], fitname=self.fitname,
-                            binning=self.binning, gui=True, redsig=True, x=self.xname,
-                            y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds
-                        )
+        self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
+                self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                function=[self.type_of_fit], fitname=self.fitname,
+                binning=self.binning, gui=True, redsig=True, x=self.xname,
+                y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds
+                )
 
         #'e_f0', 'e_w', 'e_kmax', 'e_theta'
         self.e_f0, self.e_w, \
-        self.e_kmax, self.e_theta = rawsigfit.pop('e_f0', None), \
-            rawsigfit.pop("e_w", None), \
-            rawsigfit.pop('e_kmax', None), \
-            rawsigfit.pop("e_theta", None)
+                self.e_kmax, self.e_theta = rawsigfit.pop('e_f0', None), \
+                rawsigfit.pop("e_w", None), \
+                rawsigfit.pop('e_kmax', None), \
+                rawsigfit.pop("e_theta", None)
 
         print(" "*15, "CHI SQUARED VALUES FOR EACH FIT")
         print("#"*65)
@@ -541,7 +544,30 @@ class nmrAnalyser():
             #print("#Fit #\t", key, " #\t Chisquared:", val, " #")
         print("#" * 65)
         self.updateGraph(graph=fig)
+        if not automated:
+            self.figure.show()
+            approvemsg = 'The fit looks good, let me see the fit subtraction'
+            disapprovemsg = 'The fit looks bad, let me redo it.'
+            choices = {'approve':[approvemsg, self.approvePlot],
+                    'disapprove':[disapprovemsg, self.disapprovePlot]}
+            key = dict_selector(choices)
+            f = choices[key][1]
+            f(manual=True)
+        elif automated:
+            self.approvePlot()
 
+    def approvePlot(self, **kwargs):
+        availablecolums = self.df.columns.to_list()
+        (fit_data, fitsubtraction) = availablecolums[-2:]
+        self.yname = fitsubtraction
+        self.updateGraph()
+        self.fitnumber += 1
+        
+
+    def disapprovePlot(self, manual=False):
+        if not manual:
+            print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
+        self.fitsubtract()
     def displaynoise(self):
         pass
     def changetitle(self):
