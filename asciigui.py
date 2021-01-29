@@ -237,25 +237,28 @@ class nmrAnalyser():
         os.chdir(self.rootdir)
 
     def fetchArgs(self, **kwargs):
-        self.fitnumber = 0
-        self.automatefits = []
-        self.mutouse= 'proton'
-        self.binning= 1
-        self.integrate= False
-        self.vnavme= variablenames.agui_vnavme_default
-        self.startindex= 0
-        self.signalstart= 0
-        self.signalend=0
-        self.endindex= 1
-        self.fitlorentzian = False 
-        self.xname= variablenames.agui_xname_default
-        self.xaxlabel= self.xname
-        self.yname= variablenames.agui_yname_default
-        self.yaxlabel= self.yname
-        self.impression= variablenames.agui_impression
-        self.xmin= ''
-        self.xmax= ''
-        self.plottitle= self.rawsigpath.split('/')[-1]
+        self.fitnumber = kwargs.pop('fitnumber',0)
+        self.automatefits = kwargs.pop('automatefits',[])
+        self.mutouse= kwargs.pop('mutouse','proton')
+        self.binning= kwargs.pop('binning',1)
+        self.integrate= kwargs.pop('integrate', False)
+        self.vnavme= kwargs.pop('vnavme', variablenames.agui_vnavme_default)
+        self.startindex= kwargs.pop('startindex',0)   #NMR Analyzer used
+        self.signalstart= kwargs.pop('signalstart',0) #User selected start
+        self.signalend=kwargs.pop('signalend',0)      #User selected end
+        self.endindex= kwargs.pop('endindex',1)       #NMR Analyzer used
+        self.fitlorentzian = kwargs.pop('fitlorentzian',False)
+        self.xname= kwargs.pop('xname',variablenames.agui_xname_default)
+        self.xaxlabel= kwargs.pop('xaxlabel',self.xname)
+        self.yname= kwargs.pop('yname',variablenames.agui_yname_default)
+        self.yaxlabel= kwargs.pop('yaxlabel',self.yname)
+        self.impression= kwargs.pop('impression',variablenames.agui_impression)
+        self.xmin= kwargs.pop('xmin', '')
+        self.xmax= kwargs.pop('xmax', '')
+        self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
+        self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
+        if not self.hardinit:
+            self.processes = kwargs.pop('processes',1)
         self.blSkipLinesGetter()
         self.rawsigSkipLinesGetter()
         self.updateDataFrame()
@@ -426,8 +429,9 @@ class nmrAnalyser():
         f()
 
     def setInstanceName(self):
-        print("Current instance name is:", self.instancename)
-
+        announcement("Current instance name is: "+self.instancename)
+        self.instancename = input("Input new instance name: ")
+        print("Instance name changed to", self.instancename)
 
     def toggleLorentzian(self):
         self.fitlorentzian = not self.fitlorentzian
@@ -448,7 +452,6 @@ class nmrAnalyser():
         self.binning = choices
         self.updateDataFrame()
         self.updateGraph()
-
 
     def adjustmu(self):
         allowable_mus = ['proton', 'deuteron']
@@ -509,7 +512,7 @@ class nmrAnalyser():
         reverse = dict(zip(values,keys))
         self.fitname = dict_selector(choices)
         self.type_of_fit = choices[self.fitname]
-        print(self.fitname, self.type_of_fit)
+        print("Fit name",self.fitname, "Function Name", self.type_of_fit)
 
         if not automated:
             plt.clf()
@@ -584,7 +587,6 @@ class nmrAnalyser():
         self.yname = fitsubtraction
         self.updateGraph()
         self.fitnumber += 1
-        
 
     def disapprovePlot(self, manual=False):
         if not manual:
@@ -595,9 +597,11 @@ class nmrAnalyser():
         c = input("Input new plot title: ")
         self.plottitle = c
         self.updateGraph()
+
     def saveFig(self):
         self.updateGraph(automated)
         plt.savefig(self.title)
+
     def automate(self):
         """
             Replicated from the tkinter version of the gui
@@ -645,28 +649,14 @@ class nmrAnalyser():
                           # Which will be difficult to resolve logistically with self.item adding "S %ITEM"
                           # to the names of things.
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
-        self.item = 0
-        originalentryname = self.pentry.get()
-        # Do the same thing to the plot title
-        originalplottitle = self.plottitle.get()
-        todo = len(tefiles)
-        timedeltas = []
-        for file in tefiles:
-            try:
-                t1 = time.time()
-                self.automator(file, originalplottitle, originalentryname, extension, tedirectory, graphs, graphdata, home)
-                t2 = time.time()
-                timedeltas.append(t2-t1)
-                print(self.item, "of", todo, '['+str(round(self.item*100/todo,4))+'%]', "ETA: ", round((todo-self.item)*numpy.mean(timedeltas),1), 's')
-            except KeyError:
-                print("Key error detected. breaking with loop, and will cycle back later. Most likely a fitting error. Check warnings & Errors.")
-                #self.failedfiles.append([file, self.item])
-                break 
 
-    def repeatAdNauseum(self, filelist, originalplottitle, originalentryname, extension, tedirectory, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None):
+        for index, value in enumerate(oh_indexes):
+            (start, end) = value
+            self.repeatAdNauseum(tefiles[start:end], tedirectory, graphs, graphdata, home, self_itemseed=start,id_num=index) 
+
+    def repeatAdNauseum(self, filelist, tedirectory, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
-        self.item = self_itemseed if self_itemseed is not None else self.item
-
+        self.item = int(self_itemseed) if self_itemseed is not None else self.item
         npriev = self.startcolumn
         if npriev is None:
             print("**WARNING: The Y-axis that was selected after file selection"
@@ -674,31 +664,25 @@ class nmrAnalyser():
                 "(Potential (V) if .ta1; Z_re if .s1p)")
             npriev = "Potential (V)" if self.vnavme.upper() == "VME" else "Z_re"
 
+        timedeltas = []
+        todo = len(filelist)
+
         for file in filelist:
+            t1 = time.time()
             # update attribute
             self.rawsigpath = file
             # Run method to update other attributes
-            self.update_te()
-            # Redo binning if necessary?
-            self.binning = int(self.binningvalue.get())
-            # Update critical attributes used to fit the function
-            # (starting/ending indexes)
-            self.update_indicies()
-            # Fetch the fresh dataframe
-            self.df = v.gui_file_fetcher(
-                                    file, self.blpath, self.vnavme, impression=False,
-                                    blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
-                                    binning=self.binning
-                                 )
-            # Trim down the dataframe
-            self.trim_data()
-            # Update critical attributes used to fit the function
-            # (starting/ending indexes)
-            self.updateIndicies()
+            self.rawsigSkipLinesGetter()
+            
+            # Update the dataframe.
+            self.updateDataFrame()
+
+            # Update the indecies
+            self.updateIndecies()
+
             # If the user fit more than one function to the dataframe
             # this is how it works
             if not failed:
-                a = time.time()
                 for index, tupp in enumerate(self.automatefits):
                     """
                     if index == 0, npriev is predefined to be the default y-axis to try and fit with gff
@@ -715,11 +699,12 @@ class nmrAnalyser():
                                 # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
                     n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
                                 # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
-                    self.df, fig, chsq, rawsigfit = v.gff(
-                                        self.df, self.start_index, self.end_index, fit_sans_signal=True,
-                                        function=[f], fitname=n,
-                                        binning=self.binning, gui=True, redsig=True, x=self.xname.get(),
-                                        y=npriev, plottitle=originalplottitle+" S"+str(self.item)
+
+                    self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
+                                    self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                                    function=[f], fitname=n, x=self.xname,
+                                    binning=self.binning, gui=True, redsig=True, 
+                                    y=npriev, plottitle=self.plottitle
                                     )
 
                     # Save this, because if we loop again, we're gonna need to fit subtract fit-subtracted data,
@@ -755,7 +740,7 @@ class nmrAnalyser():
                     self.B = round(self.I/9.7332, 4)
                     self.tevalue = v.tpol(self.B, self.T)
                 except TypeError:
-                    print("WARNING: TE value Failed, indicating that B, or T was not of proper type.")
+                    print(id_num,"WARNING: TE value Failed, indicating that B, or T was not of proper type.")
                     self.B = self.I
                     self.tevalue = 0
 
@@ -790,6 +775,11 @@ class nmrAnalyser():
                 #self.canvas.destroy()
                 gc.collect()
 
+                t2 = time.time()
+                timedeltas.append(t2-t1)
+                print('ID:', id_num, self.item, "of", todo, '['+str(round(self.item*100/todo,4))+'%]', "ETA: ", round((todo-self.item)*numpy.mean(timedeltas),1), 's')
+
+
 
     def __forkitindexer__(self, filelist):
         """
@@ -800,7 +790,7 @@ class nmrAnalyser():
         lenset = len(filelist)
         modulus = int(lenset%p)
         floordiv = int(lenset/p)
-        slicer = [[floordiv[i], floordiv[i+1]-1] for i in range(p-1)]
+        slicer = [[floordiv*i, floordiv*(i+1)-1] for i in range(p-1)]
         slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
         return slicer
 
