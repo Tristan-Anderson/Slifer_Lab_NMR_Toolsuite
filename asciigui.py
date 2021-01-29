@@ -8,7 +8,7 @@ Proceed Formally.
 
 # This is an attempt at an ascii gui.
 
-
+import multiprocessing
 import variablenames
 import gc, time # garbage
 import NMR_Analyzer as v
@@ -214,12 +214,17 @@ class nmrAnalyser():
     def __init__(self, hardinit=False):
         self.rootdir = os.getcwd()
         self.delimeter = '\t'
+        self.hardinit = hardinit
+        self.processes = 1
         if hardinit:
-           self.getBaseline()
-           them = '/'.join(self.baselinepath.split('/')[:-1])
-           os.chdir(them)
-           os.chdir('..')
-           self.getRawsig()
+            self.getBaseline()
+            them = '/'.join(self.baselinepath.split('/')[:-1])
+            os.chdir(them)
+            os.chdir('..')
+            self.getRawsig()
+            self.processes = int(8*multiprocessing.cpu_count()/10)
+            print(self.processes, "Processing threads available")
+        
 
     def getBaseline(self):
         self.baselinepath = selectit()
@@ -342,21 +347,21 @@ class nmrAnalyser():
             temuval = up if self.mutouse == "proton" else ud
             #print(self.mutouse)
             quirky = v.ggf(
-                                self.df, self.start_index, self.end_index, gui=True,
-                                plttitle=plot_title, x=self.xname, y=self.yname,
-                                xlabel=self.xaxlabel, ylabel=self.yaxlabel,
-                                redsig=True if [self.start_index, self.end_index] != [0, len(self.df)]\
+                            self.df, self.start_index, self.end_index, gui=True,
+                            plttitle=plot_title, x=self.xname, y=self.yname,
+                            xlabel=self.xaxlabel, ylabel=self.yaxlabel,
+                            redsig=True if [self.start_index, self.end_index] != [0, len(self.df)]\
+                            else False,
+                            binning=int(self.binning),
+                            integrate=self.integrate,
+                            fitlorentzian=fltest, fitlorentziancenter_bounds=[fls,fle],
+                            b=b, T=T,   # Its okay if type isnt right, because below line ensures type
+                            thermal_equalibrium_value=True if type(b) == float and type (T) == float\
                                 else False,
-                                binning=int(self.binning),
-                                integrate=self.integrate,
-                                fitlorentzian=fltest, fitlorentziancenter_bounds=[fls,fle],
-                                b=b, T=T,   # Its okay if type isnt right, because below line ensures type
-                                thermal_equalibrium_value=True if type(b) == float and type (T) == float\
-                                 else False,
-                                xmin=xmin if type(xmin) == float else None, xmax=xmax if type(xmax) ==\
-                                 float else None,filename=self.rawsigpath,
-                                clearfigs=True, automated=automated, temu=temuval
-                                )
+                            xmin=xmin if type(xmin) == float else None, xmax=xmax if type(xmax) ==\
+                                float else None,filename=self.rawsigpath,
+                            clearfigs=True, automated=automated, temu=temuval
+                            )
             self.tlorentzian_chisquared = quirky.pop('tristan lorentzian chisquared',None)
             self.klorentzian_chisquared = quirky.pop('karl chisquared', None)
             self.sigmaforchisquared = quirky.pop("karl sigma", None)
@@ -385,6 +390,7 @@ class nmrAnalyser():
             exit(True)
 
     def allchoices(self):
+        nameinstancemsg = "Label this current analysis cycle in the global analysis file."
         mumsg= 'Toggles between two available mu values for the TE equation'
         binningmsg = 'Bin width for the data'
         signalstartendmsg = 'Update start and end x-axis values to mark signal region'
@@ -400,7 +406,9 @@ class nmrAnalyser():
         savefigmsg = 'Save the current figure as is.'
         savedatamsg ='Save the current data as is'
         savefiganddatamsg ='Save the current figure and data as is'
-        choices = {"binning":[binningmsg, self.setBinning],
+        choices = {
+                "nameinstance":[nameinstancemsg, self.setInstanceName],
+                "binning":[binningmsg, self.setBinning],
                 'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
                 'fit subtraction':[fit_subtractionmsg, self.fitsubtract],
                 'toggleintegrate':[integratemsg, self.toggleIntegrate],
@@ -411,11 +419,15 @@ class nmrAnalyser():
                 'ylabel':[yaxlabelmsg, self.changeylabel],
                 'plottitle':[titlemsg, self.changetitle],
                 'togglemu':[mumsg, self.adjustmu],
-                'savefiganddata':[savefiganddatamsg,self.saveboth],
+                'savefiganddata':[savefiganddatamsg,self.saveBoth],
                 'automate':[automatemsg, self.automate]}
         key = dict_selector(choices)
         f = choices[key][1]
         f()
+
+    def setInstanceName(self):
+        print("Current instance name is:", self.instancename)
+
 
     def toggleLorentzian(self):
         self.fitlorentzian = not self.fitlorentzian
@@ -578,14 +590,223 @@ class nmrAnalyser():
         if not manual:
             print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
         self.fitsubtract()
+    
     def changetitle(self):
         c = input("Input new plot title: ")
         self.plottitle = c
         self.updateGraph()
-
+    def saveFig(self):
+        self.updateGraph(automated)
+        plt.savefig(self.title)
     def automate(self):
-        pass
-    def saveboth(self):
+        """
+            Replicated from the tkinter version of the gui
+        """
+        os.chdir(self.rootdir)
+        home = self.rootdir
+        os.chdir(home)
+        try:
+            os.chdir("graphs") 
+        except FileNotFoundError:
+            os.mkdir("graphs") 
+        os.chdir(home)
+        try:
+            os.chdir("graph_data") 
+        except FileNotFoundError:
+            os.mkdir("graph_data") 
+        os.chdir(home)
+        graphs = home+"/graphs/" 
+        graphdata = home+"/graph_data/" 
+
+        tedirectory = "/".join(self.rawsigpath.split('/')[:-1])
+        # Assuming linux directory deliniation '/', Just remove the 'file part' of the absolute
+        # path, leaving just the directory
+
+        # Create a list of TE/Polarization files to apply signal "filtering"
+        # "filtering" is the user's choices from the original file that they loaded into the program
+        # automation only becomes available on the last page.
+
+        tefiles = []
+        extension = ".ta1" if self.vnavme.upper() == "VME" else ".s1p"
+
+        # Create the TE/Enchanced files list
+        for file in os.listdir(tedirectory):
+            if file.endswith(extension):
+                tefiles.append(tedirectory+'/'+file)
+        #exit()
+        oh_indexes = self.__forkitindexer__(tefiles)
+
+        # To be implemented later
+        self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
+                          # if True: do not append to this list
+                          # else: append filename to this bad larry
+                          # rewrite the loop, and cycle back through
+                          # this list. It will involve proper invoking of fetch_kwargs()
+                          # Which will be difficult to resolve logistically with self.item adding "S %ITEM"
+                          # to the names of things.
+        # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
+        self.item = 0
+        originalentryname = self.pentry.get()
+        # Do the same thing to the plot title
+        originalplottitle = self.plottitle.get()
+        todo = len(tefiles)
+        timedeltas = []
+        for file in tefiles:
+            try:
+                t1 = time.time()
+                self.automator(file, originalplottitle, originalentryname, extension, tedirectory, graphs, graphdata, home)
+                t2 = time.time()
+                timedeltas.append(t2-t1)
+                print(self.item, "of", todo, '['+str(round(self.item*100/todo,4))+'%]', "ETA: ", round((todo-self.item)*numpy.mean(timedeltas),1), 's')
+            except KeyError:
+                print("Key error detected. breaking with loop, and will cycle back later. Most likely a fitting error. Check warnings & Errors.")
+                #self.failedfiles.append([file, self.item])
+                break 
+
+    def repeatAdNauseum(self, filelist, originalplottitle, originalentryname, extension, tedirectory, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None):
+        # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
+        self.item = self_itemseed if self_itemseed is not None else self.item
+
+        npriev = self.startcolumn
+        if npriev is None:
+            print("**WARNING: The Y-axis that was selected after file selection"
+                " no longer exists, or is invalid. Defaulting to file-type default "
+                "(Potential (V) if .ta1; Z_re if .s1p)")
+            npriev = "Potential (V)" if self.vnavme.upper() == "VME" else "Z_re"
+
+        for file in filelist:
+            # update attribute
+            self.rawsigpath = file
+            # Run method to update other attributes
+            self.update_te()
+            # Redo binning if necessary?
+            self.binning = int(self.binningvalue.get())
+            # Update critical attributes used to fit the function
+            # (starting/ending indexes)
+            self.update_indicies()
+            # Fetch the fresh dataframe
+            self.df = v.gui_file_fetcher(
+                                    file, self.blpath, self.vnavme, impression=False,
+                                    blskiplines=self.blskiplines, rawsigskiplines=self.rawsigskiplines,
+                                    binning=self.binning
+                                 )
+            # Trim down the dataframe
+            self.trim_data()
+            # Update critical attributes used to fit the function
+            # (starting/ending indexes)
+            self.updateIndicies()
+            # If the user fit more than one function to the dataframe
+            # this is how it works
+            if not failed:
+                a = time.time()
+                for index, tupp in enumerate(self.automatefits):
+                    """
+                    if index == 0, npriev is predefined to be the default y-axis to try and fit with gff
+                    (aka General Fitting Function)
+
+                    The dataframe is then updated by gff
+
+                    The previous function name (defined in self.automatefites which saves the user's fit 
+                        name and function each time they fit a column in the df)
+                        will then become the second, third .... nth column of data to refit, then subtract.
+
+                    """
+                    f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
+                                # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
+                    n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
+                                # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
+                    self.df, fig, chsq, rawsigfit = v.gff(
+                                        self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                                        function=[f], fitname=n,
+                                        binning=self.binning, gui=True, redsig=True, x=self.xname.get(),
+                                        y=npriev, plottitle=originalplottitle+" S"+str(self.item)
+                                    )
+
+                    # Save this, because if we loop again, we're gonna need to fit subtract fit-subtracted data,
+                    #   assuming thats what the user did; I made it so; actually otherwise the user overwrites
+                    #   their last fit.
+                    npriev = tupp[1]
+                # Save the figure
+                os.chdir(graphs)
+
+                self.saveFig(automated=True, p_title=originalplottitle+" S"+str(self.item)) # UNCOMMENT TO SAVE EVERYTHING.
+
+                """#######################################
+                # A section dedicated to second-time-arrounders.
+                if type(self.tlorentzian_chisquared) == float:
+                    if self.tlorentzian_chisquared > 1.5:
+                        self.failedfiles.append([file, self.item])
+                        print("Poor chisquared fit while fitting: ", file)
+                        #self.savefig(automated=True, p_title=originalplottitle+" S"+str(self.item))
+                        self.item+=1
+                        return False
+                    elif self.tlorentzian_chisquared <= 1.5:
+                        self.savefig(automated=True, p_title=originalplottitle+" S"+str(self.item))
+                else:
+                    self.failedfiles.append([file, self.item])
+                    self.item+=1
+                    return False
+                #######################################"""
+
+
+                os.chdir(home)
+                # This is here so that i can recreate this order within the loop
+                try:
+                    self.B = round(self.I/9.7332, 4)
+                    self.tevalue = v.tpol(self.B, self.T)
+                except TypeError:
+                    print("WARNING: TE value Failed, indicating that B, or T was not of proper type.")
+                    self.B = self.I
+                    self.tevalue = 0
+
+                headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+                       "xmax", "sigstart", "sigfinish", "blskiplines",
+                       'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name,
+                        variablenames.gui_secondary_thermistor_name,
+                       "TEvalue", "data_area", "ltzian_area",
+                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0',
+                       "lorentzian chisquared", "σ (Noise)","σ (Error Bar)",
+                       "lorentzian relative-chisquared (error)", "Sweep Centroid",
+                       "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
+                # Write to the global_analysis file
+                c = [originalplottitle + " S"+str(self.item),  self.material_type.get(),
+                 self.rawsigtime, self.vnavme, self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
+                 self.signalstart.get(),self.signalend.get(), self.blskiplines,
+                 self.rawsigskiplines, str(self.B),
+                 str(self.T), self.primary_thermistor, self.secondary_thermistor, self.tevalue,
+                 self.dataarea, self.ltzian_integration, self.data_cal_constant,
+                 self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
+                 self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared,
+                 self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
+                os.chdir(graphdata)
+                #print("Made it to line 1254")
+                self.addEntry(k=c, h =headers)
+                # Say that we've done a thing
+                os.chdir(home)
+                self.item+=1
+                # Free your mind (memory)
+                self.figure.clf()
+                plt.close(self.figure)
+                #self.canvas.destroy()
+                gc.collect()
+
+
+    def __forkitindexer__(self, filelist):
+        """
+            Return a list of tuples of indecies that divide the passed
+            list into almost equal slices
+        """
+        p = self.processes
+        lenset = len(filelist)
+        modulus = int(lenset%p)
+        floordiv = int(lenset/p)
+        slicer = [[floordiv[i], floordiv[i+1]-1] for i in range(p-1)]
+        slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
+        return slicer
+
+
+
+    def saveBoth(self):
         pass
 
 def DAQExtractor():
