@@ -7,7 +7,6 @@ Proceed Formally.
 """
 
 # This is an attempt at an ascii gui.
-
 import multiprocessing
 import variablenames
 import gc, time # garbage
@@ -255,6 +254,7 @@ class nmrAnalyser():
         self.impression= kwargs.pop('impression',variablenames.agui_impression)
         self.xmin= kwargs.pop('xmin', '')
         self.xmax= kwargs.pop('xmax', '')
+        self.startcolumn = kwargs.pop('startcolumn',[])
         self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
         self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
         if not self.hardinit:
@@ -505,12 +505,15 @@ class nmrAnalyser():
     def fitsubtract(self,automated=False):
         keys = ['Sin', 'Third order Polynomial', 'Fourth order Polynomial',
                 'Fifth Order Polynomial', 'Sixth Order Polynomial', 
-                'True Lorentzian',"Lorentzian (absorbtion/dispersion)"]
+                'True Lorentzian',"Lorentzian (absorbtion/dispersion)", "Cancel Fit"]
         values = ['sin', 'third_order', 'fourth_order', 'fifth_order',
-                'sixth_order','lorentzian_ellie','absorbtion_dispersion_ellie']
+                'sixth_order','lorentzian_ellie','absorbtion_dispersion_ellie', "Cancel Fit"]
         choices = dict(zip(keys,values))
         reverse = dict(zip(values,keys))
         self.fitname = dict_selector(choices)
+        if self.fitname == False:
+            print("Fit subtraction cancelled")
+            return True
         self.type_of_fit = choices[self.fitname]
         print("Fit name",self.fitname, "Function Name", self.type_of_fit)
 
@@ -523,10 +526,14 @@ class nmrAnalyser():
                 print("\nWARNING: Previous fit named:", self.automatefits[test][1],
                         "was overridden.\nChange fit name if you are doing multiple subtraction\n")
                 self.automatefits[test] = [self.type_of_fit, self.fitname]
+                self.startcolumn[test] = self.yname
             else:
                 self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
+                self.startcolumn.append(self.yname)
         else:
             self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
+            self.startcolumn.append(self.yname)
+
         self.updateIndecies()
         try:
             p0 = [float(self.lorentzian_x0), float(self.lorentzian_w),
@@ -592,6 +599,10 @@ class nmrAnalyser():
         if not manual:
             print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
         self.fitsubtract()
+
+    def cancelFit(self):
+        return False
+        
     
     def changetitle(self):
         c = input("Input new plot title: ")
@@ -657,7 +668,8 @@ class nmrAnalyser():
     def repeatAdNauseum(self, filelist, tedirectory, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
         self.item = int(self_itemseed) if self_itemseed is not None else self.item
-        npriev = self.startcolumn
+        npriev = self.startcolumn[0]
+        
         if npriev is None:
             print("**WARNING: The Y-axis that was selected after file selection"
                 " no longer exists, or is invalid. Defaulting to file-type default "
