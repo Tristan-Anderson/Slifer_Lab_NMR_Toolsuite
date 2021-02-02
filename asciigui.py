@@ -6,16 +6,15 @@ tja1015@wildats.unh.edu
 Proceed Formally.
 """
 import NMR_Analyzer as v
-from tkinter import filedialog
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
+import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
 
 """
 # TODO: Tighten-up input acceptance and rejection on human IO = type forcing & exception catching.
 # TODO: Add tolerance options in human IO = give user option to change more settings in the mainloop, this includes baseline & rawsig files, and if the user goes too far foward in the mainloop, execute prerequisite methods.
 # TODO: Mute the dang warning "Covariance of the parameters could not be estimated," OR just be a better programmer
+# TODO: Make sure you dont overwrite the global analysis file if it's there.
 # TODO: Add material entry into mainloop
 # TODO: Add overview of current settings on each mainloop in table format.
 # TODO: Add suggested material mu?
@@ -105,13 +104,13 @@ def getdir(cwd):
     bbreak = False
     for index, value in enumerate(fixedfiles):
         print(str("{0:^1}{3:^8}{0:^1}{1:^"+str(filewidth)+"}{0:^1}{2:^"+str(dwidth)+"}{0:^1}").format('#', value, fixeddirs[index], index))
-        if index > 99:
+        if index > 25:
             bbreak = True
             break
     print('#'*crossbar_width)
     if bbreak:
         print("Printing exceeded 100 lines.")
-    return fixeddirs, fixedfiles
+    return fixeddirs, fixedfiles, cleanfiles, dirs
 
 def dict_selector(dic):
     """
@@ -174,53 +173,59 @@ def selectit():
     cwd = os.getcwd()
     status = True
     while status:
-        fixeddirs, fixedfiles = getdir(cwd)
+        fixeddirs, fixedfiles, cleanfiles, dirs = getdir(cwd)
         print("Enter choice in the format of: \'LineNum(f/d)\n ex: 1f")
-        status, path = choice(fixeddirs, fixedfiles)
-        announcement(cwd)
+        status, path = choice(fixeddirs, fixedfiles, cleanfiles, dirs)
+        print("Current working Directory:", cwd)
         cwd = path
     return path
 
-def choice(fixeddirs, fixedfiles):
-    
+
+def choice(fixeddirs, fixedfiles, cleanfiles, dirs):
     c = input("Enter Choice: ")
     if 'd' in c.lower():
-        newpath = fixeddirs[int(c.split('d')[0])]
-        os.chdir(newpath)
-        return True, os.getcwd()
+        item = int(c.split('d')[0])
+        if item in range(len(dirs)):
+            newpath = fixeddirs[item]
+            os.chdir(newpath)
+            return True, os.getcwd()
     elif 'f' in c.lower():
-        newpath = fixedfiles[int(c.split('f')[0])]
-        return False, os.getcwd()+'/'+newpath
+        item = int(c.split('f')[0])
+        if item in range(len(cleanfiles)):
+            newpath = fixedfiles[int(c.split('f')[0])]
+            return False, os.getcwd()+'/'+newpath
     elif '..' == c:
         os.chdir(c)
         return True, os.getcwd()
     elif 'ok' in c:
         print('okay. Saving current directory choice.')
         return False, os.getcwd()
-    else:
-        print("You selected", c, 'which is not a valid option.')
-        return True, os.getcwd()
+    
+    announcement("You selected " +c+ ' which is not a valid option.')
+    return True, os.getcwd()
 
-def NMRAnalyzer():
+def NMRAnalyzer(args):
     """
     Get the baseline and rawsignal from the user.
     """
     header("NMR Analyser")
     print('\n'*3,'Please select baseline file')
     print("#"*30)
-    instance = nmrAnalyser(hardinit=True)
+    instance = nmrAnalyser(args, hardinit=True)
     instance.fetchArgs()
     #instance.showgraph()
     instance.mainloop()
 
 
 class nmrAnalyser():
-    def __init__(self, hardinit=False):
+    def __init__(self,args=None, hardinit=False):
         self.rootdir = os.getcwd()
         self.delimeter = '\t'
         self.hardinit = hardinit
         self.processes = 1
+        self.servermode = False
         if hardinit:
+            self.servermode = args.servermode
             self.getBaseline()
             them = '/'.join(self.baselinepath.split('/')[:-1])
             os.chdir(them)
@@ -241,14 +246,18 @@ class nmrAnalyser():
         pass
 
     def getBaseline(self):
+        announcement("Update Baseline")
+        print("Current working directory:",os.getcwd())
         self.baselinepath = selectit()
         os.chdir(self.rootdir)
-        announcement("Baseline path achieved")
+        announcement("Baseline path updated")
 
     def getRawsig(self):
+        announcement("Update Raw Signal")
         print("Current working directory:",os.getcwd())
         self.rawsigpath = selectit()
         os.chdir(self.rootdir)
+        announcement("Raw Signal path updated")
 
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
@@ -300,10 +309,11 @@ class nmrAnalyser():
         self.secondary_thermistor, self.rawsigskiplines, self.centroid,\
         self.spread = v.gui_rawsig_file_preview(self.rawsigpath,self.delimeter,self.vnavme)
         try:
-            self.B = round(self.I/9.7332,4)
-        except ValueError:
+            self.B = round(int(self.I)/9.7332,4)
+        except (ValueError,TypeError):
             print("WARNING: No Magnet current exists in", self.rawsigpath.split('/')[-1],
                 "TE-Value will NOT be calculated")
+            self.B = self.I
 
     def updateDataFrame(self):
         self.df = v.gui_file_fetcher(
@@ -415,7 +425,13 @@ class nmrAnalyser():
     def mainloop(self):
         try:
             while True:
-                self.figure.show()
+                if not self.servermode:
+                    self.figure.show()
+                print("#"*70)
+                announcement("Current Settings")
+                print("#"*70)
+
+                print("#"*70)
                 print(self.df.head(3))
                 self.allchoices()
         except KeyboardInterrupt:
@@ -634,7 +650,8 @@ class nmrAnalyser():
         #                   User approve/deny                                      #
 
         if not automated:
-            self.figure.show()
+            if not self.servermode:
+                self.figure.show()
             cancelmsg = 'Cancel the fit subtraction, and do not change the graph.'
             approvemsg = 'The fit looks good, let me see the fit subtraction'
             disapprovemsg = 'The fit looks bad, let me redo it.'
@@ -936,7 +953,7 @@ def DAQExtractor():
     pass
 
 class daqExtractor():
-    def __init__(self):
+    def __init__(self, args):
         pass
 
     def __getPath__(self):
@@ -964,7 +981,7 @@ def GlobalInterpreter():
     pass
 
 
-def main():
+def main(args):
     def options():
         print('\n'*3)
         header("OPTIONS")
@@ -982,7 +999,7 @@ def main():
         c = input("Enter number in table above: ")
         try:
             return int(c)
-        except TypeError:
+        except ValueError:
             print("Invalid Input")
             return options()
 
@@ -991,7 +1008,7 @@ def main():
     while True:
         c= options()
         f = optdict[c]
-        f()
+        f(args)
         
 
     #while True:
@@ -1011,5 +1028,10 @@ def main():
     #cwd=rootdir
 
     #fixeddirs, fixedfiles = lsdir(cwd)
+parser = argparse.ArgumentParser(description='Start the toolsuite')
+parser.add_argument('--server-mode', dest='servermode', action='store_true', default=False,
+                    help='Disable the .show methods on figures, useful for remote execution')
 
-main()
+args = parser.parse_args()
+
+main(args)
