@@ -12,6 +12,7 @@ formally for this toolsuite has not been optimized.
 
 If future maintenance is needed, see documentation in UNH-NPG>lab_work>students_ugrad>Tristan Anderson>TE Extraction
 """
+import variablenames
 import pandas, numpy, datetime, matplotlib, math, traceback
 from scipy.optimize import curve_fit as fit
 from matplotlib import pyplot as plt
@@ -33,7 +34,7 @@ def nearest(test_val, iterable):
     return min(iterable, key=lambda x: abs(x - test_val))
 
 
-def add_entry(*rowvals, getdf=False):
+def add_entry(*rowvals,**kwargs):
     ##################    What it does     ####################
     # Adds a line to the persistence csv *if* it exists       #
     # If the csv does not exist, an empty one will be created #
@@ -55,14 +56,14 @@ def add_entry(*rowvals, getdf=False):
                 else:
                     f.write('\n')
 
-    def get_persistence(headers, fname):
+    def get_persistence(headers, fname, addition=''):
         # Read the DF, if it doesn't exist: then makes one
         # THIS FUNCTION RETURNS A pandas.DataFrame() type.
         try:
             with open(fname, 'r') as f: # Read the df
                 return pandas.read_csv(f)
-        except FileNotFoundError:   # if it doesnt exists
-            gen_persistence('global_analysis', headers) # make it
+        except (FileNotFoundError, pandas.errors.EmptyDataError):   # if it doesnt exists
+            gen_persistence('global_analysis'+addition, headers) # make it
         finally:
             try:
                 with open(fname, 'r') as f: # Read the df.
@@ -70,19 +71,26 @@ def add_entry(*rowvals, getdf=False):
             except FileNotFoundError:   # If even THAT (^) fails,
                 print("Something went wrong in the add_entry function")
                 exit()  # Give up.
+    h_orig = variables.na_global_analysis_headers
+    headers=kwargs.pop("headers",h_orig)
+    getdf=kwargs.pop('getdf', False)
+    addition = kwargs.pop('addition', '')
+    dontwrite = kwargs.pop('dontwrite', False)
+
+    fname = "global_analysis"+addition+".csv"
 
 
-    fname = "global_analysis.csv"
-    headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
-                       "xmax", "sigstart", "sigfinish", "blskiplines",
-                       'rawsigskiplines', "B", "T", "CCCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue", "data_area", "ltzian_area",
-                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", "σ (Noise)", 
-                       "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
-
+    if len(headers) != len(rowvals):
+        if len(headers) > len(rowvals):
+            print("*Advisory: More headers than rowvalues in add_entry.")
+            print("             are you passing every header that you need?")
+        else:
+            print("***ERROR: More rowvals than headers in add_entry.")
+            print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
+            print("          RECHECK headers and rowvalues.")
     # Get the persistence df. Then add an entry to it passed to the function in *rowvals
-    df = get_persistence(headers, fname).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
+    df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
                                                 ignore_index=True)
-
     with open(fname, 'w') as f:
         df.to_csv(f, index=False)
 
@@ -110,14 +118,13 @@ def gui_bl_file_preview(filename, delimeter):
             lines_to_skip = 0
             while any(tf_file[lines_to_skip:]):  # While any values are true, iterate through it, deleting the first occurance
                 lines_to_skip += 1
-            #lines_to_skip -= 1 # Python indexing; will grab the last line in the header if you do this. Which probably not be properly formtted...
             h2 = h2[:lines_to_skip+200] 
     return h2, header, tf_file, lines_to_skip
 
 
-def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
+def gui_rawsig_file_preview(rawsigfilename, delimeter, vnaVmeType):
     h2, header, tf_file = [], [], []
-    with open(tefilename, 'r') as f:
+    with open(rawsigfilename, 'r') as f:
         for index, line in enumerate(f):
             ##########################################
             """
@@ -128,13 +135,11 @@ def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
                 the data for later on.
             """
             l = line.split(delimeter)
-            if vnaVmeType == "VNA":
+            if vnaVmeType.upper() == "VNA":
                 if index == 1: # dateline for vna
                     dateline = list(line)
                     #! Date: 12/17/2019 11:17:25 AM
                     #&&&&&&& mm/dd/YYYY II:MM:SS %p"
-                    #print("".join(dateline[7:]))
-                    #print("".join(dateline[8:]))
                     TE_DATE = datetime.datetime.strptime("".join(dateline[8:]),"%m/%d/%Y %I:%M:%S %p\n")
                     I = None
                     T = None
@@ -142,7 +147,7 @@ def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
                     vapor_pressure_t = None
                     centroid = None
                     spread = None
-            elif vnaVmeType == "VME":
+            elif vnaVmeType.upper() == "VME":
                 if index == 0:
                     dateish = l[1]
                     #2019-12-19 23:59:47
@@ -203,11 +208,10 @@ def gui_te_file_preview(tefilename, delimeter, vnaVmeType):
         lines_to_skip += 1
     #lines_to_skip -= 1 # Python indexing; will grab the last line in the header if you do this. Which probably not be properly formtted...
     h2 = h2[:lines_to_skip+200]
-
     return header, h2, TE_DATE, I, T, cccst3_t, vapor_pressure_t, lines_to_skip, centroid, spread
 
 
-def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, blskiplines=4, datatype="", binning=1, rawsigskiplines=4):
+def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, blskiplines=4, binning=1, rawsigskiplines=4):
     # this provides a wrapper for the api you've
     #   developed here
     """
@@ -220,20 +224,19 @@ def gui_file_fetcher(RAWSIG_Path, Baseline_Path, vnavmetype, impression=False, b
             - Changes S11 parameter basis to Re(Z)
         - Returns Data
     """
-    #print(len(impression))
-    if datatype == "VNA":
+    if vnavmetype == "VNA":
         return vna_frames(
-            RAWSIG_Path, Baseline_Path, impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
+            RAWSIG_Path, Baseline_Path,  impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
             binning=binning, rawsigskiplines=rawsigskiplines, blskiplines=blskiplines
         )
     else:
         return vme_frames(
-            RAWSIG_Path, Baseline_Path, impression=impression, title=RAWSIG_Path.split('/')[-1].split('.')[0],
+            RAWSIG_Path, Baseline_Path,
             binning=binning, rawsigskiplines=rawsigskiplines, blskiplines=blskiplines
         )
 
 
-def vme_frames(RAWSIG_Path, Baseline_Path, impression=False, title="", binning=1, blskiplines=4, rawsigskiplines=4):
+def vme_frames(RAWSIG_Path, Baseline_Path, binning=1, blskiplines=4, rawsigskiplines=4):
     te_df = vme_file_parser(RAWSIG_Path, rawsigskiplines)
     # Fetch TE-Data
     copy_tedf = te_df
@@ -272,51 +275,18 @@ def vme_frames(RAWSIG_Path, Baseline_Path, impression=False, title="", binning=1
         baseline_df = baseline_df_binned
 
     
-    y = "Potential (V)"
-    x = "MHz"
+    y = variablenames.na_vme_yaxis_default
+    x = variablenames.na_vme_xaxis_default
     
 
     master2 = te_df.subtract(baseline_df, axis='index')
     # SUBTRACT AFTER CONVERSION
-    master2["MHz"] = te_df[x]
+    master2[x] = te_df[x]
     # Correct the X-Axis
     master2["Raw "+y] = te_df[y]
     master2["BL "+y] = baseline_df[y]
 
-    """import traceback
-                with open('a.txt', 'a') as f:
-                    traceback.print_stack(file=f)
-                    f.write("\n")"""
-    #print("Tristan must write an impression grapher for VME data.")
-    if False:
-        # Delivers impression of the data if the data is not
-        from matplotlib.gridspec import GridSpec
-
-        def vna_format_axes(fig, x):
-            for i, ax in enumerate(fig.axes):
-                ax.set_xlabel(x)
-                if i == 0:
-                    ax.set_ylabel("Re(S11)")
-                elif i == 1:
-                    ax.set_ylabel("Im(S11)")
-                elif i > 1:
-                    ax.set_ylabel("Re(Z): Impedence [Ω]")
-
-                ax.legend(loc='best')
-
-        #fig = plt.figure(constrained_layout=True, figsize=(32, 18))
-
-        #gs = GridSpec(3, 2, figure=fig)
-        #ax1 = fig.add_subplot(gs[0, 0])  # R s11
-        #ax2 = fig.add_subplot(gs[0, 1])  # I s11
-        
-        
-        
-        #now = datetime.now()
-        #date_time = now.strftime("%m_%d_%Y %H%M%S")
-        #plt.savefig(title + "_Impression_" + date_time, dpi=200)
-        #print(title + "_Impression_" + date_time + ".png", "Saved to current working\
-        #directory.")
+    
 
     return master2
 
@@ -507,12 +477,7 @@ def vna_file_parser(filename, skiplines=4):
             cd ".."
         done
         #################################################################
-        EVERYONE, please use  EXTREME caution here. I would be happy to provide you with
-        the converted csvs. MAKE SURE you execute this in its own child
-        directory that contains ZERO symlinks, otherwise It will convert all occurrences of two spaces into a tab
-        EVERYWHERE.
     """
-
     # EXAMPLE FILE HEADER
     """
     ! COPPER MOUNTAIN TECHNOLOGIES, R60, 00111218, 19.1.1/3.0
@@ -582,9 +547,7 @@ def get_z(df):
     packed = pandas.DataFrame(
         zip(df["MHz"].values, z_re, z_im),
         columns=["MHz", "Z_re", "Z_im"], dtype=float
-
     )
-
     return packed
 
 
@@ -804,14 +767,14 @@ def gff(df, start, finish, fitname, **kwargs):
     # If fiting without the signal, this is used to narrow the fit region
     # to the left of the peak.
     #
-    #            HERE
-    # is what sf  |   is defined by,
-    # where that  | not-fitting region is
-    # to the left | of the peak.
-    #             |                 --
-    #  not Fitting|  fitting   |  ------
-    #  (sf region)V             --    ---       fitting   not fitting
+    #     (sf index)  (start index)    (finish index)  (ff index)
+    #             |            |    --     |            |
+    #             |            |    --     |            |
+    #  not fitting|  fitting   |  ------   |  fitting   | not fitting
+    #             V            V --    --- V            V 
     # ------------|++++++++++++|-       ---|++++++++++++|-------------
+    #  sf region  |            |   SIGNAL  |            |  ff region   
+    
     sf = kwargs.pop('sf', None)  # (ff region)
 
     # If fiting without the signal, ff is used to narrow the fit region
@@ -929,7 +892,7 @@ def gff(df, start, finish, fitname, **kwargs):
             fig.suptitle(plttitle)
             if gui:
                 print("***ERROR: Main fit subtraction failed for", f_name, '\n')
-                return df, fig, chsq, rawsigfit
+                return df, fig, chsq, rawsigfit, True
 
             plt.show()
             print("ERROR: Fitting failed on function: " + str(function[0]))
@@ -1134,7 +1097,7 @@ def gff(df, start, finish, fitname, **kwargs):
         ax.set_xlabel(x)
         ax.legend(loc='best')
         #print("Made it here")
-        return df, fig, chsq, rawsigfit
+        return df, fig, chsq, rawsigfit, False
 
     else:
         print("Fitting data needs to be reshaped.")
@@ -1171,8 +1134,6 @@ def ggf(master, s, f, **kwargs):
     # Used in tandem with the above line to highlight green datapoints.
     fit_bounds = kwargs.pop('fit_bounds', [])
 
-    sf = kwargs.pop('sf', None)
-    ff = kwargs.pop('ff', None)
 
     # Do not show the graph before it is saved.
     noshow = kwargs.pop('noshow', True)
@@ -1422,7 +1383,7 @@ def ggf(master, s, f, **kwargs):
             xy=(xtxt, ypp - ys), xycoords='figure pixels'
         )
         
-        verts = [*zip(ix, iy)]
+        verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
         try:
             poly = Polygon(verts, facecolor='0.9', edgecolor='0.5')
             ax.add_patch(poly)
@@ -1433,6 +1394,7 @@ def ggf(master, s, f, **kwargs):
             #   It's drawing the polygon, but complaining that it can't
             #   draw the polygon... WAT?
             pass
+   
     try:
         if thermal_equalibrium_value:
             if b is not None and T is not None:
@@ -1490,4 +1452,3 @@ def ggf(master, s, f, **kwargs):
     plt.savefig(filename, dpi=dpi)
     if not noshow:
         plt.show()
-
