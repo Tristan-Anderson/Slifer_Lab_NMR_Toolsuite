@@ -224,6 +224,9 @@ class nmrAnalyser():
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
         
+    def overrideRootDir(self, override):
+        self.rootdir = override
+        pass
 
     def getBaseline(self):
         self.baselinepath = selectit()
@@ -236,6 +239,10 @@ class nmrAnalyser():
         os.chdir(self.rootdir)
 
     def fetchArgs(self, **kwargs):
+        self.isautomated = kwargs.pop('isautomated', False)
+        if self.isautomated:
+            self.baselinepath = kwargs.pop('baselinepath', '')
+            self.rawsigpath = kwargs.pop('rawsigpath', '')
         self.fitnumber = kwargs.pop('fitnumber',0)
         self.automatefits = kwargs.pop('automatefits',[])
         self.mutouse= kwargs.pop('mutouse','proton')
@@ -257,11 +264,16 @@ class nmrAnalyser():
         self.startcolumn = kwargs.pop('startcolumn',[])
         self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
         self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
+        
+        self.filelist = kwargs.pop('filelist', [])
+        
         if not self.hardinit:
             self.processes = kwargs.pop('processes',1)
         self.blSkipLinesGetter()
         self.rawsigSkipLinesGetter()
         self.updateDataFrame()
+        if self.isautomated:
+            return True
         self.updateGraph()
 
     def blSkipLinesGetter(self):
@@ -515,12 +527,16 @@ class nmrAnalyser():
             print("Fit subtraction cancelled")
             return True
         self.type_of_fit = choices[self.fitname]
+        self.fitname = self.fitname +str(' '+str(self.fitnumber))
         print("Fit name",self.fitname, "Function Name", self.type_of_fit)
 
         if not automated:
             plt.clf()
             plt.close('all')
         test = len(self.automatefits)-1
+
+        #                   don't duplicate fits
+        ############################################################################
         if test >= 0:
             if self.automatefits[test][1] == self.fitname:
                 print("\nWARNING: Previous fit named:", self.automatefits[test][1],
@@ -528,11 +544,12 @@ class nmrAnalyser():
                 self.automatefits[test] = [self.type_of_fit, self.fitname]
                 self.startcolumn[test] = self.yname
             else:
-                self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
+                self.automatefits.append([self.type_of_fit, self.fitname])
                 self.startcolumn.append(self.yname)
         else:
-            self.automatefits.append([self.type_of_fit+str(' '+str(self.fitnumber)), self.fitname])
+            self.automatefits.append([self.type_of_fit, self.fitname])
             self.startcolumn.append(self.yname)
+        ############################################################################
 
         self.updateIndecies()
         try:
@@ -578,10 +595,12 @@ class nmrAnalyser():
         self.updateGraph(graph=fig)
         if not automated:
             self.figure.show()
+            cancelmsg = 'Cancel the fit subtraction, and do not change the graph.'
             approvemsg = 'The fit looks good, let me see the fit subtraction'
             disapprovemsg = 'The fit looks bad, let me redo it.'
             choices = {'approve':[approvemsg, self.approvePlot],
-                    'disapprove':[disapprovemsg, self.disapprovePlot]}
+                    'disapprove':[disapprovemsg, self.disapprovePlot],
+                    'cancel':[cancelmsg,self.cancelFit]}
             key = dict_selector(choices)
             f = choices[key][1]
             f(manual=True)
@@ -600,19 +619,22 @@ class nmrAnalyser():
             print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
         self.fitsubtract()
 
-    def cancelFit(self):
+    def cancelFit(self, manual='False'):
+        self.updateGraph()
         return False
         
-    
     def changetitle(self):
         c = input("Input new plot title: ")
         self.plottitle = c
         self.updateGraph()
 
-    def saveFig(self):
-        self.updateGraph(automated)
-        plt.savefig(self.title)
+    def saveFig(self,filename=None):
+        filename = self.plottitle if filename is None else filename
+        self.updateGraph()
+        plt.savefig(filename)
 
+    def updateItemSeed(self, itemseed):
+        self.item=itemseed
     def automate(self):
         """
             Replicated from the tkinter version of the gui
@@ -650,6 +672,7 @@ class nmrAnalyser():
                 tefiles.append(tedirectory+'/'+file)
         #exit()
         oh_indexes = self.__forkitindexer__(tefiles)
+        print(oh_indexes)
 
         # To be implemented later
         self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
@@ -660,18 +683,72 @@ class nmrAnalyser():
                           # Which will be difficult to resolve logistically with self.item adding "S %ITEM"
                           # to the names of things.
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
-
+        """
+        with Pool(processes=self.processes) as pool:
+            result_objects = [pool.apply_async(self.range_election_metric, args=(column_name, rangeshift)) for column_name in self.df]
+            pool.close()
+            pool.join()
+        results = [r.get() for r in result_objects if r.get() != False]
+        """
+        self.workpool = {} 
         for index, value in enumerate(oh_indexes):
             (start, end) = value
-            self.repeatAdNauseum(tefiles[start:end], tedirectory, graphs, graphdata, home, self_itemseed=start,id_num=index) 
+            self.workpool[index] = nmrAnalyser()
+            self.workpool[index].overrideRootDir(self.rootdir)
+            self.workpool[index].fetchArgs(fitnumber='fitnumber',
+                automatefits= self.automatefits,
+                mutouse= self.mutouse,
+                binning= self.binning,
+                integrate= self.integrate,
+                vnavme= self.vnavme,
+                signalstart= self.signalstart,
+                signalend=self.signalend,
+                fitlorentzian= self.fitlorentzian,
+                xname= self.xname,
+                xaxlabel= self.xaxlabel,
+                yname= self.yname,
+                yaxlabel= self.yaxlabel,
+                xmin= self.xmin,
+                xmax= self.xmax,
+                startcolumn= self.startcolumn,
+                instancename= self.instancename,
+                plottitle= self.plottitle,
+                isautomated= True,
+                filelist = (tefiles[start] if start==end else tefiles[start:end]),
+                rawsigpath = self.rawsigpath,
+                baselinepath = self.baselinepath)
+            self.workpool[index].updateItemSeed(start)
+        for index in self.workpool:
+            self.workpool[index].automatedPKernel(graphs,graphdata,home,index)
+        print("Done")
+        exit()
 
-    def repeatAdNauseum(self, filelist, tedirectory, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
+            #self.workpool[index].multiPKernel(tefiles[start:end], graphs, graphdata, home,index,start,end)
+        with multiprocessing.Pool(processes=self.processes) as pool:
+            result_objects = [pool.apply_async(self.workpool[index].automatedPKernel, args =(graphs, graphdata, home, index)) for index,value in enumerate(oh_indexes)]
+            pool.close()
+            pool.join()
+        results = [r.get() for r in result_objects if r.get() != False]
+        """
+        for index, value in enumerate(oh_indexes):
+            (start, end) = value
+            self.multiPKernel(tefiles[start:end], graphs, graphdata, home,index,start,end) 
+        """
+
+    def multiPKernel(self, tefiles, graphs, graphdata, home, id_num,start,end):
+        self.repeatAdNauseum(tefiles, graphs, graphdata, home, self_itemseed=start,id_num=id_num)
+
+    def automatedPKernel(self, graphs, graphdata, home, id_num):
+        self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num)
+
+    def repeatAdNauseum(self, filelist, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
         self.item = int(self_itemseed) if self_itemseed is not None else self.item
+        originalplottitle = self.plottitle
         npriev = self.startcolumn[0]
         
         if npriev is None:
-            print("**WARNING: The Y-axis that was selected after file selection"
+            print("ID:",id_num,"**WARNING: The Y-axis that was selected after file selection"
                 " no longer exists, or is invalid. Defaulting to file-type default "
                 "(Potential (V) if .ta1; Z_re if .s1p)")
             npriev = "Potential (V)" if self.vnavme.upper() == "VME" else "Z_re"
@@ -679,7 +756,10 @@ class nmrAnalyser():
         timedeltas = []
         todo = len(filelist)
 
-        for file in filelist:
+        for i,file in enumerate(filelist):
+            # Set the y-axis to be the first column fit by the user eariler.
+            npriev = self.startcolumn[0]
+
             t1 = time.time()
             # update attribute
             self.rawsigpath = file
@@ -711,14 +791,12 @@ class nmrAnalyser():
                                 # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
                     n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
                                 # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
-
                     self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
                                     self.df, self.start_index, self.end_index, fit_sans_signal=True,
                                     function=[f], fitname=n, x=self.xname,
                                     binning=self.binning, gui=True, redsig=True, 
                                     y=npriev, plottitle=self.plottitle
                                     )
-
                     # Save this, because if we loop again, we're gonna need to fit subtract fit-subtracted data,
                     #   assuming thats what the user did; I made it so; actually otherwise the user overwrites
                     #   their last fit.
@@ -726,7 +804,7 @@ class nmrAnalyser():
                 # Save the figure
                 os.chdir(graphs)
 
-                self.saveFig(automated=True, p_title=originalplottitle+" S"+str(self.item)) # UNCOMMENT TO SAVE EVERYTHING.
+                self.saveFig(filename=originalplottitle+" S"+str(self.item)+'.png') # UNCOMMENT TO SAVE EVERYTHING.
 
                 """#######################################
                 # A section dedicated to second-time-arrounders.
@@ -748,7 +826,7 @@ class nmrAnalyser():
 
                 os.chdir(home)
                 # This is here so that i can recreate this order within the loop
-                try:
+                """try:
                     self.B = round(self.I/9.7332, 4)
                     self.tevalue = v.tpol(self.B, self.T)
                 except TypeError:
@@ -779,7 +857,7 @@ class nmrAnalyser():
                 #print("Made it to line 1254")
                 self.addEntry(k=c, h =headers)
                 # Say that we've done a thing
-                os.chdir(home)
+                os.chdir(home)"""
                 self.item+=1
                 # Free your mind (memory)
                 self.figure.clf()
@@ -789,9 +867,7 @@ class nmrAnalyser():
 
                 t2 = time.time()
                 timedeltas.append(t2-t1)
-                print('ID:', id_num, self.item, "of", todo, '['+str(round(self.item*100/todo,4))+'%]', "ETA: ", round((todo-self.item)*numpy.mean(timedeltas),1), 's')
-
-
+                print('ID:', id_num, ":", (i+1), "of", todo, '['+str(round((i+1)*100/todo,4))+'%]', "ETA: ", round((todo-(i+1))*numpy.mean(timedeltas),1), 's')
 
     def __forkitindexer__(self, filelist):
         """
