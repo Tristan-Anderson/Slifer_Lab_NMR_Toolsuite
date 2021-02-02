@@ -5,17 +5,14 @@ tja1015@wildats.unh.edu
 
 Proceed Formally.
 """
-
-# This is an attempt at an ascii gui.
-import multiprocessing
-import variablenames
-import gc, time # garbage
 import NMR_Analyzer as v
 from tkinter import filedialog
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import datetime, pandas, os, numpy
+import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
+
+
 def announcement(mystr):
     print('\n')
     print("#"*3, mystr, '#'*3)
@@ -174,7 +171,6 @@ def selectit():
         cwd = path
     return path
 
-
 def choice(fixeddirs, fixedfiles):
     
     c = input("Enter Choice: ")
@@ -194,7 +190,6 @@ def choice(fixeddirs, fixedfiles):
     else:
         print("You selected", c, 'which is not a valid option.')
         return True, os.getcwd()
-
 
 def NMRAnalyzer():
     """
@@ -243,6 +238,7 @@ class nmrAnalyser():
         if self.isautomated:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
+            self.material_type = kwargs.pop('material_type', '')
         self.fitnumber = kwargs.pop('fitnumber',0)
         self.automatefits = kwargs.pop('automatefits',[])
         self.mutouse= kwargs.pop('mutouse','proton')
@@ -264,6 +260,7 @@ class nmrAnalyser():
         self.startcolumn = kwargs.pop('startcolumn',[])
         self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
         self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
+
         
         self.filelist = kwargs.pop('filelist', [])
         
@@ -314,6 +311,10 @@ class nmrAnalyser():
         else:
             self.signalend = float(endsignal)
         self.updateGraph()
+
+    def updateMaterialType(self):
+        announcement("Current material type: "+self.material_type)
+        self.material_type = input("Input new material type: ")
 
     def updateIndecies(self):
         try:
@@ -425,7 +426,7 @@ class nmrAnalyser():
                 "nameinstance":[nameinstancemsg, self.setInstanceName],
                 "binning":[binningmsg, self.setBinning],
                 'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
-                'fit subtraction':[fit_subtractionmsg, self.fitsubtract],
+                'fit subtraction':[fit_subtractionmsg, self.fitSubtract],
                 'toggleintegrate':[integratemsg, self.toggleIntegrate],
                 'fitlorentziancurve':[lorentzian_rawfitmsg, self.toggleLorentzian],
                 'x-data':[xnamemsg, self.changexname],
@@ -514,7 +515,10 @@ class nmrAnalyser():
         self.yaxlabel = input("Input xlabel: ")
         self.updateGraph()
 
-    def fitsubtract(self,automated=False):
+    def fitSubtract(self,automated=False):
+        ############################################################################
+        #                   User selection of fit                                  #
+        ############################################################################
         keys = ['Sin', 'Third order Polynomial', 'Fourth order Polynomial',
                 'Fifth Order Polynomial', 'Sixth Order Polynomial', 
                 'True Lorentzian',"Lorentzian (absorbtion/dispersion)", "Cancel Fit"]
@@ -529,14 +533,17 @@ class nmrAnalyser():
         self.type_of_fit = choices[self.fitname]
         self.fitname = self.fitname +str(' '+str(self.fitnumber))
         print("Fit name",self.fitname, "Function Name", self.type_of_fit)
+        ############################################################################
 
+        # Free some memory
         if not automated:
             plt.clf()
             plt.close('all')
-        test = len(self.automatefits)-1
-
-        #                   don't duplicate fits
+        
         ############################################################################
+        #                   don't duplicate fits                                   #
+        ############################################################################
+        test = len(self.automatefits)-1
         if test >= 0:
             if self.automatefits[test][1] == self.fitname:
                 print("\nWARNING: Previous fit named:", self.automatefits[test][1],
@@ -551,7 +558,12 @@ class nmrAnalyser():
             self.startcolumn.append(self.yname)
         ############################################################################
 
+        # Update the indecies before we fit the data
         self.updateIndecies()
+
+        ############################################################################
+        #                 Collect p0 / bounds if it exists                         #
+        ############################################################################
         try:
             p0 = [float(self.lorentzian_x0), float(self.lorentzian_w),
                     float(self.lorentzian_A), float(self.lorentzian_B)]\
@@ -566,6 +578,12 @@ class nmrAnalyser():
             print("***WARNING: Error in type conversion for RAWSIGNAL fit \
                     coersion. p0 WILL NOT be passed.")
             p0 = None
+        ############################################################################
+
+        
+        ############################################################################
+        #                           Fit the function                               #
+        ############################################################################
         self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
                 self.df, self.start_index, self.end_index, fit_sans_signal=True,
                 function=[self.type_of_fit], fitname=self.fitname,
@@ -576,12 +594,13 @@ class nmrAnalyser():
             print('Fit failed broh, try something else man.')
             self.disapprovePlot()
             return True
-        #'e_f0', 'e_w', 'e_kmax', 'e_theta'
-        self.e_f0, self.e_w, \
-                self.e_kmax, self.e_theta = rawsigfit.pop('e_f0', None), \
-                rawsigfit.pop("e_w", None), \
-                rawsigfit.pop('e_kmax', None), \
-                rawsigfit.pop("e_theta", None)
+        
+        self.e_f0= rawsigfit.pop('e_f0', None)
+        self.e_w=rawsigfit.pop("e_w", None)
+        self.e_kmax=rawsigfit.pop('e_kmax', None)
+        self.e_theta=rawsigfit.pop("e_theta", None)
+        ############################################################################
+                
 
         print(" "*15, "CHI SQUARED VALUES FOR EACH FIT")
         print("#"*65)
@@ -604,6 +623,7 @@ class nmrAnalyser():
             key = dict_selector(choices)
             f = choices[key][1]
             f(manual=True)
+
         elif automated:
             self.approvePlot()
 
@@ -616,8 +636,8 @@ class nmrAnalyser():
 
     def disapprovePlot(self, manual=False):
         if not manual:
-            print("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
-        self.fitsubtract()
+            announcement("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
+        self.fitSubtract()
 
     def cancelFit(self, manual='False'):
         self.updateGraph()
@@ -634,11 +654,26 @@ class nmrAnalyser():
         plt.savefig(filename)
 
     def updateItemSeed(self, itemseed):
+        # Reseed the item in the class.
+        # Used for multithreading
         self.item=itemseed
+
+    def getFileList(self):
+        print("Filelist")
+        print(self.filelist)
+
     def automate(self):
         """
             Replicated from the tkinter version of the gui
         """
+        matplotlib.use('Agg') # Thwarts X-server Errors
+        # Matplotlib is NOT thread-safe w/ known race conditions.
+        # Care has been used to avoid these conditions
+        # Let me know if I missed any.
+        
+        ##################################################
+        # Ensure Directories exist where we can put file #
+        ##################################################
         os.chdir(self.rootdir)
         home = self.rootdir
         os.chdir(home)
@@ -656,23 +691,18 @@ class nmrAnalyser():
         graphdata = home+"/graph_data/" 
 
         tedirectory = "/".join(self.rawsigpath.split('/')[:-1])
-        # Assuming linux directory deliniation '/', Just remove the 'file part' of the absolute
-        # path, leaving just the directory
-
-        # Create a list of TE/Polarization files to apply signal "filtering"
-        # "filtering" is the user's choices from the original file that they loaded into the program
-        # automation only becomes available on the last page.
 
         tefiles = []
+        #########################################################
         extension = ".ta1" if self.vnavme.upper() == "VME" else ".s1p"
 
         # Create the TE/Enchanced files list
         for file in os.listdir(tedirectory):
             if file.endswith(extension):
                 tefiles.append(tedirectory+'/'+file)
-        #exit()
+        
+        # create a list of tuples that split the files between multiple threads
         oh_indexes = self.__forkitindexer__(tefiles)
-        print(oh_indexes)
 
         # To be implemented later
         self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
@@ -683,13 +713,6 @@ class nmrAnalyser():
                           # Which will be difficult to resolve logistically with self.item adding "S %ITEM"
                           # to the names of things.
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
-        """
-        with Pool(processes=self.processes) as pool:
-            result_objects = [pool.apply_async(self.range_election_metric, args=(column_name, rangeshift)) for column_name in self.df]
-            pool.close()
-            pool.join()
-        results = [r.get() for r in result_objects if r.get() != False]
-        """
         self.workpool = {} 
         for index, value in enumerate(oh_indexes):
             (start, end) = value
@@ -714,26 +737,16 @@ class nmrAnalyser():
                 instancename= self.instancename,
                 plottitle= self.plottitle,
                 isautomated= True,
-                filelist = (tefiles[start] if start==end else tefiles[start:end]),
+                filelist = ([tefiles[start]] if start==end else tefiles[start:end]),
                 rawsigpath = self.rawsigpath,
                 baselinepath = self.baselinepath)
             self.workpool[index].updateItemSeed(start)
-        for index in self.workpool:
-            self.workpool[index].automatedPKernel(graphs,graphdata,home,index)
-        print("Done")
-        exit()
 
-            #self.workpool[index].multiPKernel(tefiles[start:end], graphs, graphdata, home,index,start,end)
         with multiprocessing.Pool(processes=self.processes) as pool:
             result_objects = [pool.apply_async(self.workpool[index].automatedPKernel, args =(graphs, graphdata, home, index)) for index,value in enumerate(oh_indexes)]
             pool.close()
             pool.join()
         results = [r.get() for r in result_objects if r.get() != False]
-        """
-        for index, value in enumerate(oh_indexes):
-            (start, end) = value
-            self.multiPKernel(tefiles[start:end], graphs, graphdata, home,index,start,end) 
-        """
 
     def multiPKernel(self, tefiles, graphs, graphdata, home, id_num,start,end):
         self.repeatAdNauseum(tefiles, graphs, graphdata, home, self_itemseed=start,id_num=id_num)
@@ -757,7 +770,7 @@ class nmrAnalyser():
         todo = len(filelist)
 
         for i,file in enumerate(filelist):
-            # Set the y-axis to be the first column fit by the user eariler.
+            # Set the y-axis to be the first column fit by the user during interactive mode.
             npriev = self.startcolumn[0]
 
             t1 = time.time()
@@ -772,21 +785,9 @@ class nmrAnalyser():
             # Update the indecies
             self.updateIndecies()
 
-            # If the user fit more than one function to the dataframe
-            # this is how it works
+            # As the user fit more than one function to the dataframe
             if not failed:
                 for index, tupp in enumerate(self.automatefits):
-                    """
-                    if index == 0, npriev is predefined to be the default y-axis to try and fit with gff
-                    (aka General Fitting Function)
-
-                    The dataframe is then updated by gff
-
-                    The previous function name (defined in self.automatefites which saves the user's fit 
-                        name and function each time they fit a column in the df)
-                        will then become the second, third .... nth column of data to refit, then subtract.
-
-                    """
                     f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
                                 # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
                     n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
@@ -797,6 +798,10 @@ class nmrAnalyser():
                                     binning=self.binning, gui=True, redsig=True, 
                                     y=npriev, plottitle=self.plottitle
                                     )
+                    self.e_f0= rawsigfit.pop('e_f0', None)
+                    self.e_w=rawsigfit.pop("e_w", None)
+                    self.e_kmax=rawsigfit.pop('e_kmax', None)
+                    self.e_theta=rawsigfit.pop("e_theta", None)
                     # Save this, because if we loop again, we're gonna need to fit subtract fit-subtracted data,
                     #   assuming thats what the user did; I made it so; actually otherwise the user overwrites
                     #   their last fit.
@@ -826,7 +831,7 @@ class nmrAnalyser():
 
                 os.chdir(home)
                 # This is here so that i can recreate this order within the loop
-                """try:
+                try:
                     self.B = round(self.I/9.7332, 4)
                     self.tevalue = v.tpol(self.B, self.T)
                 except TypeError:
@@ -844,9 +849,9 @@ class nmrAnalyser():
                        "lorentzian relative-chisquared (error)", "Sweep Centroid",
                        "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
                 # Write to the global_analysis file
-                c = [originalplottitle + " S"+str(self.item),  self.material_type.get(),
-                 self.rawsigtime, self.vnavme, self.bldatapath, self.rawsigdatapath, self.xminentry.get(), self.xmaxentry.get(),
-                 self.signalstart.get(),self.signalend.get(), self.blskiplines,
+                c = [originalplottitle + " S"+str(self.item),  self.material_type,
+                 self.te_date, self.vnavme, self.baselinepath, self.rawsigpath, self.xmin, self.xmax,
+                 self.signalstart,self.signalend, self.blskiplines,
                  self.rawsigskiplines, str(self.B),
                  str(self.T), self.primary_thermistor, self.secondary_thermistor, self.tevalue,
                  self.dataarea, self.ltzian_integration, self.data_cal_constant,
@@ -857,7 +862,7 @@ class nmrAnalyser():
                 #print("Made it to line 1254")
                 self.addEntry(k=c, h =headers)
                 # Say that we've done a thing
-                os.chdir(home)"""
+                os.chdir(home)
                 self.item+=1
                 # Free your mind (memory)
                 self.figure.clf()
@@ -868,6 +873,27 @@ class nmrAnalyser():
                 t2 = time.time()
                 timedeltas.append(t2-t1)
                 print('ID:', id_num, ":", (i+1), "of", todo, '['+str(round((i+1)*100/todo,4))+'%]', "ETA: ", round((todo-(i+1))*numpy.mean(timedeltas),1), 's')
+
+    def addEntry(self, k=[], h=None):
+       # as the headers list in vna_visualizer.py
+        headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+               "xmax", "sigstart", "sigfinish", "blskiplines",
+               'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name,
+               variablenames.gui_secondary_thermistor_name,
+               "TEvalue", "data_area", "ltzian_area",
+               "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0',
+               "lorentzian chisquared (distribution)", "σ (Noise)", "σ (Error Bar)",
+               "lorentzian relative-chisquared (error)",
+               "Sweep Centroid", "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
+        
+        if len(k) != 0:
+            with open(k[0]+'.csv', 'w') as f:
+                self.df.to_csv(f)
+            v.add_entry(*k, headers=headers if h is not None else h)
+        else:
+            with open(self.pentry.get()+'.csv', 'w') as f:
+                self.df.to_csv(f)
+            v.add_entry(*c, headers=headers if h is not None else h)
 
     def __forkitindexer__(self, filelist):
         """
@@ -947,6 +973,12 @@ def main():
         c= options()
         f = optdict[c]
         f()
+        
+
+    #while True:
+        #c= options()
+        #f = optdict[c]
+        #f()
         """
         try:
             f = optdict[c]
@@ -960,4 +992,5 @@ def main():
     #cwd=rootdir
 
     #fixeddirs, fixedfiles = lsdir(cwd)
+
 main()

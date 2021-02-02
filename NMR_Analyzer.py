@@ -62,7 +62,7 @@ def add_entry(*rowvals,**kwargs):
         try:
             with open(fname, 'r') as f: # Read the df
                 return pandas.read_csv(f)
-        except FileNotFoundError:   # if it doesnt exists
+        except (FileNotFoundError, pandas.errors.EmptyDataError):   # if it doesnt exists
             gen_persistence('global_analysis', headers) # make it
         finally:
             try:
@@ -480,12 +480,7 @@ def vna_file_parser(filename, skiplines=4):
             cd ".."
         done
         #################################################################
-        EVERYONE, please use  EXTREME caution here. I would be happy to provide you with
-        the converted csvs. MAKE SURE you execute this in its own child
-        directory that contains ZERO symlinks, otherwise It will convert all occurrences of two spaces into a tab
-        EVERYWHERE.
     """
-
     # EXAMPLE FILE HEADER
     """
     ! COPPER MOUNTAIN TECHNOLOGIES, R60, 00111218, 19.1.1/3.0
@@ -555,9 +550,7 @@ def get_z(df):
     packed = pandas.DataFrame(
         zip(df["MHz"].values, z_re, z_im),
         columns=["MHz", "Z_re", "Z_im"], dtype=float
-
     )
-
     return packed
 
 
@@ -1393,7 +1386,7 @@ def ggf(master, s, f, **kwargs):
             xy=(xtxt, ypp - ys), xycoords='figure pixels'
         )
         
-        verts = [*zip(ix, iy)]
+        verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
         try:
             poly = Polygon(verts, facecolor='0.9', edgecolor='0.5')
             ax.add_patch(poly)
