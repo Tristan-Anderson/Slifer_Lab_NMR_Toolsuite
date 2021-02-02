@@ -1382,8 +1382,13 @@ def ggf(master, s, f, **kwargs):
             "Data Area: " + str(round(integrated_value, 6)),
             xy=(xtxt, ypp - ys), xycoords='figure pixels'
         )
-        
-        verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
+        try:
+            verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
+        except IndexError:
+            try:
+                verts = [*zip(ix, iy)]
+            except:
+                print("Failed to draw shaded polygon for visual integration of",filename)
         try:
             poly = Polygon(verts, facecolor='0.9', edgecolor='0.5')
             ax.add_patch(poly)
@@ -1393,6 +1398,10 @@ def ggf(master, s, f, **kwargs):
             # TODO FIXME FIND out why this keeps "failing sucessfully".
             #   It's drawing the polygon, but complaining that it can't
             #   draw the polygon... WAT?
+            pass
+        except NameError:
+            # verts not defined, whoops, everything failed.
+            #   Sweep everything under the rug, and pretend like it didn't happen.
             pass
    
     try:
