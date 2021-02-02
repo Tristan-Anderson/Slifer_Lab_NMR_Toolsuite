@@ -12,6 +12,16 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
 
+"""
+# TODO: Tighten-up input acceptance and rejection on human IO = type forcing & exception catching.
+# TODO: Add tolerance options in human IO = give user option to change more settings in the mainloop, this includes baseline & rawsig files, and if the user goes too far foward in the mainloop, execute prerequisite methods.
+# TODO: Mute the dang warning "Covariance of the parameters could not be estimated," OR just be a better programmer
+# TODO: Add material entry into mainloop
+# TODO: Add overview of current settings on each mainloop in table format.
+# TODO: Add suggested material mu?
+
+"""
+
 
 def announcement(mystr):
     print('\n')
@@ -770,11 +780,6 @@ class nmrAnalyser():
         print(self.analysisfile)
         input('Press any key to continue')
         exit()
-
-
-
-
-
 
     def automatedPKernel(self, graphs, graphdata, home, id_num):
         return self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num)
