@@ -56,14 +56,14 @@ def add_entry(*rowvals,**kwargs):
                 else:
                     f.write('\n')
 
-    def get_persistence(headers, fname):
+    def get_persistence(headers, fname, addition=''):
         # Read the DF, if it doesn't exist: then makes one
         # THIS FUNCTION RETURNS A pandas.DataFrame() type.
         try:
             with open(fname, 'r') as f: # Read the df
                 return pandas.read_csv(f)
         except (FileNotFoundError, pandas.errors.EmptyDataError):   # if it doesnt exists
-            gen_persistence('global_analysis', headers) # make it
+            gen_persistence('global_analysis'+addition, headers) # make it
         finally:
             try:
                 with open(fname, 'r') as f: # Read the df.
@@ -71,16 +71,14 @@ def add_entry(*rowvals,**kwargs):
             except FileNotFoundError:   # If even THAT (^) fails,
                 print("Something went wrong in the add_entry function")
                 exit()  # Give up.
-    h_orig = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
-                       "xmax", "sigstart", "sigfinish", "blskiplines",
-                       'rawsigskiplines', "B", "T", variablenames.na_primary_thermistor_name, 
-                       variablenames.na_secondary_thermistor_name, "TEvalue", "data_area", "ltzian_area",
-                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0', "lorentzian chisquared (distribution)", 
-                       "σ (Noise)", "σ (Error Bar)", "lorentzian relative-chisquared (error)", "Sweep Centroid", "Sweep Width"]
+    h_orig = variables.na_global_analysis_headers
     headers=kwargs.pop("headers",h_orig)
     getdf=kwargs.pop('getdf', False)
+    addition = kwargs.pop('addition', '')
+    dontwrite = kwargs.pop('dontwrite', False)
 
-    fname = "global_analysis.csv"
+    fname = "global_analysis"+addition+".csv"
+
 
     if len(headers) != len(rowvals):
         if len(headers) > len(rowvals):
@@ -91,9 +89,8 @@ def add_entry(*rowvals,**kwargs):
             print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
             print("          RECHECK headers and rowvalues.")
     # Get the persistence df. Then add an entry to it passed to the function in *rowvals
-    df = get_persistence(headers, fname).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
+    df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
                                                 ignore_index=True)
-
     with open(fname, 'w') as f:
         df.to_csv(f, index=False)
 
@@ -1455,4 +1452,3 @@ def ggf(master, s, f, **kwargs):
     plt.savefig(filename, dpi=dpi)
     if not noshow:
         plt.show()
-

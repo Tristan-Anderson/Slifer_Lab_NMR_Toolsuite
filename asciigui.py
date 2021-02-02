@@ -218,6 +218,13 @@ class nmrAnalyser():
             self.getRawsig()
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
+
+    def __del__(self):
+        cname = self.__class__.__name__
+        p = multiprocessing.current_process()
+        if "Worker" in p.name:
+            print("Work complete for", p.name, 'Destroying....')
+
         
     def overrideRootDir(self, override):
         self.rootdir = override
@@ -515,10 +522,7 @@ class nmrAnalyser():
         self.yaxlabel = input("Input xlabel: ")
         self.updateGraph()
 
-    def fitSubtract(self,automated=False):
-        ############################################################################
-        #                   User selection of fit                                  #
-        ############################################################################
+    def __user_fit_selection__(self):
         keys = ['Sin', 'Third order Polynomial', 'Fourth order Polynomial',
                 'Fifth Order Polynomial', 'Sixth Order Polynomial', 
                 'True Lorentzian',"Lorentzian (absorbtion/dispersion)", "Cancel Fit"]
@@ -532,17 +536,9 @@ class nmrAnalyser():
             return True
         self.type_of_fit = choices[self.fitname]
         self.fitname = self.fitname +str(' '+str(self.fitnumber))
-        print("Fit name",self.fitname, "Function Name", self.type_of_fit)
-        ############################################################################
+        #print("Fit name",self.fitname, "Function Name", self.type_of_fit)
 
-        # Free some memory
-        if not automated:
-            plt.clf()
-            plt.close('all')
-        
-        ############################################################################
-        #                   don't duplicate fits                                   #
-        ############################################################################
+    def __ensure_unique_fit__(self):
         test = len(self.automatefits)-1
         if test >= 0:
             if self.automatefits[test][1] == self.fitname:
@@ -556,14 +552,8 @@ class nmrAnalyser():
         else:
             self.automatefits.append([self.type_of_fit, self.fitname])
             self.startcolumn.append(self.yname)
-        ############################################################################
 
-        # Update the indecies before we fit the data
-        self.updateIndecies()
-
-        ############################################################################
-        #                 Collect p0 / bounds if it exists                         #
-        ############################################################################
+    def __fitbound_coersion__(self):
         try:
             p0 = [float(self.lorentzian_x0), float(self.lorentzian_w),
                     float(self.lorentzian_A), float(self.lorentzian_B)]\
@@ -578,20 +568,40 @@ class nmrAnalyser():
             print("***WARNING: Error in type conversion for RAWSIGNAL fit \
                     coersion. p0 WILL NOT be passed.")
             p0 = None
-        ############################################################################
+        return p0, bounds
 
+    def fitSubtract(self,automated=False):
+        #                   User selection of fit                                  #
+        if self.__user_fit_selection__():
+            return True
+
+        # Free some memory
+        if not automated:
+            plt.clf()
+            plt.close('all')
         
-        ############################################################################
+        #                   don't duplicate fits                                   #
+
+        self.__ensure_unique_fit__()
+
+        # Update the indecies before we fit the data
+        self.updateIndecies()
+
+        #                 Collect p0 / bounds if it exists                         #
+
+        p0, bounds = self.__fitbound_coersion__()
+
         #                           Fit the function                               #
-        ############################################################################
+
+
         self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
                 self.df, self.start_index, self.end_index, fit_sans_signal=True,
                 function=[self.type_of_fit], fitname=self.fitname,
                 binning=self.binning, gui=True, redsig=True, x=self.xname,
-                y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds
-                )
+                y=self.yname, plottitle=self.plottitle, p0=p0, bounds = bounds)
+
         if self.didfailfit and not automated:
-            print('Fit failed broh, try something else man.')
+            print('Fit failed, try another.')
             self.disapprovePlot()
             return True
         
@@ -599,8 +609,6 @@ class nmrAnalyser():
         self.e_w=rawsigfit.pop("e_w", None)
         self.e_kmax=rawsigfit.pop('e_kmax', None)
         self.e_theta=rawsigfit.pop("e_theta", None)
-        ############################################################################
-                
 
         print(" "*15, "CHI SQUARED VALUES FOR EACH FIT")
         print("#"*65)
@@ -612,6 +620,9 @@ class nmrAnalyser():
             #print("#Fit #\t", key, " #\t Chisquared:", val, " #")
         print("#" * 65)
         self.updateGraph(graph=fig)
+
+        #                   User approve/deny                                      #
+
         if not automated:
             self.figure.show()
             cancelmsg = 'Cancel the fit subtraction, and do not change the graph.'
@@ -670,6 +681,7 @@ class nmrAnalyser():
         # Matplotlib is NOT thread-safe w/ known race conditions.
         # Care has been used to avoid these conditions
         # Let me know if I missed any.
+        self.analysisfile = pandas.DataFrame()
         
         ##################################################
         # Ensure Directories exist where we can put file #
@@ -746,16 +758,31 @@ class nmrAnalyser():
             result_objects = [pool.apply_async(self.workpool[index].automatedPKernel, args =(graphs, graphdata, home, index)) for index,value in enumerate(oh_indexes)]
             pool.close()
             pool.join()
-        results = [r.get() for r in result_objects if r.get() != False]
+        # Keeper data / global analysis is in the results
+        results = [r.get() for r in result_objects]
 
-    def multiPKernel(self, tefiles, graphs, graphdata, home, id_num,start,end):
-        self.repeatAdNauseum(tefiles, graphs, graphdata, home, self_itemseed=start,id_num=id_num)
+        # Cleanup behind ourselves.
+        del self.workpool 
+
+        # extract then merge individual results into a keeper data
+        for i in results:
+            self.analysisfile = self.analysisfile.append(i,ignore_index=True)
+        print(self.analysisfile)
+        input('Press any key to continue')
+        exit()
+
+
+
+
+
 
     def automatedPKernel(self, graphs, graphdata, home, id_num):
-        self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num)
+        return self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num)
 
     def repeatAdNauseum(self, filelist, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
+        self.analysisfile = pandas.DataFrame()
+
         self.item = int(self_itemseed) if self_itemseed is not None else self.item
         originalplottitle = self.plottitle
         npriev = self.startcolumn[0]
@@ -839,15 +866,9 @@ class nmrAnalyser():
                     self.B = self.I
                     self.tevalue = 0
 
-                headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
-                       "xmax", "sigstart", "sigfinish", "blskiplines",
-                       'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name,
-                        variablenames.gui_secondary_thermistor_name,
-                       "TEvalue", "data_area", "ltzian_area",
-                       "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0',
-                       "lorentzian chisquared", "σ (Noise)","σ (Error Bar)",
-                       "lorentzian relative-chisquared (error)", "Sweep Centroid",
-                       "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
+                # Headers for the global analysis file
+                headers = variablenames.na_global_analysis_headers
+
                 # Write to the global_analysis file
                 c = [originalplottitle + " S"+str(self.item),  self.material_type,
                  self.te_date, self.vnavme, self.baselinepath, self.rawsigpath, self.xmin, self.xmax,
@@ -858,11 +879,10 @@ class nmrAnalyser():
                  self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
                  self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared,
                  self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
-                os.chdir(graphdata)
-                #print("Made it to line 1254")
-                self.addEntry(k=c, h =headers)
-                # Say that we've done a thing
-                os.chdir(home)
+                #os.chdir(graphdata)
+
+                self.analysisfile = self.analysisfile.append(pandas.DataFrame(dict(zip(headers,c)), index=[0]))
+                
                 self.item+=1
                 # Free your mind (memory)
                 self.figure.clf()
@@ -874,26 +894,20 @@ class nmrAnalyser():
                 timedeltas.append(t2-t1)
                 print('ID:', id_num, ":", (i+1), "of", todo, '['+str(round((i+1)*100/todo,4))+'%]', "ETA: ", round((todo-(i+1))*numpy.mean(timedeltas),1), 's')
 
-    def addEntry(self, k=[], h=None):
+        return self.analysisfile
+
+    def addEntry(self, k=[], h=None, addition='',dontwrite=False):
        # as the headers list in vna_visualizer.py
-        headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
-               "xmax", "sigstart", "sigfinish", "blskiplines",
-               'rawsigskiplines', "B", "T", variablenames.gui_primary_thermistor_name,
-               variablenames.gui_secondary_thermistor_name,
-               "TEvalue", "data_area", "ltzian_area",
-               "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0',
-               "lorentzian chisquared (distribution)", "σ (Noise)", "σ (Error Bar)",
-               "lorentzian relative-chisquared (error)",
-               "Sweep Centroid", "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
-        
+        headers = variables.na_global_analysis_headers
+
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*k, headers=headers if h is not None else h)
+            v.add_entry(*k, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
         else:
-            with open(self.pentry.get()+'.csv', 'w') as f:
+            with open(self.instancename+'.csv', 'w') as f:
                 self.df.to_csv(f)
-            v.add_entry(*c, headers=headers if h is not None else h)
+            v.add_entry(*c, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
 
     def __forkitindexer__(self, filelist):
         """

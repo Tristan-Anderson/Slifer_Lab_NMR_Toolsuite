@@ -77,6 +77,16 @@ na_vme_yaxis_default = "Potential (V)"
 
 na_vme_xaxis_default = "MHz"
 
+na_global_analysis_headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+               "xmax", "sigstart", "sigfinish", "blskiplines",
+               'rawsigskiplines', "B", "T", dmsa_primary_thermometer_colname,
+               dmsa_secondary_thermometer_colname,
+               "TEvalue", "data_area", "ltzian_area",
+               "data_cal_constant","ltzian_cal_constant", 'a', 'w', 'x0',
+               "lorentzian chisquared (distribution)", "σ (Noise)", "σ (Error Bar)",
+               "lorentzian relative-chisquared (error)",
+               "Sweep Centroid", "Sweep Width", 'e_f0', 'e_w', 'e_kmax', 'e_theta']
+
 ####################################################################
 """
 					  ___         ___  

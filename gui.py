@@ -654,7 +654,7 @@ class Fitting_Page(tk.Frame):
             self.ltzian_integration = quirky.pop('ltzian_integration', None)
             self.df = quirky.pop('df', None)
             self.ltzian_a = quirky.pop('a', None)
-            self.ltzian_w = quirky.pop('w', None)http://192.168.1.106:8080/?remote=7391526c-33a0-49ac-b2a0-e736fcf46b0a#tab_status
+            self.ltzian_w = quirky.pop('w', None)
             self.ltzian_x0 = quirky.pop('x0',None)
             self.sigma_error = quirky.pop('noisesigma', None)
         else:
