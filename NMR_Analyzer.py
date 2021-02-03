@@ -12,12 +12,15 @@ formally for this toolsuite has not been optimized.
 
 If future maintenance is needed, see documentation in UNH-NPG>lab_work>students_ugrad>Tristan Anderson>TE Extraction
 """
-import variablenames
+import variablenames, warnings
+from scipy.optimize import OptimizeWarning
 import pandas, numpy, datetime, matplotlib, math, traceback
 from scipy.optimize import curve_fit as fit
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 from statistics import mode
+
+numpy.seterr(all='ignore')
 
 global fig_size_x, fig_size_y
 fig_size_x,fig_size_y = 16,9
@@ -871,7 +874,10 @@ def gff(df, start, finish, fitname, **kwargs):
         chsq = {}
         for f in fitnames:
             try:
-                var, _ = fit(eval(f), x_data_for_fit, y_data_for_fit)  # Prof. Narayan is screaming because I'm evaling' here
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error', OptimizeWarning)
+                    var, _ = fit(eval(f), x_data_for_fit, y_data_for_fit)  # Prof. Narayan is screaming because I'm evaling' here
+
                 yfit = get_function(f, x_data_for_fit, var)
                 chsq[f] = chisquared(y_data_for_fit, yfit)/(len(y_data_for_fit)-3) # reduced chisquared
             except: # We probably failed fitting

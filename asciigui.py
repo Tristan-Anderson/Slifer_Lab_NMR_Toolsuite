@@ -180,7 +180,6 @@ def selectit():
         cwd = path
     return path
 
-
 def choice(fixeddirs, fixedfiles, cleanfiles, dirs):
     c = input("Enter Choice: ")
     if 'd' in c.lower():
@@ -200,7 +199,6 @@ def choice(fixeddirs, fixedfiles, cleanfiles, dirs):
     elif 'ok' in c:
         print('okay. Saving current directory choice.')
         return False, os.getcwd()
-    
     announcement("You selected " +c+ ' which is not a valid option.')
     return True, os.getcwd()
 
@@ -215,6 +213,8 @@ def NMRAnalyzer(args):
     instance.fetchArgs()
     #instance.showgraph()
     instance.mainloop()
+
+
 
 
 class nmrAnalyser():
@@ -233,12 +233,6 @@ class nmrAnalyser():
             self.getRawsig()
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
-
-    def __del__(self):
-        cname = self.__class__.__name__
-        p = multiprocessing.current_process()
-        if "Worker" in p.name:
-            print("Work complete for", p.name, 'Destroying....')
 
         
     def overrideRootDir(self, override):
@@ -436,7 +430,7 @@ class nmrAnalyser():
                 self.allchoices()
         except KeyboardInterrupt:
             print("Keyboard Inturrupt recieved in mainloop. Exiting.")
-            exit(True)
+            return True
 
     def allchoices(self):
         nameinstancemsg = "Label this current analysis cycle in the global analysis file."
@@ -949,9 +943,6 @@ class nmrAnalyser():
     def saveBoth(self):
         pass
 
-def DAQExtractor():
-    pass
-
 class daqExtractor():
     def __init__(self, args):
         pass
@@ -970,6 +961,11 @@ class daqExtractor():
         # Sets the state between directory and individual file mode.
         pass
 
+def DAQExtractor(args):
+    header("DAQ Extractor")
+    print("Please select a file or directory with csvs")
+    print("#"*30)
+    instance = daqExtractor()
 
 def DirSorter():
     pass
