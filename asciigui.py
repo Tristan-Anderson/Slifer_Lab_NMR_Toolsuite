@@ -11,213 +11,209 @@ from matplotlib import pyplot as plt
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
 
 """
-# TODO: Tighten-up input acceptance and rejection on human IO = type forcing & exception catching.
-# TODO: Add tolerance options in human IO = give user option to change more settings in the mainloop, this includes baseline & rawsig files, and if the user goes too far foward in the mainloop, execute prerequisite methods.
-# TODO: Mute the dang warning "Covariance of the parameters could not be estimated," OR just be a better programmer
-# TODO: Make sure you dont overwrite the global analysis file if it's there.
-# TODO: Add material entry into mainloop
 # TODO: Add overview of current settings on each mainloop in table format.
-# TODO: Add suggested material mu?
-
 """
+class AsciiGUI():
+    def __init__(self, args, **passed):
+        kwargs = passed.pop('kwargs', {})
+        self.delimeter = '\t'
+        self.hardinit = kwargs.pop('hardinit',False)
+        self.processes = 1
+        self.servermode = False
+        if hardinit:
+            self.servermode = args.servermode
 
+    def fileDirectorySelector(self):
+        cwd = os.getcwd()
+        status = True
+        while status:
+            fixeddirs, fixedfiles, cleanfiles, dirs = self.getdir(cwd)
+            print("Current working Directory:", cwd)
+            print("Enter choice in the format of: \'LineNum(f/d)\n ex: 1f")
+            status, path = self.choice(fixeddirs, fixedfiles, cleanfiles, dirs)
+            
+            cwd = path
+        return path
 
-def announcement(mystr):
-    print('\n')
-    print("#"*3, mystr, '#'*3)
-    print('\n')
-
-def header(mystr):
-    s = 7
-    lstr = len(mystr) +2
-    width = lstr+s*2+2
-    print("@"*width)
-    print(str("{0:1}{2:^"+str(s)+"}{1:^"+str(lstr)+"}{2:^"+str(s)+"}{0:1}").format("@",mystr, ' '*s))
-    print("@"*width)
-
-def getdir(cwd):
-    # Get the items in a directory
-    for subdir, dirs, files in os.walk(cwd):
-        break
-    #print("Current directory:", cwd)
-    cleanfiles = []
-    for f in files:
-        if any(ext in f for ext in variablenames.agui_allowable_file_extensions):
-            # If theres a match in the allowable extensions, then save it
-            # Otherwise, dont.
-            cleanfiles.append(f)
-    # String-lengths of the allowable file extensions
-    filewidth = [len(i) for i in cleanfiles]
-    try:
-        # Width for output formatting.
-        filewidth = max(filewidth)+2
-    except ValueError:
-        # If theres no allowable extenstions, cleanfiles is of length 0
-        # And therefor has no max value in zero-len list.
-        filewidth = 0
-
-    if filewidth < 7:
-        # Is the minimum width of the file column in ascii format
-        filewidth = 7
-
-    dwidth = [len(i) for i in dirs]
-    try:
-        dwidth = max(dwidth)+2
-    except ValueError:
-        dwidth= 2
-    if dwidth < 13:
-        # is the minimum width of the directory column in the ascii output formatted table
-        dwidth = 13
-
-    crossbar_width = filewidth+dwidth+3+9
-    dirlongfile = len(dirs) > len(cleanfiles)
-    fixeddirs = []
-    fixedfiles = []
-    ###########################
-    """
-    If the file list and directory list are not of the same length,
-    make whichever list is shorter, as long as the longest width, filling
-    the missing values with sentinals (i.e. '') so that output formatting
-    can print the options.
-    """
-    if dirlongfile: 
-        for index,value in enumerate(dirs):
-            fixeddirs.append(value)
-            if index < len(cleanfiles):
-                fixedfiles.append(cleanfiles[index])
-            else:
-                fixedfiles.append(' '*filewidth)
-
-    else:
-        for index,value in enumerate(cleanfiles):
-            fixedfiles.append(value)
-            if index < len(dirs):
-                fixeddirs.append(dirs[index])
-            else:
-                fixeddirs.append(' '*dwidth)
-    ##########################
-
-    ######## BEGIN OUTPUT FORMATTING ###########
-    print('#'*crossbar_width)
-    print(str("{0:^1}{3:^8}{0:^1}{1:^"+str(filewidth)+"}{0:^1}{2:^"+str(dwidth)+"}{0:^1}").format("#","Files","Directories","LinNUM"))
-    print('#'*crossbar_width)
-    bbreak = False
-    for index, value in enumerate(fixedfiles):
-        print(str("{0:^1}{3:^8}{0:^1}{1:^"+str(filewidth)+"}{0:^1}{2:^"+str(dwidth)+"}{0:^1}").format('#', value, fixeddirs[index], index))
-        if index > 25:
-            bbreak = True
+    def getdir(self, cwd):
+        # Get the items in a directory
+        for subdir, dirs, files in os.walk(cwd):
             break
-    print('#'*crossbar_width)
-    if bbreak:
-        print("Printing exceeded 100 lines.")
-    return fixeddirs, fixedfiles, cleanfiles, dirs
-
-def dict_selector(dic):
-    """
-    expects a key:tupple unorganized dictionary where
-        tuple = [String, Function]
-    such that the string describes the properties of the function.
-
-    the "key"
-    has the function of not only being the ouput choice of this selector
-    function, but it also is the key to the tuple.
-    """
-    def tableformatter(keys, strs):
-        len_keys = [len(key) for key in keys]
-        maxlen_keys = max(len_keys)+2
-
-        keydescribers = strs
-        len_keydescribers = [len(k) for k in keydescribers]
-        maxlen_key_descrbers = max(len_keydescribers)+2
-        maxlen_key_descrbers = 10 if maxlen_key_descrbers < 10 else maxlen_key_descrbers
-        xbar = maxlen_keys + maxlen_key_descrbers +4+8+1
-
-        print('#'*xbar)
-        print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#','option#','name','describers'))
-        print('#'*xbar)
-        for index,value in enumerate(keys):
-            print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#',index,value,keydescribers[index]))
-        print('#'*xbar)
-        return True
-
-    keys = dic.keys()
-    options = [i for i in range(len(keys))]
-    reconsile = dict(zip(options, keys))
-    keydescribers = []
-    for k in keys:
-        value = dic[k]
-        if type(value) == list:
-            keydescribers.append(dic[k][0])
-        else:
-            keydescribers.append(dic[k])
-    tableformatter(keys,keydescribers)
-
-    choices = 'hey'
-    while True:
+        #print("Current directory:", cwd)
+        cleanfiles = []
+        for f in files:
+            if any(ext in f for ext in variablenames.agui_allowable_file_extensions):
+                # If theres a match in the allowable extensions, then save it
+                # Otherwise, dont.
+                cleanfiles.append(f)
+        # String-lengths of the allowable file extensions
+        filewidth = [len(i) for i in cleanfiles]
         try:
-            choices = int(input("Enter option number: "))
-            print("Your choice was", reconsile[choices], 'returning...')
-            break
-        except KeyboardInterrupt:
-            print('keyboard inturrupt recived. Breaking.')
-            raise KeyboardInterrupt
-        except ValueError as e:
-            print("Invalid input. Try again.", '\n'*2)
-            continue
-        except KeyError:
-            print("Incorrect Key. Make sure option number matches that which is in the table of options.")
-            continue
-    return reconsile[choices]
+            # Width for output formatting.
+            filewidth = max(filewidth)+2
+        except ValueError:
+            # If theres no allowable extenstions, cleanfiles is of length 0
+            # And therefor has no max value in zero-len list.
+            filewidth = 0
 
-def selectit():
-    cwd = os.getcwd()
-    status = True
-    while status:
-        fixeddirs, fixedfiles, cleanfiles, dirs = getdir(cwd)
-        print("Enter choice in the format of: \'LineNum(f/d)\n ex: 1f")
-        status, path = choice(fixeddirs, fixedfiles, cleanfiles, dirs)
-        print("Current working Directory:", cwd)
-        cwd = path
-    return path
+        if filewidth < 7:
+            # Is the minimum width of the file column in ascii format
+            filewidth = 7
 
-def choice(fixeddirs, fixedfiles, cleanfiles, dirs):
-    c = input("Enter Choice: ")
-    if 'd' in c.lower():
-        item = int(c.split('d')[0])
-        if item in range(len(dirs)):
-            newpath = fixeddirs[item]
-            os.chdir(newpath)
+        dwidth = [len(i) for i in dirs]
+        try:
+            dwidth = max(dwidth)+2
+        except ValueError:
+            dwidth= 2
+        if dwidth < 13:
+            # is the minimum width of the directory column in the ascii output formatted table
+            dwidth = 13
+
+        crossbar_width = filewidth+dwidth+3+9
+        dirlongfile = len(dirs) > len(cleanfiles)
+        fixeddirs = []
+        fixedfiles = []
+        ###########################
+        """
+        If the file list and directory list are not of the same length,
+        make whichever list is shorter, as long as the longest width, filling
+        the missing values with sentinals (i.e. '') so that output formatting
+        can print the options.
+        """
+        if dirlongfile: 
+            for index,value in enumerate(dirs):
+                fixeddirs.append(value)
+                if index < len(cleanfiles):
+                    fixedfiles.append(cleanfiles[index])
+                else:
+                    fixedfiles.append(' '*filewidth)
+
+        else:
+            for index,value in enumerate(cleanfiles):
+                fixedfiles.append(value)
+                if index < len(dirs):
+                    fixeddirs.append(dirs[index])
+                else:
+                    fixeddirs.append(' '*dwidth)
+        ##########################
+
+        ######## BEGIN OUTPUT FORMATTING ###########
+        print('#'*crossbar_width)
+        print(str("{0:^1}{3:^8}{0:^1}{1:^"+str(filewidth)+"}{0:^1}{2:^"+str(dwidth)+"}{0:^1}").format("#","Files","Directories","LinNUM"))
+        print('#'*crossbar_width)
+        bbreak = False
+        for index, value in enumerate(fixedfiles):
+            print(str("{0:^1}{3:^8}{0:^1}{1:^"+str(filewidth)+"}{0:^1}{2:^"+str(dwidth)+"}{0:^1}").format('#', value, fixeddirs[index], index))
+            if index > 25:
+                bbreak = True
+                break
+        print('#'*crossbar_width)
+        if bbreak:
+            print("Printing exceeded 100 lines.")
+        return fixeddirs, fixedfiles, cleanfiles, dirs
+
+    def choice(self, fixeddirs, fixedfiles, cleanfiles, dirs):
+        c = input("Enter Choice: ")
+        if 'd' in c.lower():
+            item = int(c.split('d')[0])
+            if item in range(len(dirs)):
+                newpath = fixeddirs[item]
+                os.chdir(newpath)
+                return True, os.getcwd()
+        elif 'f' in c.lower():
+            item = int(c.split('f')[0])
+            if item in range(len(cleanfiles)):
+                newpath = fixedfiles[int(c.split('f')[0])]
+                return False, os.getcwd()+'/'+newpath
+        elif '..' == c:
+            os.chdir(c)
             return True, os.getcwd()
-    elif 'f' in c.lower():
-        item = int(c.split('f')[0])
-        if item in range(len(cleanfiles)):
-            newpath = fixedfiles[int(c.split('f')[0])]
-            return False, os.getcwd()+'/'+newpath
-    elif '..' == c:
-        os.chdir(c)
+        elif 'ok' in c:
+            print('okay. Saving current directory choice.')
+            return False, os.getcwd()
+        announcement("You selected " +c+ ' which is not a valid option.')
         return True, os.getcwd()
-    elif 'ok' in c:
-        print('okay. Saving current directory choice.')
-        return False, os.getcwd()
-    announcement("You selected " +c+ ' which is not a valid option.')
-    return True, os.getcwd()
+
+    def dict_selector(self, dic):
+        """
+        expects a key:tupple unorganized dictionary where
+            tuple = [String, Function]
+        such that the string describes the properties of the function.
+
+        the "key"
+        has the function of not only being the ouput choice of this selector
+        function, but it also is the key to the tuple.
+        """
+        def tableformatter(keys, strs):
+            len_keys = [len(key) for key in keys]
+            maxlen_keys = max(len_keys)+2
+
+            keydescribers = strs
+            len_keydescribers = [len(k) for k in keydescribers]
+            maxlen_key_descrbers = max(len_keydescribers)+2
+            maxlen_key_descrbers = 10 if maxlen_key_descrbers < 10 else maxlen_key_descrbers
+            xbar = maxlen_keys + maxlen_key_descrbers +4+8+1
+
+            print('#'*xbar)
+            print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#','option#','name','describers'))
+            print('#'*xbar)
+            for index,value in enumerate(keys):
+                print(str('{0:1}{1:^9}{0:1}{2:^'+str(maxlen_keys)+'}{0:1}{3:^'+str(maxlen_key_descrbers)+'}{0:1}').format('#',index,value,keydescribers[index]))
+            print('#'*xbar)
+            return True
+
+        keys = dic.keys()
+        options = [i for i in range(len(keys))]
+        reconsile = dict(zip(options, keys))
+        keydescribers = []
+        for k in keys:
+            value = dic[k]
+            if type(value) == list:
+                keydescribers.append(dic[k][0])
+            else:
+                keydescribers.append(dic[k])
+        tableformatter(keys,keydescribers)
+
+        choices = 'hey'
+        while True:
+            try:
+                choices = int(input("Enter option number: "))
+                print("Your choice was", reconsile[choices], 'returning...')
+                break
+            except KeyboardInterrupt:
+                print('keyboard inturrupt recived. Breaking.')
+                raise KeyboardInterrupt
+            except ValueError as e:
+                print("Invalid input. Try again.", '\n'*2)
+                continue
+            except KeyError:
+                print("Incorrect Key. Make sure option number matches that which is in the table of options.")
+                continue
+        return reconsile[choices]
+
+    def announcement(self, mystr):
+        print('\n')
+        print("#"*3, mystr, '#'*3)
+
+    def header(self, mystr):
+        s = 7
+        lstr = len(mystr) +2
+        width = lstr+s*2+2
+        print("@"*width)
+        print(str("{0:1}{2:^"+str(s)+"}{1:^"+str(lstr)+"}{2:^"+str(s)+"}{0:1}").format("@",mystr, ' '*s))
+        print("@"*width)
 
 def NMRAnalyzer(args):
     """
     Get the baseline and rawsignal from the user.
     """
-    header("NMR Analyser")
-    print('\n'*3,'Please select baseline file')
-    print("#"*30)
     instance = nmrAnalyser(args, hardinit=True)
     instance.fetchArgs()
     #instance.showgraph()
     instance.mainloop()
 
 
-
-
-class nmrAnalyser():
+class nmrAnalyser(AsciiGUI):
     def __init__(self,args=None, hardinit=False):
         self.rootdir = os.getcwd()
         self.delimeter = '\t'
@@ -240,25 +236,25 @@ class nmrAnalyser():
         pass
 
     def getBaseline(self):
-        announcement("Update Baseline")
+        self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
-        self.baselinepath = selectit()
+        self.baselinepath = self.fileDirectorySelector()
         os.chdir(self.rootdir)
-        announcement("Baseline path updated")
+        self.announcement("Baseline path updated")
 
     def getRawsig(self):
-        announcement("Update Raw Signal")
+        self.announcement("Update Raw Signal")
         print("Current working directory:",os.getcwd())
-        self.rawsigpath = selectit()
+        self.rawsigpath = self.fileDirectorySelector()
         os.chdir(self.rootdir)
-        announcement("Raw Signal path updated")
+        self.announcement("Raw Signal path updated")
 
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
         if self.isautomated:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
-            self.material_type = kwargs.pop('material_type', '')
+        self.material_type = kwargs.pop('material_type', '')
         self.fitnumber = kwargs.pop('fitnumber',0)
         self.automatefits = kwargs.pop('automatefits',[])
         self.mutouse= kwargs.pop('mutouse','proton')
@@ -286,17 +282,25 @@ class nmrAnalyser():
         
         if not self.hardinit:
             self.processes = kwargs.pop('processes',1)
+
+        
         self.blSkipLinesGetter()
         self.rawsigSkipLinesGetter()
         self.updateDataFrame()
         if self.isautomated:
             return True
+        self.updateMaterialType()
+        self.updateInstanceName()
         self.updateGraph()
 
     def blSkipLinesGetter(self):
         delimeter = self.delimeter
         choices = self.vnavme
         _, _, _, self.blskiplines = v.gui_bl_file_preview(self.baselinepath, self.delimeter)
+
+    def updateInstanceName(self):
+        self.announcement("Current instance name: "+self.instancename)
+        self.instancename = input("Input new instance name: ")
 
     def rawsigSkipLinesGetter(self):
         _, _, self.te_date, self.I, self.T, self.primary_thermistor,\
@@ -318,7 +322,7 @@ class nmrAnalyser():
                 )
 
     def changeSignalStartEnd(self):
-        announcement("Changing start / end of signal boundaries. Use current x-coordinates.")
+        self.announcement("Changing start / end of signal boundaries. Use current x-coordinates.")
         print("To skip changing value for a particular entry, please hit ENTER")
         startsignal = input("Signal Start X-value: ")
         if startsignal == '':
@@ -334,7 +338,7 @@ class nmrAnalyser():
         self.updateGraph()
 
     def updateMaterialType(self):
-        announcement("Current material type: "+self.material_type)
+        self.announcement("Current material type: "+self.material_type)
         self.material_type = input("Input new material type: ")
 
     def updateIndecies(self):
@@ -422,7 +426,7 @@ class nmrAnalyser():
                 if not self.servermode:
                     self.figure.show()
                 print("#"*70)
-                announcement("Current Settings")
+                self.currentSettings()
                 print("#"*70)
 
                 print("#"*70)
@@ -449,8 +453,10 @@ class nmrAnalyser():
         savefigmsg = 'Save the current figure as is.'
         savedatamsg ='Save the current data as is'
         savefiganddatamsg ='Save the current figure and data as is'
+        updatebaselinemsg = "Update baseline file"
+        updaterawsigmsg = "Update signal file"
+        changematerialmsg = "Update Material Type"
         choices = {
-                "nameinstance":[nameinstancemsg, self.setInstanceName],
                 "binning":[binningmsg, self.setBinning],
                 'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
                 'fit subtraction':[fit_subtractionmsg, self.fitSubtract],
@@ -463,13 +469,26 @@ class nmrAnalyser():
                 'plottitle':[titlemsg, self.changetitle],
                 'togglemu':[mumsg, self.adjustmu],
                 'savefiganddata':[savefiganddatamsg,self.saveBoth],
-                'automate':[automatemsg, self.automate]}
-        key = dict_selector(choices)
+                'automate':[automatemsg, self.automate],
+                "updatebaseline":[updatebaselinemsg, self.getBaseline],
+                "updaterawsignal":[updaterawsigmsg, self.getRawsig],
+                "updatematerial":[changematerialmsg, self.updateMaterialType],
+                "nameinstance":[nameinstancemsg, self.setInstanceName]}
+        key = self.dict_selector(choices)
         f = choices[key][1]
         f()
 
+    def currentSettings(self):
+        self.header("Current Settings:")
+        x = self.xname
+        lineone ="# Data Range: " str(min(self.df[x]))+ ' to ' + str(max(self.df[x])) + str(self.xname) + ' # Current Signal Highlighting Region '+ str(self.signalstart) + ' to ' + str(self.signalend)+ ' #'
+        linetwo = "# Shading: " + ('Enabled' if self.integrate else 'Disabled') + " # Current binning: " + str(self.binning) + " #"
+
+        lines = [lineone, linetwo]
+        maxline = max([len(i) for i in lines])
+
     def setInstanceName(self):
-        announcement("Current instance name is: "+self.instancename)
+        self.announcement("Current instance name is: "+self.instancename)
         self.instancename = input("Input new instance name: ")
         print("Instance name changed to", self.instancename)
 
@@ -478,7 +497,7 @@ class nmrAnalyser():
         self.updateGraph()
     
     def setBinning(self):
-        announcement('Current binning is '+str(self.binning)+'.')
+        self.announcement('Current binning is '+str(self.binning)+'.')
         print('Please select new binning')
         choices = 'hey'
         while type(choices) != int:
@@ -501,7 +520,7 @@ class nmrAnalyser():
         messages = [protonmsg, deuteronmsg]
 
         choices = dict(zip(allowable_mus, messages))
-        self.mutouse = dict_selector(choices)
+        self.mutouse = self.dict_selector(choices)
         print("Mu is now: ", self.mutouse)
         self.updateGraph()
 
@@ -511,34 +530,34 @@ class nmrAnalyser():
         self.updateGraph()
 
     def changexname(self):
-        announcement("Current X name "+str(self.xname))
+        self.announcement("Current X name "+str(self.xname))
         columns = self.df.columns.tolist()
         columnmsg = "Column in dataframe."
         print("available columns:") 
         nice = [columnmsg for _ in range(len(columns))]
         choices = dict(zip(columns, nice))
-        self.xname = dict_selector(choices)
+        self.xname = self.dict_selector(choices)
         self.xaxlabel = self.xname
         self.updateGraph()
 
     def changeyname(self):
-        announcement("Current Y name "+str(self.yname))
+        self.announcement("Current Y name "+str(self.yname))
         columns = self.df.columns.tolist()
         columnmsg = "Column in dataframe."
         print("available columns:") 
         nice = [columnmsg for i in range(len(columns))]
         choices = dict(zip(columns, nice))
-        self.yname = dict_selector(choices)
+        self.yname = self.dict_selector(choices)
         self.yaxlabel = self.yname
         self.updateGraph()
 
     def changexlabel(self):
-        announcement("Current xlabel "+str(self.xaxlabel))
+        self.announcement("Current xlabel "+str(self.xaxlabel))
         self.xaxlabel = input("Input xlabel: ")
         self.updateGraph()
 
     def changeylabel(self):
-        announcement("Current ylabel "+str(self.yaxlabel))
+        self.announcement("Current ylabel "+str(self.yaxlabel))
         self.yaxlabel = input("Input xlabel: ")
         self.updateGraph()
 
@@ -550,7 +569,7 @@ class nmrAnalyser():
                 'sixth_order','lorentzian_ellie','absorbtion_dispersion_ellie', "Cancel Fit"]
         choices = dict(zip(keys,values))
         reverse = dict(zip(values,keys))
-        self.fitname = dict_selector(choices)
+        self.fitname = self.dict_selector(choices)
         if self.fitname == False:
             print("Fit subtraction cancelled")
             return True
@@ -652,7 +671,7 @@ class nmrAnalyser():
             choices = {'approve':[approvemsg, self.approvePlot],
                     'disapprove':[disapprovemsg, self.disapprovePlot],
                     'cancel':[cancelmsg,self.cancelFit]}
-            key = dict_selector(choices)
+            key = self.dict_selector(choices)
             f = choices[key][1]
             f(manual=True)
 
@@ -668,7 +687,7 @@ class nmrAnalyser():
 
     def disapprovePlot(self, manual=False):
         if not manual:
-            announcement("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
+            self.announcement("Plot rejected. Try alternate fitting strategy, or adjust signal highlighted region")
         self.fitSubtract()
 
     def cancelFit(self, manual='False'):
@@ -790,6 +809,7 @@ class nmrAnalyser():
             self.analysisfile = self.analysisfile.append(i,ignore_index=True)
         print(self.analysisfile)
         input('Press any key to continue')
+        self.addEntry(appendme=self.analysisfile)
         exit()
 
     def automatedPKernel(self, graphs, graphdata, home, id_num):
@@ -912,14 +932,16 @@ class nmrAnalyser():
 
         return self.analysisfile
 
-    def addEntry(self, k=[], h=None, addition='',dontwrite=False):
+    def addEntry(self, k=[], h=None, addition='',dontwrite=False, appendme=None):
        # as the headers list in vna_visualizer.py
-        headers = variables.na_global_analysis_headers
+        headers = variablenames.na_global_analysis_headers
 
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
                 self.df.to_csv(f)
             v.add_entry(*k, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
+        elif appendme is not None:
+            v.add_entry(*headers, headers=headers if h is not None else h, appendme=appendme)
         else:
             with open(self.instancename+'.csv', 'w') as f:
                 self.df.to_csv(f)
@@ -943,12 +965,22 @@ class nmrAnalyser():
     def saveBoth(self):
         pass
 
-class daqExtractor():
+class daqExtractor(AsciiGUI):
     def __init__(self, args):
-        pass
+        self.header("DAQ Extractor")
+        print("Extracts and organizes DAQ .csvs into .ta1 based on keywords found in variablenames.py and setting entered here, by the user.")
+        self.mainloop()
 
-    def __getPath__(self):
-        pass
+    def mainloop(self):
+        while True:
+            self.choices()
+
+    def choices(self):
+        selectmsg = 'Select file, or directory to unpack'
+        destination = 'Select destination to place unpacked data'
+
+        
+
 
     def getFile(self):
         self.path = self.__getPath__()
@@ -962,9 +994,7 @@ class daqExtractor():
         pass
 
 def DAQExtractor(args):
-    header("DAQ Extractor")
-    print("Please select a file or directory with csvs")
-    print("#"*30)
+    
     instance = daqExtractor()
 
 def DirSorter():
@@ -979,8 +1009,7 @@ def GlobalInterpreter():
 
 def main(args):
     def options():
-        print('\n'*3)
-        header("OPTIONS")
+        print("NMR Toolsuite options:")
         functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
         functionalities = ["NMRAnalyzer","DAQExtractor","DirSorter","SweepAverage","GlobalInterpreter"]
 

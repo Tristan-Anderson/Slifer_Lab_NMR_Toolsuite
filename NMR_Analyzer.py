@@ -51,13 +51,9 @@ def add_entry(*rowvals,**kwargs):
     def gen_persistence(path, columns):
         # Creates a comma separated value file at path
         # with the columns that you give it
+        df = pandas.DataFrame(columns=columns)
         with open(path + '.csv', 'w') as f:
-            for index, column in enumerate(columns):
-                f.write(column)
-                if index < len(columns) - 0:
-                    f.write(',')
-                else:
-                    f.write('\n')
+            df.to_csv(f)
 
     def get_persistence(headers, fname, addition=''):
         # Read the DF, if it doesn't exist: then makes one
@@ -74,26 +70,30 @@ def add_entry(*rowvals,**kwargs):
             except FileNotFoundError:   # If even THAT (^) fails,
                 print("Something went wrong in the add_entry function")
                 exit()  # Give up.
-    h_orig = variables.na_global_analysis_headers
+    h_orig = variablenames.na_global_analysis_headers
     headers=kwargs.pop("headers",h_orig)
     getdf=kwargs.pop('getdf', False)
     addition = kwargs.pop('addition', '')
     dontwrite = kwargs.pop('dontwrite', False)
+    appendme = kwargs.pop('appendme', None)
 
     fname = "global_analysis"+addition+".csv"
 
-
-    if len(headers) != len(rowvals):
-        if len(headers) > len(rowvals):
-            print("*Advisory: More headers than rowvalues in add_entry.")
-            print("             are you passing every header that you need?")
-        else:
-            print("***ERROR: More rowvals than headers in add_entry.")
-            print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
-            print("          RECHECK headers and rowvalues.")
+    if appendme is None:
+        if len(headers) != len(rowvals):
+            if len(headers) > len(rowvals):
+                print("*Advisory: More headers than rowvalues in add_entry.")
+                print("             are you passing every header that you need?")
+            else:
+                print("***ERROR: More rowvals than headers in add_entry.")
+                print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
+                print("          RECHECK headers and rowvalues.")
     # Get the persistence df. Then add an entry to it passed to the function in *rowvals
-    df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
+    if appendme is None:
+        df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
                                                 ignore_index=True)
+    else:
+        df = get_persistence(headers, fname, addition=addition).append(appendme)
     with open(fname, 'w') as f:
         df.to_csv(f, index=False)
 
