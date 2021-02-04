@@ -212,7 +212,6 @@ def NMRAnalyzer(args):
     #instance.showgraph()
     instance.mainloop()
 
-
 class nmrAnalyser(AsciiGUI):
     def __init__(self,args=None, hardinit=False):
         self.rootdir = os.getcwd()
@@ -428,7 +427,7 @@ class nmrAnalyser(AsciiGUI):
                 print("#"*70)
                 self.currentSettings()
                 print("#"*70)
-
+                self.header("Data frame head")
                 print("#"*70)
                 print(self.df.head(3))
                 self.allchoices()
@@ -481,11 +480,17 @@ class nmrAnalyser(AsciiGUI):
     def currentSettings(self):
         self.header("Current Settings:")
         x = self.xname
-        lineone ="# Data Range: " str(min(self.df[x]))+ ' to ' + str(max(self.df[x])) + str(self.xname) + ' # Current Signal Highlighting Region '+ str(self.signalstart) + ' to ' + str(self.signalend)+ ' #'
-        linetwo = "# Shading: " + ('Enabled' if self.integrate else 'Disabled') + " # Current binning: " + str(self.binning) + " #"
+
+        lineone = "# Data Range: " + str(min(self.df[x]))+ ' to ' + str(max(self.df[x])) + ' ' + str(x) \
+                + '\n# Current Signal Highlighting Region ' + str(self.signalstart) + ' to ' + str(self.signalend)+ ' ' + str(x)
+        
+        linetwo = "# Shading: " + ('Enabled' if self.integrate else 'Disabled') \
+                + " \n# Current binning: " + str(self.binning) + " \n# Current mu: " + str(self.mutouse.upper())
+
+        linethree = '# Current Baseline File: ' + str(self.baselinepath) + '\n# Current Raw-Signal File: '+ str(self.rawsigpath)
 
         lines = [lineone, linetwo]
-        maxline = max([len(i) for i in lines])
+        print(lineone, linetwo, linethree, sep='\n')
 
     def setInstanceName(self):
         self.announcement("Current instance name is: "+self.instancename)
@@ -960,8 +965,6 @@ class nmrAnalyser(AsciiGUI):
         slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
         return slicer
 
-
-
     def saveBoth(self):
         pass
 
@@ -969,33 +972,68 @@ class daqExtractor(AsciiGUI):
     def __init__(self, args):
         self.header("DAQ Extractor")
         print("Extracts and organizes DAQ .csvs into .ta1 based on keywords found in variablenames.py and setting entered here, by the user.")
+        self.selecton = ''
+        self.fdump = ''
+        self.rootdir = os.getcwd()
+        self.getSelection()
+        self.getDestination()
         self.mainloop()
 
     def mainloop(self):
-        while True:
-            self.choices()
+        try:
+            while True:
+                self.choices()
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt recieved in mainloop. Exiting.")
+            return True
+
+    def getSelection(self):
+        self.announcement("Pick directory or file to unpack")
+        self.selection = self.fileDirectorySelector()
+        self.is_file = os.path.isfile(self.selection)
+        print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
+
+    def getDestination(self):
+        self.announcement("The current unpacking destination is " +str(self.fdump))
+        while not os.path.isdir(self.fdump):
+            print("Select a DIRECTORY to place files.")
+            self.fdump = self.fileDirectorySelector()+'/'
+            if os.path.isdir(self.fdump):
+                print("Path accepted.")
+                break
+            else:
+                self.announcement("Path REJECTED. Try selecting a directory with 'ok'.")
+
+
 
     def choices(self):
         selectmsg = 'Select file, or directory to unpack'
-        destination = 'Select destination to place unpacked data'
+        destinationmsg = 'Select destination to place unpacked data'
+        extractmsg = 'Extract current selection into analyzeable files'
 
-        
+
+        self.options = {'updateSelection':[selectmsg, self.getSelection],
+            'updateDestination':[destinationmsg, self.getDestination],
+            'extractData':[extractmsg, self.execute]
+            }
+
+        choice = self.dict_selector(self.options)
+        f = self.options[choice][1]
+        f()
 
 
-    def getFile(self):
-        self.path = self.__getPath__()
-        pass
+    def execute(self):     
+        if self.is_file:
+            self.filelocation = self.selection
+            daq_muncher.single_file(self.selection, self.fdump)
+        else:
+            self.filelocation = self.selection+'/'
+            daq_muncher.directory(self.selection, self.fdump, self.rootdir)
 
-    def execute(self):
-        pass
-
-    def setstate(self):
-        # Sets the state between directory and individual file mode.
-        pass
 
 def DAQExtractor(args):
     
-    instance = daqExtractor()
+    instance = daqExtractor(args)
 
 def DirSorter():
     pass

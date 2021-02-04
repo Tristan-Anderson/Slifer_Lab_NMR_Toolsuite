@@ -110,7 +110,7 @@ agui_primary_thermistor_name = dmsa_primary_thermometer_colname
 
 agui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
 
-agui_allowable_file_extensions = ['.ta1', '.s1p']
+agui_allowable_file_extensions = ['.ta1', '.s1p', '.csv']
 
 agui_vnavme_default = 'vme'
 
