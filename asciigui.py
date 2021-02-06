@@ -131,7 +131,7 @@ class AsciiGUI():
         elif 'ok' in c:
             print('okay. Saving current directory choice.')
             return False, os.getcwd()
-        announcement("You selected " +c+ ' which is not a valid option.')
+        self.announcement("You selected " +c+ ' which is not a valid option.')
         return True, os.getcwd()
 
     def dict_selector(self, dic):
@@ -202,6 +202,27 @@ class AsciiGUI():
         print("@"*width)
         print(str("{0:1}{2:^"+str(s)+"}{1:^"+str(lstr)+"}{2:^"+str(s)+"}{0:1}").format("@",mystr, ' '*s))
         print("@"*width)
+
+    def getNumInRange(self, a,b):
+        choice = None
+        maxn = max([a,b])
+        minn = min([a,b])
+        inputstring = 'Please enter a number between '+str(a) + ' ' + str(b) + ' or press enter to skip: '
+        while True:
+            r = input(inputstring)
+            if r == '':
+                print('Sentinal recieved - ignoring and returning.')
+                choice = 0
+                return choice
+            try:
+                choice = float(r)
+                if choice <= maxn and choice >= minn:
+                    return choice
+            except ValueError:
+                print("ValueError, improper-input. Numbers only please, within the appropriate range.")
+
+            
+
 
 def NMRAnalyzer(args):
     """
@@ -975,12 +996,14 @@ class daqExtractor(AsciiGUI):
         self.selecton = ''
         self.fdump = ''
         self.rootdir = os.getcwd()
-        self.getSelection()
-        self.getDestination()
+       
         self.mainloop()
 
     def mainloop(self):
+
         try:
+            self.getSelection()
+            self.getDestination()
             while True:
                 self.choices()
         except KeyboardInterrupt:
@@ -996,7 +1019,7 @@ class daqExtractor(AsciiGUI):
     def getDestination(self):
         self.announcement("The current unpacking destination is " +str(self.fdump))
         while not os.path.isdir(self.fdump):
-            print("Select a DIRECTORY to place files.")
+            self.header("Select a DIRECTORY to place files.")
             self.fdump = self.fileDirectorySelector()+'/'
             if os.path.isdir(self.fdump):
                 print("Path accepted.")
@@ -1030,18 +1053,78 @@ class daqExtractor(AsciiGUI):
             self.filelocation = self.selection+'/'
             daq_muncher.directory(self.selection, self.fdump, self.rootdir)
 
+class dirSorter(AsciiGUI):
+    def __init__(self, args):
+        self.header("Directory Sorter")
+        print("Packs and unpacks directories by a width of time based on timestamps present in the .ta1 files")
+        self.selecton = ''
+        self.fdump = ''
+        self.rootdir = os.getcwd()
+        self.getSelection()
+        self.mainloop()
 
-def DAQExtractor(args):
-    
+    def mainloop(self):
+        try:
+            while True:
+                self.choices()
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt recieved in mainloop. Exiting.")
+            return True
+
+    def getSelection(self):
+        self.announcement("Pick directory or file to unpack")
+        self.selection = self.fileDirectorySelector()
+        self.is_file = os.path.isfile(self.selection)
+        print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
+        if self.is_file:
+            print("You selected an individual file. Please ONLY select a directory")
+            print("this is done by entering 'ok' once the current working directory reads the desired path")
+            self.getSelection()
+
+    def choices(self):
+        shelfmsg = "Organize the current directory per the user selected time-stamp"
+        unshelfmsg = "Move files/folders in first child directories out to their parent directory"
+        configuretimestepmsg = "Set the width of time to organize directories with."
+        # Your mother was a:
+        hampster = {'shelf':[shelfmsg, self.doShelf],
+                    'unshelf':[unshelfmsg, self.unShelf],
+                    'settimestep':[configuretimestepmsg, self.setTimestep]}
+        # And your father smelt of            
+        ELDER_BERRIES = self.dict_selector(hampster)
+
+        you = hampster[ELDER_BERRIES][1]
+
+        you()
+
+    def doShelf(self):
+        try:
+            self.h, self.m, self.s
+        except:
+            self.setTimestep()
+        directory_sorter.shelf(self.selection, hours=self.h, minutes=self.m, seconds=self.s)
+
+    def unShelf(self):
+        directory_sorter.unshelf(self.selection)
+
+    def setTimestep(self):
+        print("Enter the number of seconds:")
+        self.s = self.getNumInRange(0, 59)
+        print("Enter the number of minutes:")
+        self.m = self.getNumInRange(0,59)
+        print("Enter the number of hours:")
+        self.h = self.getNumInRange(0,23)
+
+        
+def DAQExtractor(args):  
     instance = daqExtractor(args)
 
-def DirSorter():
+def DirSorter(args):
+    instance = dirSorter(args)
+
+def SweepAverager(args):
     pass
 
-def SweepAverager():
-    pass
-
-def GlobalInterpreter():
+def GlobalInterpreter(args):
     pass
 
 
