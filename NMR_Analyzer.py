@@ -1,4 +1,6 @@
+# PYTHON 3.9.1
 """
+
 Tristan Anderson
 tja1015@wildats.unh.edu
 
@@ -12,12 +14,15 @@ formally for this toolsuite has not been optimized.
 
 If future maintenance is needed, see documentation in UNH-NPG>lab_work>students_ugrad>Tristan Anderson>TE Extraction
 """
-import variablenames
+import variablenames, warnings
+from scipy.optimize import OptimizeWarning
 import pandas, numpy, datetime, matplotlib, math, traceback
 from scipy.optimize import curve_fit as fit
 from matplotlib import pyplot as plt
 from matplotlib.patches import Polygon
 from statistics import mode
+
+numpy.seterr(all='ignore')
 
 global fig_size_x, fig_size_y
 fig_size_x,fig_size_y = 16,9
@@ -48,13 +53,9 @@ def add_entry(*rowvals,**kwargs):
     def gen_persistence(path, columns):
         # Creates a comma separated value file at path
         # with the columns that you give it
+        df = pandas.DataFrame(columns=columns)
         with open(path + '.csv', 'w') as f:
-            for index, column in enumerate(columns):
-                f.write(column)
-                if index < len(columns) - 0:
-                    f.write(',')
-                else:
-                    f.write('\n')
+            df.to_csv(f)
 
     def get_persistence(headers, fname, addition=''):
         # Read the DF, if it doesn't exist: then makes one
@@ -71,26 +72,30 @@ def add_entry(*rowvals,**kwargs):
             except FileNotFoundError:   # If even THAT (^) fails,
                 print("Something went wrong in the add_entry function")
                 exit()  # Give up.
-    h_orig = variables.na_global_analysis_headers
+    h_orig = variablenames.na_global_analysis_headers
     headers=kwargs.pop("headers",h_orig)
     getdf=kwargs.pop('getdf', False)
     addition = kwargs.pop('addition', '')
     dontwrite = kwargs.pop('dontwrite', False)
+    appendme = kwargs.pop('appendme', None)
 
     fname = "global_analysis"+addition+".csv"
 
-
-    if len(headers) != len(rowvals):
-        if len(headers) > len(rowvals):
-            print("*Advisory: More headers than rowvalues in add_entry.")
-            print("             are you passing every header that you need?")
-        else:
-            print("***ERROR: More rowvals than headers in add_entry.")
-            print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
-            print("          RECHECK headers and rowvalues.")
+    if appendme is None:
+        if len(headers) != len(rowvals):
+            if len(headers) > len(rowvals):
+                print("*Advisory: More headers than rowvalues in add_entry.")
+                print("             are you passing every header that you need?")
+            else:
+                print("***ERROR: More rowvals than headers in add_entry.")
+                print("          DATA IS BEING DROPPED and not added to global_analysis.csv")
+                print("          RECHECK headers and rowvalues.")
     # Get the persistence df. Then add an entry to it passed to the function in *rowvals
-    df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
+    if appendme is None:
+        df = get_persistence(headers, fname, addition=addition).append(pandas.DataFrame(dict(zip(headers,rowvals)), index=[0]),
                                                 ignore_index=True)
+    else:
+        df = get_persistence(headers, fname, addition=addition).append(appendme)
     with open(fname, 'w') as f:
         df.to_csv(f, index=False)
 
@@ -871,7 +876,10 @@ def gff(df, start, finish, fitname, **kwargs):
         chsq = {}
         for f in fitnames:
             try:
-                var, _ = fit(eval(f), x_data_for_fit, y_data_for_fit)  # Prof. Narayan is screaming because I'm evaling' here
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error', OptimizeWarning)
+                    var, _ = fit(eval(f), x_data_for_fit, y_data_for_fit)  # Prof. Narayan is screaming because I'm evaling' here
+
                 yfit = get_function(f, x_data_for_fit, var)
                 chsq[f] = chisquared(y_data_for_fit, yfit)/(len(y_data_for_fit)-3) # reduced chisquared
             except: # We probably failed fitting
@@ -1382,8 +1390,13 @@ def ggf(master, s, f, **kwargs):
             "Data Area: " + str(round(integrated_value, 6)),
             xy=(xtxt, ypp - ys), xycoords='figure pixels'
         )
-        
-        verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
+        try:
+            verts = [[ix[0], 0],*zip(ix, iy),[ix[-1],0]]
+        except IndexError:
+            try:
+                verts = [*zip(ix, iy)]
+            except:
+                print("Failed to draw shaded polygon for visual integration of",filename)
         try:
             poly = Polygon(verts, facecolor='0.9', edgecolor='0.5')
             ax.add_patch(poly)
@@ -1393,6 +1406,10 @@ def ggf(master, s, f, **kwargs):
             # TODO FIXME FIND out why this keeps "failing sucessfully".
             #   It's drawing the polygon, but complaining that it can't
             #   draw the polygon... WAT?
+            pass
+        except NameError:
+            # verts not defined, whoops, everything failed.
+            #   Sweep everything under the rug, and pretend like it didn't happen.
             pass
    
     try:

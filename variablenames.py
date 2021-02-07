@@ -110,7 +110,7 @@ agui_primary_thermistor_name = dmsa_primary_thermometer_colname
 
 agui_secondary_thermistor_name = dmsa_secondary_thermometer_colname
 
-agui_allowable_file_extensions = ['.ta1', '.s1p']
+agui_allowable_file_extensions = ['.ta1', '.s1p', '.csv']
 
 agui_vnavme_default = 'vme'
 
@@ -119,3 +119,37 @@ agui_xname_default = na_vme_xaxis_default
 agui_yname_default = na_vme_yaxis_default
 
 agui_impression = False
+####################################################################
+###                    Global Interpreter                        ###
+####################################################################
+
+## Change the thermistor type here
+gi_primary_thermistor = "CCX.T3 (K)"
+gi_secondary_thermistor ="Vapor Pressure Temperature (K)"
+##
+gi_time = 'time'
+gi_lorentzianarea_results = "Lorentzian Area"
+gi_scaled_polarization = "Scaled Polarization (%)"
+gi_uncert_in_scaled_pol = "Uncert in Scaled polarization"
+gi_integrated_data_area_results = "Integrated Data Area"
+gi_ltz_area_results = "Lorentzian Area"
+gi_bviaI_results = 'B via I (T)'
+gi_primary_thermistor_results ="CCCS.T3 (K)"
+gi_secondary_thermistor_results = "VP (K)"
+gi_centroid_results = "sweep centroid"
+gi_width_results = "sweep width"
+gi_te_results ="TEvalue"
+gi_teviax0_results = 'TE via x0'
+gi_tebest_results = "TE Best"
+gi_te_uncert_results = "TE Uncert"
+gi_rsq_results = "Reduced Relative Chi-Square"
+
+gi_centroidlabel = 'x0'
+gi_lorentzianarea = "ltzian_area"
+gi_dataarea = "data_area"
+gi_relchisq = "lorentzian relative-chisquared (error)"
+gi_centroid = "Sweep Centroid"
+gi_width = "Sweep Width"
+gi_TE = "TEvalue"
+
+

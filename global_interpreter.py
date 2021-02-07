@@ -18,7 +18,7 @@ TODO: Seperate the TE from the Enhanced routines. Condense TE error propogation
 
 """
 
-import pandas, numpy
+import pandas, numpy, variablenames
 from scipy.stats import mode
 import datetime
 from matplotlib import pyplot as plt
@@ -107,7 +107,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 
 
 		# Header from global_analysis files.
-		rows_to_keep =["name", "time", "B", "ltzian_area", "data_area", "x0", "CCCS.T3 (K)", "Vapor Pressure (K)", "TEvalue"]
+		rows_to_keep =["name", variablenames.gi_time, "B", "ltzian_area", "data_area", variablenames.gi_centroidlabel, variablenames.gi_primary_thermistor,
+								variablenames.gi_secondary_thermistor, "TEvalue"]
 		mhz_to_b = 42.58
 
 		rows_to_delete = []
@@ -117,38 +118,38 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 
 		# Pull out the data needed to do the analysis from our file.
 		if not deuteron:
-			y1 = df["x0"].values.astype(float)
-			y1b = df["x0"].values.astype(float)/mhz_to_b
-		y3 = df["ltzian_area"].values.astype(float)
-		y3a = df["data_area"].values.astype(float)
-		relative_error = df["lorentzian relative-chisquared (error)"].values.astype(float)
+			y1 = df[variablenames.gi_centroidlabel].values.astype(float)
+			y1b = df[variablenames.gi_centroidlabel].values.astype(float)/mhz_to_b
+		y3 = df[variablenames.gi_lorentzianarea].values.astype(float)
+		y3a = df[variablenames.gi_dataarea].values.astype(float)
+		relative_error = df[variablenames.gi_relchisq].values.astype(float)
 		
 		try:
-			vpy = df["Vapor Pressure (K)"].values.astype(float)
-			t3y = df["CCCCS.T3 (K)"].values.astype(float)
+			vpy = df[variablenames.gi_secondary_thermistor].values.astype(float)
+			t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
 		except ValueError as e:
 			if te:
-				vpy = df["Vapor Pressure (K)"].values.astype(float)
-				t3y = df["CCCCS.T3 (K)"].values.astype(float)
+				vpy = df[variablenames.gi_secondary_thermistor].values.astype(float)
+				t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
 				#If you got here, then you're missing some critical thermometry data
 				# in a global analysis csv.
 			else:
 				print(e)
-				print("WARNING: Using vapor pressure as failsafe.")
+				print("WARNING: Using", variablenames.gi_secondary_thermistor, "as failsafe.")
 				try:
-					vpy = df["Vapor Pressure (K)"].values.astype(float)
-					t3y = df["CCCCS.T3 (K)"].values.astype(float)
+					vpy = df[variablenames.gi_secondary_thermistor].values.astype(float)
+					t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
 				except:
 					print("\n***ERROR: Backup to the backup temperature failed")
 					print("ADVISORY: Setting all temperatures to 1K, hoping for the best\n")
-					t3y = numpy.array([1 for i in range(len(df["time"]))])
+					t3y = numpy.array([1 for i in range(len(df[variablenames.gi_time]))])
 					vpy=t3y
 
 
 		
-		sweep_centroids = df["Sweep Centroid"].values.astype(float)
-		sweep_width = df["Sweep Width"].values.astype(float)
-		teval = df["TEvalue"].values.astype(float) # unscaled
+		sweep_centroids = df[variablenames.gi_centroid].values.astype(float)
+		sweep_width = df[variablenames.gi_width].values.astype(float)
+		teval = df[variablenames.gi_TE].values.astype(float) # unscaled
 		
 
 	else:
@@ -159,23 +160,23 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		#		This is the portion for the tertiary analysis
 		with open(prevanalized, 'r') as f:
 			df = pandas.read_csv(f)
-		y1a = df['B via I (T)'].values
-		y1 = df["x0"].values.astype(float)
-		#y1b = df["x0"].values.astype(float)/mhz_to_b
-		y3 = df["Lorentzian Area"].values.astype(float)
-		y3a = df["Integrated Data Area"].values.astype(float)
-		t3y = df["CCCS.T3 (K)"].values.astype(float)
-		vpy = df["VP (K)"].values.astype(float)
-		sweep_centroids = df["sweep centroid"].values.astype(float)
-		sweep_width = df["sweep width"].values.astype(float)
+		y1a = df[variablenames.gi_bviaI_results].values
+		y1 = df[variablenames.gi_centroidlabel].values.astype(float)
+		#y1b = df[variablenames.gi_centroidlabel].values.astype(float)/mhz_to_b
+		y3 = df[variablenames.gi_lorentzianarea_results].values.astype(float)
+		y3a = df[variablenames.gi_integrated_data_area_results].values.astype(float)
+		t3y = df[variablenames.gi_primary_thermistor_results].values.astype(float)
+		vpy = df[variablenames.gi_secondary_thermistor_results].values.astype(float)
+		sweep_centroids = df[variablenames.gi_centroid_results].values.astype(float)
+		sweep_width = df[variablenames.gi_width_results].values.astype(float)
 
-	df["time"] = pandas.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
-	df.sort_values(by='time')
+	df[variablenames.gi_time] = pandas.to_datetime(df[variablenames.gi_time], format="%Y-%m-%d %H:%M:%S")
+	df.sort_values(by=variablenames.gi_time)
 
 
-	dt_for_dmy = df.loc[1, "time"]
+	dt_for_dmy = df.loc[1, variablenames.gi_time]
 	
-	datemax,datemin = max(df["time"]), min(df["time"])
+	datemax,datemin = max(df[variablenames.gi_time]), min(df[variablenames.gi_time])
 	timedelta = (datemax-datemin).days/2
 	centertime = datemin+datetime.timedelta(timedelta)
 	material = df.loc[0,'material']
@@ -184,9 +185,9 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	print(y,m,d, "Enhanced" if te == False else "")
 
 	results_df = pandas.DataFrame()
-	results_df["time"] = df["time"]
+	results_df[variablenames.gi_time] = df[variablenames.gi_time]
 
-	x = df["time"].values
+	x = df[variablenames.gi_time].values
 	y1a = df['B'].values
 	for index, val in enumerate(y1a):
 		if val == 'Off':
@@ -203,10 +204,10 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			t3y[index] = float(t3y[index])
 
 	if enforce_T3:
-		print("Enforcing T3 Value.")
+		print("Enforcing primary therimstor Value.")
 		vpy = t3y
 	if enforce_VP:
-		print("Enforcing VP Value.")
+		print("Enforcing secondary thermistor Value.")
 		t3y = vpy
 
 	y2 = (t3y+vpy)/2
@@ -258,10 +259,10 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			print(N)
 			
 			# Save the data
-			results_df["B via x0 (T)"] = y1b
-			results_df["Integrated Data Area"] = y3a
-			results_df["Lorentzian Area"] = y3
-			results_df["Scaled Polarization (%)"] = y3*CAL_BEST
+			results_df[variablenames.gi_bviaI_results] = y1b
+			results_df[variablenames.gi_integrated_data_area_results] = y3a
+			results_df[variablenames.gi_lorentzianarea_results] = y3
+			results_df[variablenames.gi_scaled_polarization] = y3*CAL_BEST
 		
 		elif deuteron:
 			if mode(teval)[0] == 0: # tanh(x) = 0 iff x=0. Here, x = uB/(kT) ==> B = 0 (we didn't get I for some reason from PSU)
@@ -333,8 +334,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			ax[2].scatter(x,y3a*CAL_BEST, color='blue',zorder=2, s=2)
 
 			# "BEST" is with uncert
-			results_df["Scaled Polarization (%)"] = y3a*CAL_BEST
-			results_df["Uncert in Scaled polarization"] = y3a*CAL_UNCERT
+			results_df[variablenames.gi_scaled_polarization] = y3a*CAL_BEST
+			results_df[variablenames.gi_uncert_in_scaled_pol] = y3a*CAL_UNCERT
 		
 		else:
 			fig, ax = plt.subplots(nrows=6, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
@@ -352,11 +353,11 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			tevaluesaxis.legend(loc='best')
 			tevaluesaxis.set_yscale('symlog')
 
-			results_df['TE via x0'] = vix0
+			results_df[variablenames.gi_teviax0_results] = vix0
 			#results_df["cal_constant"] = constants
-			results_df['TEvalue'] = teval
-			results_df["TE Best"] = TE_BEST
-			results_df["TE Uncert"] = TE_UNCERT
+			results_df[variablenames.gi_te_results] = teval
+			results_df[variablenames.gi_tebest_results] = TE_BEST
+			results_df[variablenames.gi_te_uncert_results] = TE_UNCERT
 
 			
 			
@@ -372,8 +373,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			ax[2].scatter(x,y3*CAL_BEST, color='blue', zorder=2, s=2)
 
 			# "BEST" is with uncert
-			results_df["Scaled Polarization (%)"] = y3*CAL_BEST
-			results_df["Uncert in Scaled polarization"] = y3*CAL_UNCERT
+			results_df[variablenames.gi_scaled_polarization] = y3*CAL_BEST
+			results_df[variablenames.gi_uncert_in_scaled_pol] = y3*CAL_UNCERT
 
 		ax[2].set_ylabel("Scaled Polarization (%)")
 	
@@ -392,7 +393,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 
 	
 	ax[1].scatter(x,t3y, label="CCCS.T3 (K)", color="maroon")
-	ax[1].scatter(x,vpy, label="Vapor Pressure (K)",color="orange")
+	ax[1].scatter(x,vpy, label=variablenames.gi_secondary_thermistor,color="orange")
 	ax[1].set_ylabel('Kelvin')
 	ax[1].legend(loc='best')
 
@@ -409,16 +410,16 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		if home is not None:
 			plt.savefig(home+d+"_"+pltsave)
 			if prevanalized is None:
-				results_df["B via I (T)"] = y1a
-				results_df["B via x0 (T)"] = None
-				results_df["CCCS.T3 (K)"] = t3y
-				results_df["VP (K)"] = vpy
-				results_df["Integrated Data Area"] = y3a
-				results_df["Lorentzian Area"] = y3
-				results_df["Reduced Relative Chi-Square"] = relative_error
-				results_df["x0"] = None
-				results_df["sweep centroid"] = sweep_centroids
-				results_df["sweep width"] = sweep_width
+				results_df[variablenames.gi_bviaI_results] = y1a
+				results_df[variablenames.gi_bviaI_results] = None
+				results_df[variablenames.gi_primary_thermistor_results] = t3y
+				results_df[variablenames.gi_secondary_thermistor_results] = vpy
+				results_df[variablenames.gi_integrated_data_area_results] = y3a
+				results_df[variablenames.gi_ltz_area_results] = y3
+				results_df[variablenames.gi_rsq_results] = relative_error
+				results_df[variablenames.gi_centroidlabel] = None
+				results_df[variablenames.gi_centroid_results] = sweep_centroids
+				results_df[variablenames.gi_width_results] = sweep_width
 				with open(home+d+"_"+pltsave+".csv", 'w') as f:
 					results_df.to_csv(f, index=False)
 		else:
@@ -429,13 +430,13 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		return False
 	
 	else:
-		results_df["B via I (T)"] = y1a
-		results_df["CCCS.T3 (K)"] = t3y
-		results_df["VP (K)"] = vpy
-		results_df["Reduced Relative Chi-Square"] = relative_error
-		results_df["x0"] = y1
-		results_df["sweep centroid"] = sweep_centroids
-		results_df["sweep width"] = sweep_width
+		results_df[variablenames.gi_bviaI_results] = y1a
+		results_df[variablenames.gi_primary_thermistor_results] = t3y
+		results_df[variablenames.gi_secondary_thermistor_results] = vpy
+		results_df[variablenames.gi_rsq_results] = relative_error
+		results_df[variablenames.gi_centroidlabel] = y1
+		results_df[variablenames.gi_centroid_results] = sweep_centroids
+		results_df[variablenames.gi_width_results] = sweep_width
 		# A visual aid for how poorly the user is able to extract the lorentzian (;
 		# A functional form that is better than the lorentzian is "Voight Curve"
 		#	which is a curve that's a linear combination of the convolutions
