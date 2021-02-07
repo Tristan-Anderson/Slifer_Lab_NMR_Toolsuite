@@ -441,7 +441,7 @@ class nmrAnalyser(AsciiGUI):
             them = '/'.join(self.baselinepath.split('/')[:-1])
             os.chdir(them)
             os.chdir('..')
-            self.getRawsig()s
+            self.getRawsig()
             self.fetchArgs()
             while True:
                 if not self.servermode:
