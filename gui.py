@@ -315,7 +315,7 @@ class Directory_Sorter(tk.Frame):
         s = int(self.seconds.get())
         status = self.status.get()
         if status == "shelf":
-            directory_sorter.shelf(self.location, hours=h, minutes=m, seconds=s)
+            directory_sorter.shelf(self.location, hours=self.h, minutes=self.m, seconds=self.s)
         elif status == "unshelf":
             directory_sorter.unshelf(self.location)
 

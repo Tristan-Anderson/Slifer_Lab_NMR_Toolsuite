@@ -1074,6 +1074,7 @@ class dirSorter(AsciiGUI):
     def getSelection(self):
         self.announcement("Pick directory or file to unpack")
         self.selection = self.fileDirectorySelector()
+        self.selection += '/' # needed to make the fact this was a directory clear to the file organisers
         self.is_file = os.path.isfile(self.selection)
         print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
         if self.is_file:

@@ -74,7 +74,6 @@ def shelf(location, **ts):
 			except FileNotFoundError:
 				os.mkdir(directoryname)
 			# one by one move the files.
-			#print(files_to_move)
 			for f in files_to_move:
 				#print("Hello")
 				#print(glob.glob(location+'*'+f+'*'), f)
