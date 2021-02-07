@@ -231,8 +231,8 @@ def NMRAnalyzer(args):
     """
     instance = nmrAnalyser(args, hardinit=True)
     instance.fetchArgs()
-    #instance.showgraph()
     instance.mainloop()
+    del instance
 
 class nmrAnalyser(AsciiGUI):
     def __init__(self,args=None, hardinit=False):
@@ -1064,6 +1064,7 @@ class dirSorter(AsciiGUI):
         self.getSelection()
         self.mainloop()
 
+
     def mainloop(self):
         try:
             while True:
@@ -1119,18 +1120,22 @@ class dirSorter(AsciiGUI):
         
 def DAQExtractor(args):  
     instance = daqExtractor(args)
+    del instance
 
 def DirSorter(args):
     instance = dirSorter(args)
+    del instance
 
 def SweepAverager(args):
     instance = sweepAverager(args)
+    del instance
 
 class sweepAverager(AsciiGUI):
     def __init__(self, args):
         super().__init__(args, getrootdir=True)
 
         self.mainloop()
+
 
     def mainloop(self):
         try: 
@@ -1151,8 +1156,6 @@ class sweepAverager(AsciiGUI):
 
         f = choice[key][1]
         f()
-
-
 
     def updateLocation(self):
         self.selection = self.fileDirectorySelector() + '/'
@@ -1175,7 +1178,66 @@ class sweepAverager(AsciiGUI):
 
 
 def GlobalInterpreter(args):
-    pass
+    instance = globalInterpreter(args)
+    del instance
+
+class globalInterpreter(AsciiGUI):
+    def __init__(self, args):
+        super().__init__(args, getrootdir=True)
+        self.rootdir += '/'
+        self.enhancedpath = ''
+        self.tepath = ''
+        self.deuteron = False
+
+        self.mainloop()
+
+    def mainloop(self):
+        try:
+            while True:
+                self.choices()
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt recieved. Returning.")
+            return True
+
+    def choices(self):
+        updatetemsg = "Update TE global analysis path"
+        updateenhancedmsg = "Update ENHANCED global analysis path"
+        analyzetemsg = "Analyze only the TE global analysis"
+        analyzeenhancedmsg = "Analyze the TE and ENHANCED global analysis"
+        toggledeuteronmsg = "Toggle Deuteron status"
+
+        choice = {'updatete':[updatetemsg, self.updateTE],
+                    'updateenhanced':[updateenhancedmsg, self.updateEnhanced],
+                    'toggleDeuteron':[toggledeuteronmsg, self.toggleDeuteron],
+                    'onlyTE':[analyzetemsg,self.teonly],
+                    'onlyEnhanced':[analyzeenhancedmsg, self.summarize]}
+
+        key = self.dict_selector(choice)
+        f = choice[key][1]
+        f()
+
+    def toggleDeuteron(self):
+        print("\n\n Toggling deuteron from", str(self.deuteron), 'to', str(not self.deuteron))
+        self.deuteron = not self.deuteron
+
+    def updateEnhanced(self):
+        print("Please update the ENHANCED path. Current selection is: ", self.enhancedpath)
+        self.enhancedpath = self.fileDirectorySelector()
+
+    def updateTE(self):
+        print("Please update the TE path. Current selection is: ", self.tepath)
+        self.tepath = self.fileDirectorySelector()
+
+
+    def teonly(self):
+        constants, teinfo = global_interpreter.collator(self.tepath, te=True, home=self.rootdir, deuteron=self.deuteron)
+        print("Done. Have a nice day.")
+
+    def summarize(self):
+        constants,teinfo = global_interpreter.collator(self.tepath, te=True, home=self.rootdir, deuteron=self.deuteron)
+        print("TE Global Analysis Complete. Applying calibration constant forward")
+        global_interpreter.collator(self.enhancedpath, home=self.dumppath, deuteron=self.deuteron, constant=constants, to_save=teinfo)
+        print("Enhanced Global analysis complete.")
 
 
 def main(args):
