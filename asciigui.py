@@ -15,12 +15,13 @@ import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
 """
 class AsciiGUI():
     def __init__(self, args, **passed):
-        kwargs = passed.pop('kwargs', {})
         self.delimeter = '\t'
-        self.hardinit = kwargs.pop('hardinit',False)
+        self.hardinit = passed.pop('hardinit',False)
+        if passed.pop('getrootdir',False):
+            self.rootdir = os.getcwd()
         self.processes = 1
         self.servermode = False
-        if hardinit:
+        if self.hardinit:
             self.servermode = args.servermode
 
     def fileDirectorySelector(self):
@@ -1123,7 +1124,55 @@ def DirSorter(args):
     instance = dirSorter(args)
 
 def SweepAverager(args):
-    pass
+    instance = sweepAverager(args)
+
+class sweepAverager(AsciiGUI):
+    def __init__(self, args):
+        super().__init__(args, getrootdir=True)
+
+        self.mainloop()
+
+    def mainloop(self):
+        try: 
+            while True:
+                self.choices()
+
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt detected. Returning")
+            return True
+
+    def choices(self):
+        locationmsg = "Select directory for averaging"
+        startmsg = "Start the avergaing process"
+
+        choice = {'updatelocation':[locationmsg, self.updateLocation], "execute":[startmsg, self.execute]}
+
+        key = self.dict_selector(choice)
+
+        f = choice[key][1]
+        f()
+
+
+
+    def updateLocation(self):
+        self.selection = self.fileDirectorySelector() + '/'
+        self.is_file = os.path.isfile(self.selection)
+        print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
+        if self.is_file:
+            print("You selected an individual file. Please ONLY select a directory")
+            print("this is done by entering 'ok' once the current working directory reads the desired path")
+            self.getSelection()
+
+    def execute(self):
+        choice = {"nested":['Avarage sweeps in a nested directory, naming avg sweep after parent directory'], 'directory':['average single directory into a single file']}
+
+        key = self.dict_selector(choice)
+        if key == "directory":
+            sweep_averager.avg_single_dir(self.selection)
+        elif key == "nested":
+            sweep_averager.avg_nested_dirs(self.selection)
+
+
 
 def GlobalInterpreter(args):
     pass
