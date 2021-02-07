@@ -230,8 +230,6 @@ def NMRAnalyzer(args):
     Get the baseline and rawsignal from the user.
     """
     instance = nmrAnalyser(args, hardinit=True)
-    instance.fetchArgs()
-    instance.mainloop()
     del instance
 
 class nmrAnalyser(AsciiGUI):
@@ -243,13 +241,9 @@ class nmrAnalyser(AsciiGUI):
         self.servermode = False
         if hardinit:
             self.servermode = args.servermode
-            self.getBaseline()
-            them = '/'.join(self.baselinepath.split('/')[:-1])
-            os.chdir(them)
-            os.chdir('..')
-            self.getRawsig()
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
+            self.mainloop()
 
         
     def overrideRootDir(self, override):
@@ -443,6 +437,12 @@ class nmrAnalyser(AsciiGUI):
 
     def mainloop(self):
         try:
+            self.getBaseline()
+            them = '/'.join(self.baselinepath.split('/')[:-1])
+            os.chdir(them)
+            os.chdir('..')
+            self.getRawsig()s
+            self.fetchArgs()
             while True:
                 if not self.servermode:
                     self.figure.show()
