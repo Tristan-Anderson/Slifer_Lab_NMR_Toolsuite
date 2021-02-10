@@ -660,7 +660,6 @@ class Fitting_Page(tk.Frame):
         else:
             self.figure = graph
         if not automated:
-            #print("hitteth")
             self.graph=tk.LabelFrame(self, text="Graph")
             self.graph.grid(column=2, row=1)
             self.canvas = FigureCanvasTkAgg(self.figure, master=self.graph)

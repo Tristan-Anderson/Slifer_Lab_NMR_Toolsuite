@@ -380,6 +380,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	
 	# Begin ubiquitous stuff, and general useful data.
 	fig.suptitle(y+" "+m+" "+d+" "+pltsave)
+	results_df['name'] = df['name']
 	
 	ax[0].set_title("Magnetic Field Strength")
 	ax[0].scatter(x,y1a, label="B via I (T)", color='purple')
@@ -411,7 +412,6 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			plt.savefig(home+d+"_"+pltsave)
 			if prevanalized is None:
 				results_df[variablenames.gi_bviaI_results] = y1a
-				results_df[variablenames.gi_bviaI_results] = None
 				results_df[variablenames.gi_primary_thermistor_results] = t3y
 				results_df[variablenames.gi_secondary_thermistor_results] = vpy
 				results_df[variablenames.gi_integrated_data_area_results] = y3a

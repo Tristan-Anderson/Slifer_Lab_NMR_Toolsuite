@@ -793,12 +793,15 @@ class nmrAnalyser(AsciiGUI):
                           # to the names of things.
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
         self.workpool = {} 
+
+        self.plottitle = self.instancename if self.plottitle == self.rawsigpath.split('/')[-1] else self.plottitle
         for index, value in enumerate(oh_indexes):
             (start, end) = value
             self.workpool[index] = nmrAnalyser()
             self.workpool[index].overrideRootDir(self.rootdir)
             self.workpool[index].fetchArgs(fitnumber='fitnumber',
                 automatefits= self.automatefits,
+                material_type = self.material_type,
                 mutouse= self.mutouse,
                 binning= self.binning,
                 integrate= self.integrate,
@@ -845,6 +848,7 @@ class nmrAnalyser(AsciiGUI):
     def repeatAdNauseum(self, filelist, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
         self.analysisfile = pandas.DataFrame()
+        self.dataset = {}
 
         self.item = int(self_itemseed) if self_itemseed is not None else self.item
         originalplottitle = self.plottitle
@@ -898,8 +902,9 @@ class nmrAnalyser(AsciiGUI):
                     npriev = tupp[1]
                 # Save the figure
                 os.chdir(graphs)
+                filename = self.instancename+" S"+str(self.item)
 
-                self.saveFig(filename=originalplottitle+" S"+str(self.item)+'.png') # UNCOMMENT TO SAVE EVERYTHING.
+                self.saveFig(filename=filename+'.png') # UNCOMMENT TO SAVE EVERYTHING.
 
                 """#######################################
                 # A section dedicated to second-time-arrounders.
@@ -918,8 +923,6 @@ class nmrAnalyser(AsciiGUI):
                     return False
                 #######################################"""
 
-
-                os.chdir(home)
                 # This is here so that i can recreate this order within the loop
                 try:
                     self.B = round(self.I/9.7332, 4)
@@ -933,7 +936,7 @@ class nmrAnalyser(AsciiGUI):
                 headers = variablenames.na_global_analysis_headers
 
                 # Write to the global_analysis file
-                c = [originalplottitle + " S"+str(self.item),  self.material_type,
+                c = [self.instancename + " S"+str(self.item),  self.material_type,
                  self.te_date, self.vnavme, self.baselinepath, self.rawsigpath, self.xmin, self.xmax,
                  self.signalstart,self.signalend, self.blskiplines,
                  self.rawsigskiplines, str(self.B),
@@ -942,7 +945,10 @@ class nmrAnalyser(AsciiGUI):
                  self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
                  self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared,
                  self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
-                #os.chdir(graphdata)
+                
+                os.chdir(graphdata)
+                with open(filename+'.csv', 'w') as f:
+                    self.df.to_csv(f)
 
                 self.analysisfile = self.analysisfile.append(pandas.DataFrame(dict(zip(headers,c)), index=[0]))
                 
@@ -1176,7 +1182,6 @@ class sweepAverager(AsciiGUI):
             sweep_averager.avg_nested_dirs(self.selection)
 
 
-
 def GlobalInterpreter(args):
     instance = globalInterpreter(args)
     del instance
@@ -1216,6 +1221,7 @@ class globalInterpreter(AsciiGUI):
         f = choice[key][1]
         f()
 
+
     def toggleDeuteron(self):
         print("\n\n Toggling deuteron from", str(self.deuteron), 'to', str(not self.deuteron))
         self.deuteron = not self.deuteron
@@ -1236,7 +1242,7 @@ class globalInterpreter(AsciiGUI):
     def summarize(self):
         constants,teinfo = global_interpreter.collator(self.tepath, te=True, home=self.rootdir, deuteron=self.deuteron)
         print("TE Global Analysis Complete. Applying calibration constant forward")
-        global_interpreter.collator(self.enhancedpath, home=self.dumppath, deuteron=self.deuteron, constant=constants, to_save=teinfo)
+        global_interpreter.collator(self.enhancedpath, home=self.rootdir, deuteron=self.deuteron, constant=constants, to_save=teinfo)
         print("Enhanced Global analysis complete.")
 
 
