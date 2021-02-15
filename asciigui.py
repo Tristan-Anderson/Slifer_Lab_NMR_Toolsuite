@@ -14,6 +14,16 @@ import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
 # TODO: Add overview of current settings on each mainloop in table format.
 """
 class AsciiGUI():
+    """
+    The master template
+    for the different frames of the
+    ascii-gui page.
+
+    Each option will need to have access to a:
+        - File/Dir selector
+        - Output formatting
+        - And an Options selection method,
+    """
     def __init__(self, args, **passed):
         self.delimeter = '\t'
         self.hardinit = passed.pop('hardinit',False)
@@ -1269,10 +1279,13 @@ def main(args):
 
     functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
     optdict = dict(zip([i for i in range(len(functions))],functions))
+    home = os.getcwd()
     while True:
         c= options()
         f = optdict[c]
         f(args)
+        # Good idea to "clean up" so to set home directory, and return to it in-between functionalities.
+        os.chdir(home)
         
 
     #while True:
