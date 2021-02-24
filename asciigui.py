@@ -6,7 +6,7 @@ tja1015@wildats.unh.edu
 Proceed Formally.
 """
 import NMR_Analyzer as v
-import daq_muncher, directory_sorter,sweep_averager,global_interpreter
+import daq_muncher, directory_sorter,sweep_averager,global_interpreter#,spin_extractor
 from matplotlib import pyplot as plt
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
 
@@ -981,13 +981,13 @@ class nmrAnalyser(AsciiGUI):
 
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
-                self.df.to_csv(f)
+                self.df.to_csv(f,index=False)
             v.add_entry(*k, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
         elif appendme is not None:
             v.add_entry(*headers, headers=headers if h is not None else h, appendme=appendme)
         else:
             with open(self.instancename+'.csv', 'w') as f:
-                self.df.to_csv(f)
+                self.df.to_csv(f,index=False)
             v.add_entry(*c, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
 
     def __forkitindexer__(self, filelist):
@@ -1256,11 +1256,47 @@ class globalInterpreter(AsciiGUI):
         print("Enhanced Global analysis complete.")
 
 
+def SpinCurves(args):
+    #instance = spinCurves(args)
+    #del instance
+    print("Feature not entirely implemented.")
+"""
+class spinCurves(AsciiGUI):
+    def __init__(self, args):
+        super().__init__(args, getrootdir=True)
+        self.title = "Spin Curve"
+
+        self.mainloop()
+
+    def mainloop(self):
+        try:
+            self.choice()
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt recieved. Returning...")
+
+    def choice(self):
+        selectionmsg = "Select Parsed DAQ file OR Raw Global interpreter file"
+        settitlemsg = "Set title for graph"
+        selectdatemsg = "Select Time region"
+
+        c = {"SelectCSV":[selectionmsg, self.gerSelection],
+                "SetTitle":[settitlemsg, self.settitle],
+                "TimeSelection":[selectdatemsg, self.selectDate]}
+
+    def settitle(self):
+        print("Current plot title is: ", self.title)
+        self.title = input("Input title: ")
+
+
+    def getSelection(self):
+        self.selection = self.fileDirectorySelector()
+
+"""
 def main(args):
     def options():
         print("NMR Toolsuite options:")
-        functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
-        functionalities = ["NMRAnalyzer","DAQExtractor","DirSorter","SweepAverage","GlobalInterpreter"]
+        functions = [DAQExtractor, DirSorter, SweepAverager, NMRAnalyzer, GlobalInterpreter]
+        functionalities = ["DAQExtractor","DirSorter","SweepAverager","NMRAnalyzer","GlobalInterpreter", "SpinCurves"]
 
         print('#'*(12+max([len(i) for i in functionalities])))
         print(str("{0:1}{2:^7}{0:1}{1:^"+str(2+max([len(i) for i in functionalities]))+"}{0:1}").format('#','Functionality',"Mode"))
@@ -1277,7 +1313,7 @@ def main(args):
             print("Invalid Input")
             return options()
 
-    functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
+    functions = [DAQExtractor, DirSorter, SweepAverager, NMRAnalyzer, GlobalInterpreter]
     optdict = dict(zip([i for i in range(len(functions))],functions))
     home = os.getcwd()
     while True:
