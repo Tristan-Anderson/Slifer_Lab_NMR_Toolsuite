@@ -152,4 +152,10 @@ gi_centroid = "Sweep Centroid"
 gi_width = "Sweep Width"
 gi_TE = "TEvalue"
 
+####################################################################
+###                    Spin Extractor                            ###
+####################################################################
 
+agui_se_time = gi_time
+agui_se_yaxdef = gi_scaled_polarization
+agui_se_yaxfallback = gi_dataarea
