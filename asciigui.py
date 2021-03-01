@@ -6,7 +6,7 @@ tja1015@wildats.unh.edu
 Proceed Formally.
 """
 import NMR_Analyzer as v
-import daq_muncher, directory_sorter,sweep_averager,global_interpreter#,spin_extractor
+import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor
 from matplotlib import pyplot as plt
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
 
@@ -232,12 +232,18 @@ class AsciiGUI():
             except ValueError:
                 print("ValueError, improper-input. Numbers only please, within the appropriate range.")
 
-    def getMDY(self):
+    def getMDY(self, end=False):
         x = ''
         date = None
         while type(date) != datetime.datetime:
             try:
-                date = datetime.datetime.strptime(input("Your Date: "), "%m/%d/%Y")
+                if end:
+                    print("Press ENTER if the start and end DATE are the same.")
+                k = input("Your Date: ")
+                if end and k == '':
+                    return None
+                date = datetime.datetime.strptime(k, "%m/%d/%Y")
+                return date
             except KeyboardInterrupt:
                 print("Inturrupt Recieved")
                 raise KeyboardInterrupt
@@ -1176,7 +1182,8 @@ class sweepAverager(AsciiGUI):
         locationmsg = "Select directory for averaging"
         startmsg = "Start the avergaing process"
 
-        choice = {'updatelocation':[locationmsg, self.updateLocation], "execute":[startmsg, self.execute]}
+        choice = {'updatelocation':[locationmsg, self.updateLocation], "execute":[startmsg, self.execute], 
+                  }
 
         key = self.dict_selector(choice)
 
@@ -1298,7 +1305,16 @@ class spinCurves(AsciiGUI):
             print(i, end='\t')
             if index % 4 == 0:
                 print('')
-        print
+        print("")
+        self.announcement("Current Settings:")
+        print("Selected y-axis:", self.yax)
+        print("Selected x-axis:", self.time)
+        print("Current plot Title:", self.title)
+        print("Current time selection:")
+
+
+        if self.yax not in cols and self.df != pandas.DataFrame():
+            print("WARNING! current y-axis selection is NOT in the selected dataframe.")
 
     def choices(self):
         selectionmsg = "Select Parsed DAQ file OR Raw Global interpreter file"
@@ -1324,19 +1340,33 @@ class spinCurves(AsciiGUI):
         with open(self.selection, 'r') as f:
             self.df = pandas.read_csv(f)
 
+    def preview(self):
+        ax = getupdown(self.selection, self.title, self., 12, 2020, 19, 56, 21,8, 'data_area', 'time', ss=30, preview=True, up=True)
+        ax.show()
+
+
 
     def selectDate(self):
         self.title = "Spin Curve"
-        self.header("START DATE: Enter the start date in MM/DD/YYYY format")
+        self.header("START DATE: Enter the START date in MM/DD/YYYY format")
+
         self.start_date = self.getMDY()
+        self.Sm, self.Sd, self.Sy =  self.start_date.strftime('%d'), self.start_date.strftime('%m'),  self.start_date.strftime("%Y")
+
         print("START TIME: Enter the number of seconds:")
         self.ss = self.getNumInRange(0, 59)
         print("START TIME: Enter the number of minutes:")
         self.sm = self.getNumInRange(0,59)
         print("START TIME:  Enter the number of hours:")
         self.sh = self.getNumInRange(0,23)
-        print("START DATE: Enter the start date in MM/DD/YYYY format")
-        self.end_date = self.getMDY()
+        print("END DATE: Enter the END date in MM/DD/YYYY format")
+
+
+        self.end_date = self.getMDY(end=True)
+        if self.end_date == None:
+            self.end_date = self.start_date 
+
+        self.Em, self.Ed, self.Ey = self.end_date.strftime('%d'), self.end_date.strftime('%m'),  self.end_date.strftime("%Y")
         self.header("END TIME: Select The hour/minute/second")
         self.es = self.getNumInRange(0, 59)
         print("END TIME: Enter the number of minutes:")
@@ -1344,6 +1374,8 @@ class spinCurves(AsciiGUI):
         print("END TIME: Enter the number of hours:")
         self.eh = self.getNumInRange(0,23)
 
+        self.start = self.start_date + datetime.timedelta(hours=self.sh, minutes=self.sm, seconds=self.ss)
+        self.end = self.end_date + datetime.timedelta(hours=self.eh, minutes=self.em, seconds=self.es)
 
 
     def execute(self):

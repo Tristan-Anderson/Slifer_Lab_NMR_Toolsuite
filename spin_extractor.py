@@ -131,8 +131,8 @@ def getupdown(*args, **kwargs):
 		print('')
 		fy = spin_up(xforfit, fitvars[0], fitvars[1], fitvars[2], fitvars[3])
 		ax[1].plot(xforplot, fy, c='green', label="Spin Up")
+		
 	else:
-
 		fitvars, _ = fit(spin_down, xforfit, yforfit, p0=bounds)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
 		print("\n\nSpin down:", "p0*numpy.exp(-(t-t0)/tau)+shift\n")
 		print(title)
@@ -144,13 +144,14 @@ def getupdown(*args, **kwargs):
 		ax[1].plot(xforplot, fy, c='green', label="Spin Down")
 
 	ax[1].legend(loc='best')
+	ax[0].legend(loc='best')
 
 	return fig
 
 #ax = previewdata_gui("/home/kb/research/wdirs/NMR_Toolsuite/global_analysis.csv",
 #	"2020-12-10 Down", 10, 12, 2020, 20, 32, 22,32, 'data_area', 'time', ss=30, preview=True, up=True, bounds=[.02, 69200, 7200, .015])
-ax = getupdown("/home/kb/research/wdirs/NMR_Toolsuite/global_analysis.csv",
-	"2020-12-10 Up", 10, 12, 2020, 19, 56, 21,8, 'data_area', 'time', ss=30, preview=True, up=True, bounds=[.02, 69200, 7200, .015])
+#ax = getupdown("/home/kb/research/wdirs/NMR_Toolsuite/global_analysis.csv",
+#	"2020-12-10 Up", 10, 12, 2020, 19, 56, 21,8, 'data_area', 'time', ss=30, preview=True, up=True, bounds=[.02, 69200, 7200, .015])
 
-ax.show()
-input('Press ENTER to continue')
+#ax.show()
+#input('Press ENTER to continue')
