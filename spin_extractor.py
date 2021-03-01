@@ -71,7 +71,7 @@ def previewdata_gui(*args, **kwargs):
 	Fm=kwargs.pop('Fm',None)
 	Fy=kwargs.pop('Fy',None)
 	preview=kwargs.pop('preview',True)
-	bounds=kwargs.pop('bounds',[])
+	bounds=kwargs.pop('bounds',[1, 1, 1, 1])
 	up=kwargs.pop('up',True)
 	df = file_fetcher(filename, t)
 
@@ -97,7 +97,7 @@ def getupdown(*args, **kwargs):
 	Fm=kwargs.pop('Fm',None)
 	Fy=kwargs.pop('Fy',None)
 	preview=kwargs.pop('preview',False)
-	bounds=kwargs.pop('bounds',[])
+	bounds=kwargs.pop('bounds',[1, 1, 1, 1])
 	up=kwargs.pop('up',True)
 	df = file_fetcher(filename, t)
 
@@ -122,7 +122,7 @@ def getupdown(*args, **kwargs):
 
 	if up:
 		print(xforfit, yforfit)
-		fitvars, _ = fit(spin_up, xforfit, yforfit, p0=bounds)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
+		fitvars, _ = fit(spin_up, xforfit, yforfit)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
 		print("\n\nSpin up:", "pmax*(1-numpy.exp(-(t-t0)/tau))+shift\n")
 		print(title)
 		print("pmax", "t0", "tau", 'shift')
@@ -131,9 +131,9 @@ def getupdown(*args, **kwargs):
 		print('')
 		fy = spin_up(xforfit, fitvars[0], fitvars[1], fitvars[2], fitvars[3])
 		ax[1].plot(xforplot, fy, c='green', label="Spin Up")
-		
+
 	else:
-		fitvars, _ = fit(spin_down, xforfit, yforfit, p0=bounds)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
+		fitvars, _ = fit(spin_down, xforfit, yforfit)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
 		print("\n\nSpin down:", "p0*numpy.exp(-(t-t0)/tau)+shift\n")
 		print(title)
 		print(["p0", "t0", "tau", "shift"])
@@ -147,11 +147,3 @@ def getupdown(*args, **kwargs):
 	ax[0].legend(loc='best')
 
 	return fig
-
-#ax = previewdata_gui("/home/kb/research/wdirs/NMR_Toolsuite/global_analysis.csv",
-#	"2020-12-10 Down", 10, 12, 2020, 20, 32, 22,32, 'data_area', 'time', ss=30, preview=True, up=True, bounds=[.02, 69200, 7200, .015])
-#ax = getupdown("/home/kb/research/wdirs/NMR_Toolsuite/global_analysis.csv",
-#	"2020-12-10 Up", 10, 12, 2020, 19, 56, 21,8, 'data_area', 'time', ss=30, preview=True, up=True, bounds=[.02, 69200, 7200, .015])
-
-#ax.show()
-#input('Press ENTER to continue')
