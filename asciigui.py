@@ -1022,6 +1022,7 @@ class nmrAnalyser(AsciiGUI):
     def saveBoth(self):
         pass
 
+
 class daqExtractor(AsciiGUI):
     def __init__(self, args):
         self.header("DAQ Extractor")
@@ -1085,6 +1086,7 @@ class daqExtractor(AsciiGUI):
         else:
             self.filelocation = self.selection+'/'
             daq_muncher.directory(self.selection, self.fdump, self.rootdir)
+
 
 class dirSorter(AsciiGUI):
     def __init__(self, args):
@@ -1283,6 +1285,11 @@ class spinCurves(AsciiGUI):
         super().__init__(args, getrootdir=True)
         self.title = "Spin Curve"
         self.df = pandas.DataFrame()
+        self.selection="None"
+
+        self.HasTimes = False
+
+        self.sh, self.sm, self.ss, self.fh, self.fm, self.es = None,None,None,None,None,None
 
         self.time = variablenames.agui_se_time
         self.yax = variablenames.agui_se_yaxdef
@@ -1291,8 +1298,12 @@ class spinCurves(AsciiGUI):
         self.mainloop()
 
     def mainloop(self):
+        self.getSelection()
+        self.selectDate()
         try:
             while True:
+                if self.Hasplots:
+                    self.figure.show()
                 self.currentSettings()
                 self.choices()
         except KeyboardInterrupt:
@@ -1307,29 +1318,88 @@ class spinCurves(AsciiGUI):
                 print('')
         print("")
         self.announcement("Current Settings:")
+        print("Current File:", self.selection)
         print("Selected y-axis:", self.yax)
         print("Selected x-axis:", self.time)
         print("Current plot Title:", self.title)
         print("Current time selection:")
+        if self.HasTimes:
+            print("Start:", self.start.strftime('%m/%d/%Y %H:%M:%S'))
+            print("End:", self.end.strftime('%m/%d/%Y %H:%M:%S'))
 
-
-        if self.yax not in cols and self.df != pandas.DataFrame():
-            print("WARNING! current y-axis selection is NOT in the selected dataframe.")
+        self.ensure_yax()
+        if self.HasTimes:
+            self.preview()
 
     def choices(self):
         selectionmsg = "Select Parsed DAQ file OR Raw Global interpreter file"
         settitlemsg = "Set title for graph"
-        selectdatemsg = "Select Time region"
+        selectdatemsg = "Set new time region"
+        selectstarttime = "Set start time"
+        setstartdate = "Set start date"
+        updateEndTime = "Set end time"
+        updateEndDate = "Set end date"
         executemsg = "Fit the plot"
         toggleupdownmsg = "Toggle Spin up / Spin Down mode"
 
         c = {"SelectCSV":[selectionmsg, self.getSelection],
-                "SetTitle":[settitlemsg, self.settitle],
-                "TimeSelection":[selectdatemsg, self.selectDate]}
+            "TimeSelection":[selectdatemsg, self.selectDate],
+            "SetTitle":[settitlemsg, self.settitle],
+            "toggleSpinCurve":[toggleupdownmsg, self.togglespin],
+            'updateStartTime':[selectstarttime, self.updateStartTime],
+            'updateStartDate':[setstartdate, self.updateStartDate],
+            'updateEndTime':[updateEndTime, self.updateEndTime],
+            'updateEndDate':[updateEndDate, self.updateEndDate],
+            'fitcurve':[executemsg, self.execute]
+                }
 
         key = self.dict_selector(c)
         f = c[key][1]
         f()
+
+    def updateStartTime(self):
+        print("START TIME: Enter the number of seconds:")
+        self.ss = int(self.getNumInRange(0, 59))
+        print("START TIME: Enter the number of minutes:")
+        self.sm = int(self.getNumInRange(0,59))
+        print("START TIME:  Enter the number of hours:")
+        self.sh = int(self.getNumInRange(0,23))
+
+        self.updatestart()
+
+    def updateStartDate(self):
+        self.header("START DATE: Enter the START date in MM/DD/YYYY format")
+
+        self.start_date = self.getMDY()
+        self.Sd, self.Sm, self.Sy =  int(self.start_date.strftime('%d')), int(self.start_date.strftime('%m')),  int(self.start_date.strftime("%Y"))
+
+        self.updatestart()
+
+    def updateEndTime(self):
+        print("END TIME: Enter the number of seconds:")
+        self.es = int(self.getNumInRange(0, 59))
+        print("END TIME: Enter the number of minutes:")
+        self.fm = int(self.getNumInRange(0,59))
+        print("END TIME: Enter the number of hours:")
+        self.fh = int(self.getNumInRange(0,23))
+
+        self.updateend()
+
+    def updateEndDate(self):
+        self.header("END DATE: Enter the END date in MM/DD/YYYY format")
+
+        self.end_date = self.getMDY(end=True)
+        if self.end_date == None:
+            self.end_date = self.start_date 
+
+        self.Fd, self.Fm, self.Fy = int(self.end_date.strftime('%d')), int(self.end_date.strftime('%m')),  int(self.end_date.strftime("%Y"))
+
+        self.updateend()
+
+    def togglespin(self):
+        print("Currently in", "Spin Up" if self.spinup else "Spin Down", "Mode")
+        self.spinup = not self.spinup
+        print("Switching to", "Spin Up" if self.spinup else "Spin Down", "Mode")
 
     def settitle(self):
         print("Current plot title is: ", self.title)
@@ -1337,50 +1407,61 @@ class spinCurves(AsciiGUI):
 
     def getSelection(self):
         self.selection = self.fileDirectorySelector()
+        self.updateDF()
+        print("made it")
+        self.ensure_yax()
+
+    def updateDF(self):
         with open(self.selection, 'r') as f:
             self.df = pandas.read_csv(f)
 
+    def ensure_yax(self):
+        cols = self.df.columns.values.tolist()
+        if self.yax not in cols:
+            print("WARNING! current y-axis selection is NOT in the selected dataframe.")
+            print("PLEASE select y-axis column in dataframe:")
+            self.updateyax()
+
+    def updateyax(self):
+        print('Current y-axis is', self.yax, 'which is not in the current dataframe. Please select an option that is.')
+
+        cols = self.df.columns.values.tolist()
+        msg = "Column in Dataframe"
+        the_choices = {}
+        for i in cols:
+            the_choices[i] = [msg]
+
+        k = self.dict_selector(the_choices)
+        print("Column updated to", k)
+        self.yax = k
+
     def preview(self):
-        ax = getupdown(self.selection, self.title, self., 12, 2020, 19, 56, 21,8, 'data_area', 'time', ss=30, preview=True, up=True)
-        ax.show()
 
-
+        self.figure = spin_extractor.previewdata_gui(self.selection, self.title, self.Sd, self.Sm, self.Sy, self.sh,
+                             self.sm,  self.fh,self.fm, self.yax, self.time, ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy, preview=True)
 
     def selectDate(self):
-        self.title = "Spin Curve"
-        self.header("START DATE: Enter the START date in MM/DD/YYYY format")
+        self.HasTimes = True
+        self.updateStartDate()
 
-        self.start_date = self.getMDY()
-        self.Sm, self.Sd, self.Sy =  self.start_date.strftime('%d'), self.start_date.strftime('%m'),  self.start_date.strftime("%Y")
+        self.updateStartTime()
+        
+        self.updateEndDate()
 
-        print("START TIME: Enter the number of seconds:")
-        self.ss = self.getNumInRange(0, 59)
-        print("START TIME: Enter the number of minutes:")
-        self.sm = self.getNumInRange(0,59)
-        print("START TIME:  Enter the number of hours:")
-        self.sh = self.getNumInRange(0,23)
-        print("END DATE: Enter the END date in MM/DD/YYYY format")
+        self.updateEndTime()
+        
+        
+    def updatestart(self):
+        self.start = self.start_date + datetime.timedelta(hours=0 if self.sh is None else self.sh, minutes=0 if self.sm is None else self.sm, seconds=0 if self.ss is None else self.ss)
 
-
-        self.end_date = self.getMDY(end=True)
-        if self.end_date == None:
-            self.end_date = self.start_date 
-
-        self.Em, self.Ed, self.Ey = self.end_date.strftime('%d'), self.end_date.strftime('%m'),  self.end_date.strftime("%Y")
-        self.header("END TIME: Select The hour/minute/second")
-        self.es = self.getNumInRange(0, 59)
-        print("END TIME: Enter the number of minutes:")
-        self.em = self.getNumInRange(0,59)
-        print("END TIME: Enter the number of hours:")
-        self.eh = self.getNumInRange(0,23)
-
-        self.start = self.start_date + datetime.timedelta(hours=self.sh, minutes=self.sm, seconds=self.ss)
-        self.end = self.end_date + datetime.timedelta(hours=self.eh, minutes=self.em, seconds=self.es)
+    def updateend(self):
+        self.end = self.end_date + datetime.timedelta(hours=0 if self.fh is None else self.fh, minutes=0 if self.fm is None else self.fm, seconds=0 if self.es is None else self.es)
 
 
     def execute(self):
-        pass
-
+        self.figure = spin_extractor.getupdown(self.selection, self.title, self.Sd, self.Sm, self.Sy, 
+                    self.sh, self.sm,  self.fh,self.fm, self.yax, self.time, up=self.spinup, 
+                    ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy)
 
 
 class omniVIEW(AsciiGUI):
