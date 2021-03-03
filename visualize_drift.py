@@ -3,7 +3,7 @@ Tristan Anderson
 tja1015@wildcats.unh.edu
 """
 
-import pandas, os, numpy, multiprocessing, numpy, time
+import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
 csvdirectory = "graph_data/"
