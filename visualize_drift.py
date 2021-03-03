@@ -108,9 +108,8 @@ def plotter(files, indexes, times, ga_csv):
 		ax[0,2].set_ylabel('Volts (V)')
 		ax[0,2].set_xlabel('Time')
 
-
-		ax[1,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'SIG (V)'], color='magenta', label="Current Sweep")
 		ax[1,2].scatter(ga_csv['time'], ga_fixed['SIG (V)'], label="SIG (V)")
+		ax[1,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'SIG (V)'], color='magenta', label="Current Sweep")
 		ax[1,2].grid(True)
 		ax[1,2].legend(loc='best')
 		ax[1,2].set_title("SIG")
@@ -173,7 +172,7 @@ indexes = forkitindexer(files)
 #for index,value in enumerate(indexes):
 #	plotter(files, value, timesteps, dffixed)
 
-with multiprocessing.Pool(processes=int(9*multiprocessing.cpu_count()/10)) as pool:
+with multiprocessing.Pool(processes=int(8*multiprocessing.cpu_count()/10)) as pool:
     result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed)) for index,value in enumerate(indexes)]
     pool.close()
     pool.join()
