@@ -18,15 +18,19 @@ def forkitindexer(filelist):
     lenset = len(filelist)
     modulus = int(lenset%p)
     floordiv = int(lenset/p)
-    slicer = [[floordiv*i, floordiv*(i+1)-1] for i in range(p-1)]
+    slicer = [[floordiv*i, floordiv*(i+1)] for i in range(p-1)]
     slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
     return slicer
 
 def plotter(files, indexes, times, ga_csv, id_num):
 	dump = "dump3/"
 	s,f = indexes
+	#sprint(files)
 	todo = files[s:f]
-	it = [i for i in range(s,f+1)]
+	#print('\n'*10)
+	#print(todo)
+	#print(s,f)
+	#it = [i for i in range(s,f+1)]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
 	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
@@ -179,14 +183,23 @@ timesteps = sorted_df['time'].to_list()
 files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
+"""
+for two in indexes:
+	print([i for i in range(two[0], two[1]+1)])
 
-#print(indexes)
-#exit()
+print(indexes)
+
+exit()
+#""
+print(indexes)
+exit()
+
+for index,value in enumerate(indexes):
+	plotter(files, value, timesteps, dffixed, 0)"""
 
 matplotlib.use('Agg')
 
-for index,value in enumerate(indexes):
-	plotter(files, value, timesteps, dffixed, 0)
+
 
 with multiprocessing.Pool(processes=int(8*multiprocessing.cpu_count()/10)) as pool:
     result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed, index)) for index,value in enumerate(indexes)]
