@@ -26,6 +26,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	dump = "dump3/"
 	s,f = indexes
 	todo = files[s:f]
+	it = [i for i in range(s,f)]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
 	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
@@ -140,7 +141,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		
 
 
-		plt.savefig(dump+str("{0:04d}".format(s+i)))
+		plt.savefig(dump+str("{0:04d}".format(it[i])))
 		plt.clf()
 		plt.close('all')
 
