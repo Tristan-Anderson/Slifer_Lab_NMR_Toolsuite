@@ -180,9 +180,6 @@ files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
 
-print(indexes)
-exit()
-
 matplotlib.use('Agg')
 
 #for index,value in enumerate(indexes):
