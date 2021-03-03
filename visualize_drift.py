@@ -141,7 +141,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		
 
 
-		plt.savefig(dump+str("{0:04d}".format(it[i])))
+		plt.savefig(dump+str("{0:04d}".format(s+i)))
 		plt.clf()
 		plt.close('all')
 
@@ -180,10 +180,13 @@ files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
 
+#print(indexes)
+#exit()
+
 matplotlib.use('Agg')
 
-#for index,value in enumerate(indexes):
-#	plotter(files, value, timesteps, dffixed, 0)
+for index,value in enumerate(indexes):
+	plotter(files, value, timesteps, dffixed, 0)
 
 with multiprocessing.Pool(processes=int(8*multiprocessing.cpu_count()/10)) as pool:
     result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed, index)) for index,value in enumerate(indexes)]
