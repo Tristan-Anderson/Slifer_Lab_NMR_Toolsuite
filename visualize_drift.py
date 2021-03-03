@@ -60,7 +60,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
 
 
-		#fig.suptitle(str(times[s+i]))
+		fig.suptitle(str(times[s+i]))
 
 		
 
@@ -193,10 +193,9 @@ exit()
 #""
 print(indexes)
 exit()
-
+"""
 for index,value in enumerate(indexes):
-	plotter(files, value, timesteps, dffixed, 0)"""
-
+	plotter(files, value, timesteps, dffixed, 0)
 matplotlib.use('Agg')
 
 
