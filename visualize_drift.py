@@ -106,12 +106,15 @@ def plotter(files, indexes, times, ga_csv, id_num):
 
 
 
+
 		ax[0,2].scatter(ga_csv['time'], ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
 		ax[0,2].scatter(ga_csv['time'], ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
 		ax[0,2].scatter(ga_csv['time'], ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
+		ax[0,2].scatter(ga_csv['time'], ga_fixed['IFOFF (V)'], label="IFOFF (V)")
 		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
 		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
 		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
+		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta')
 		ax[0,2].grid(True)
 		ax[0,2].legend(loc='best')
 		ax[0,2].set_title("VME & Microwave Stuff")
