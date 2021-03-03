@@ -26,7 +26,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	dump = "dump3/"
 	s,f = indexes
 	todo = files[s:f]
-	it = [i for i in range(s,f)]
+	it = [i for i in range(s,f+1)]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
 	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
@@ -179,6 +179,9 @@ timesteps = sorted_df['time'].to_list()
 files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
+
+print(indexes)
+exit()
 
 matplotlib.use('Agg')
 
