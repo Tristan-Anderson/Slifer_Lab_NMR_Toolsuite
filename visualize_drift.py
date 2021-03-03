@@ -194,8 +194,8 @@ exit()
 print(indexes)
 exit()
 """
-for index,value in enumerate(indexes):
-	plotter(files, value, timesteps, dffixed, 0)
+#for index,value in enumerate(indexes):
+#	plotter(files, value, timesteps, dffixed, 0)
 matplotlib.use('Agg')
 
 
