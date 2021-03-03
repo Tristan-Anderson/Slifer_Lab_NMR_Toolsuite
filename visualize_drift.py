@@ -64,6 +64,8 @@ def plotter(files, indexes, times, ga_csv):
 		ax[0,0].set_title("Fit Subtracted Signal")
 		ax[0,0].set_ylabel('Volts (V)')
 		ax[0,0].set_xlabel('Frequency (MHz)')
+		ax[0,0].set_xlim(32.6,33.5)
+		ax[0,0].set_ylim(-.175, .25)
 
 
 
