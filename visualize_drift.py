@@ -3,7 +3,7 @@ Tristan Anderson
 tja1015@wildcats.unh.edu
 """
 
-import pandas, os, numpy, multiprocessing, numpy
+import pandas, os, numpy, multiprocessing, numpy, time
 from matplotlib import pyplot as plt
 
 csvdirectory = "graph_data/"
@@ -22,7 +22,7 @@ def forkitindexer(filelist):
     slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
     return slicer
 
-def plotter(files, indexes, times, ga_csv):
+def plotter(files, indexes, times, ga_csv, id_num):
 	dump = "dump3/"
 	s,f = indexes
 	todo = files[s:f]
@@ -46,8 +46,11 @@ def plotter(files, indexes, times, ga_csv):
 	x = "MHz"
 	bl = "BL Potential (V)"
 	raw = "Raw Potential (V)"
+	timedeltas = []
 
 	for i, val in enumerate(todo):
+
+		t1 = time.time()
 
 		fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
 
@@ -141,6 +144,11 @@ def plotter(files, indexes, times, ga_csv):
 		plt.clf()
 		plt.close('all')
 
+		t2 = time.time()
+
+		timedeltas.append(t2-t1)
+		print('ID:', id_num, ":", (i+1), "of", len(todo), '['+str(round((i+1)*100/len(todo),4))+'%]', "ETA: ", round((len(todo)-(i+1))*numpy.mean(timedeltas),1), 's')
+
 
 csvs = []
 for root, dirs, files in os.walk(csvdirectory):
@@ -171,11 +179,13 @@ files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
 
+matplotlib.use('Agg')
+
 #for index,value in enumerate(indexes):
-#	plotter(files, value, timesteps, dffixed)
+#	plotter(files, value, timesteps, dffixed, 0)
 
 with multiprocessing.Pool(processes=int(8*multiprocessing.cpu_count()/10)) as pool:
-    result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed)) for index,value in enumerate(indexes)]
+    result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed, index)) for index,value in enumerate(indexes)]
     pool.close()
     pool.join()
 
