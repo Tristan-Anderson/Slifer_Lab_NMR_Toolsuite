@@ -270,8 +270,7 @@ class nmrAnalyser(AsciiGUI):
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
             self.mainloop()
-
-        
+       
     def overrideRootDir(self, override):
         self.rootdir = override
         pass
@@ -1288,6 +1287,7 @@ class spinCurves(AsciiGUI):
         self.selection="None"
 
         self.HasTimes = False
+        self.Hasplots = False
 
         self.sh, self.sm, self.ss, self.fh, self.fm, self.es = None,None,None,None,None,None
 
@@ -1302,10 +1302,12 @@ class spinCurves(AsciiGUI):
         self.selectDate()
         try:
             while True:
+                self.currentSettings()
                 if self.Hasplots:
                     self.figure.show()
-                self.currentSettings()
                 self.choices()
+                plt.close('all')
+                plt.clf()
         except KeyboardInterrupt:
             print("Keyboard Inturrupt recieved. Returning...")
 
@@ -1436,6 +1438,7 @@ class spinCurves(AsciiGUI):
         self.yax = k
 
     def preview(self):
+        self.Hasplots = True
 
         self.figure = spin_extractor.previewdata_gui(self.selection, self.title, self.Sd, self.Sm, self.Sy, self.sh,
                              self.sm,  self.fh,self.fm, self.yax, self.time, ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy, preview=True)
@@ -1459,6 +1462,7 @@ class spinCurves(AsciiGUI):
 
 
     def execute(self):
+        self.Hasplots = True
         self.figure = spin_extractor.getupdown(self.selection, self.title, self.Sd, self.Sm, self.Sy, 
                     self.sh, self.sm,  self.fh,self.fm, self.yax, self.time, up=self.spinup, 
                     ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy)

@@ -73,6 +73,7 @@ def previewdata_gui(*args, **kwargs):
 	preview=kwargs.pop('preview',True)
 	bounds=kwargs.pop('bounds',[1, 1, 1, 1])
 	up=kwargs.pop('up',True)
+	datetimeaxis = kwargs.pop('datetimeaxis', True)
 	df = file_fetcher(filename, t)
 
 	trimmed = df_trimmer(df, Sd, Sm, Sy, sh, sm,  fh,fm, t, ss=ss, fs=fs, Fd=Fd,Fm=Fm,Fy=Fy)
@@ -81,9 +82,9 @@ def previewdata_gui(*args, **kwargs):
 	ax[0].set_title(title)
 	ax[1].set_xlabel("Datetime")
 	ax[0].set_xlabel("Datetime")
-	ax[0].scatter(df[t], df[p], c='b', label=title)
-	ax[0].scatter(trimmed[t], trimmed[p], c='red')
-	ax[1].scatter(trimmed[t], trimmed[p], c='red')
+	ax[0].plot(df[t], df[p], c='b', label=title)
+	ax[0].plot(trimmed[t], trimmed[p], c='red')
+	ax[1].plot(trimmed[t], trimmed[p], c='red')
 	ax[0].grid(True)
 	ax[1].grid(True)
 
@@ -99,6 +100,7 @@ def getupdown(*args, **kwargs):
 	preview=kwargs.pop('preview',False)
 	bounds=kwargs.pop('bounds',[1, 1, 1, 1])
 	up=kwargs.pop('up',True)
+	datetimeaxis = kwargs.pop('datetimeaxis', False)
 	df = file_fetcher(filename, t)
 
 	trimmed = df_trimmer(df, Sd, Sm, Sy, sh, sm,  fh,fm, t, ss=ss, fs=fs, Fd=Fd,Fm=Fm,Fy=Fy)
@@ -112,16 +114,12 @@ def getupdown(*args, **kwargs):
 	ax[0].set_title(title)
 	
 	ax[0].set_xlabel("Datetime")
-	ax[0].scatter(df[t], df[p], c='b', label=title)
-	ax[0].scatter(trimmed[t], trimmed[p], c='red')
+	ax[0].plot(df[t], df[p], c='b', label=title)
+	ax[0].plot(trimmed[t], trimmed[p], c='red')
 	ax[0].grid(True)
 
-	ax[1].set_xlabel("Datetime")
-	ax[1].scatter(trimmed[t], trimmed[p], c='red')
-	ax[1].grid(True)
 
 	if up:
-		print(xforfit, yforfit)
 		fitvars, _ = fit(spin_up, xforfit, yforfit)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
 		print("\n\nSpin up:", "pmax*(1-numpy.exp(-(t-t0)/tau))+shift\n")
 		print(title)
@@ -130,7 +128,11 @@ def getupdown(*args, **kwargs):
 			print(fitvars[i],end='\t')
 		print('')
 		fy = spin_up(xforfit, fitvars[0], fitvars[1], fitvars[2], fitvars[3])
-		ax[1].plot(xforplot, fy, c='green', label="Spin Up")
+		if datetimeaxis:
+			ax[1].plot(xforplot, fy, c='green', label="Spin Up")
+		else:
+			ax[1].plot(xforfit, fy, c='green', label="Spin Up")
+
 
 	else:
 		fitvars, _ = fit(spin_down, xforfit, yforfit)#, bounds=[(0, 83500, 0),(numpy.inf, 100000, numpy.inf)])
@@ -141,8 +143,24 @@ def getupdown(*args, **kwargs):
 			print(fitvars[i],end='\t')
 
 		fy = spin_up(xforfit, fitvars[0], fitvars[1], fitvars[2], fitvars[3])
-		ax[1].plot(xforplot, fy, c='green', label="Spin Down")
 
+		if datetimeaxis:
+			ax[1].plot(xforplot, fy, c='green', label="Spin Down")
+		else:
+			ax[1].plot(xforfit, fy, c='green', label="Spin Down")
+
+	if datetimeaxis:
+		ax[1].set_xlabel("Datetime")
+		ax[1].scatter(trimmed[t], trimmed[p], c='red')
+		
+
+	else:
+		ax[1].set_xlabel("Seconds since Midnight")
+		ax[1].scatter(xforfit, trimmed[p], c='red')
+		ax[1].plot(xforfit, fy, c='green', label=("Spin "+("Up" if up else "Down")))
+
+
+	ax[1].grid(True)
 	ax[1].legend(loc='best')
 	ax[0].legend(loc='best')
 
