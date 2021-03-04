@@ -3,6 +3,13 @@ Tristan Anderson
 tja1015@wildcats.unh.edu
 """
 
+"""
+This is used to generate images containing data from a Slifer Lab NMR cooldown.
+The NMR analysis toolsuite produces a file called "global_analysis.csv" which this program needs
+in tandem with the raw DAQ .csv to form an image sequence that captures the cooldown datastream.
+
+"""
+
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
