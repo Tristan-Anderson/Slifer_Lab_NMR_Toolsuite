@@ -116,11 +116,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	pl[0,2].grid(True)
 	pl[0,1].grid(True)
 
-
-
 	for i, val in enumerate(todo):
-
-		for i, val in enumerate(todo):
 
 		t1 = time.time()
 
