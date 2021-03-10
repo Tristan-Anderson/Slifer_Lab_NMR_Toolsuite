@@ -27,15 +27,18 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 
 
 	for i in desired_columns:
-		primary_df.loc[indexes_to_grab, i] = secondary_df.loc[indexes_to_grab, i]
+		primary_df.loc[primary_df.index.intersection(indexes_to_grab), i] = secondary_df.loc[secondary_df.index.intersection(indexes_to_grab), i]
 
 	return primary_df
 
 
 
 
-primary_df = merger("global_analysis.csv", "datasets/dec_2020/rawdata/data_record_12-10-2020.csv",
-		['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", "CCCS.T2 (K)", "CCS.F11 (K)"])
+primary_df = merger("//home/kb/research/wdirs/NMR_Toolsuite/datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/enhanced_global_analysis.csv", "/home/kb/research/wdirs/NMR_Toolsuite/datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/data_record_9-14-2020.csv",
+		['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
+		"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
+		"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
+		"CCCS.T2 (K)", "CCS.F11 (K)"])
 
-with open("global_analysis_2.csv", 'w') as f:
+with open("/home/kb/research/wdirs/NMR_Toolsuite/datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv", 'w') as f:
 	primary_df.to_csv(f)

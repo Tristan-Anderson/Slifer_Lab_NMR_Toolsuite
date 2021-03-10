@@ -13,9 +13,9 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
-csvdirectory = "../graph_data/"
-globalcsv = "../global_analysis_2.csv"
-
+csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
+dump = "../dump3/"
 def forkitindexer(filelist):
     """
         Return a list of tuples of indecies that divide the passed
@@ -30,7 +30,7 @@ def forkitindexer(filelist):
     return slicer
 
 def plotter(files, indexes, times, ga_csv, id_num):
-	dump = "../dump3/"
+	
 	s,f = indexes
 	#sprint(files)
 	todo = files[s:f]
@@ -60,62 +60,6 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	raw = "Raw Potential (V)"
 	timedeltas = []
 
-	aig, pl = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
-
-	pl[0,0].set_title("Fit Subtracted Signal")
-	pl[0,0].set_ylabel('Volts (V)')
-	pl[0,0].set_xlabel('Frequency (MHz)')
-	pl[0,0].set_xlim(32.6,33.5)
-	pl[0,0].set_ylim(-.175, .25)
-
-
-
-	pl[0,1].set_title('Temperature')
-	pl[0,1].scatter(ga_csv['time'], ga_csv['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
-	#pl[0,2].scatter(ga_csv['time'], ga_csv['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
-	pl[0,1].scatter(ga_csv['time'], ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
-	pl[0,1].scatter(ga_csv['time'], ga_csv['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
-	pl[0,1].scatter(ga_csv['time'], ga_csv['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
-	pl[0,1].set_ylim(-.5, 7)
-	pl[0,1].set_ylabel('Kelvin (K)')
-	pl[0,1].set_xlabel('Time')
-
-	pl[1,0].set_xlim(32.6,33.5)
-	pl[1,0].set_ylim(-1, 1.3)
-	pl[1,0].set_ylabel('Volt')
-	pl[1,0].set_xlabel('Frequency (MHz)')
-
-
-	pl[1,1].scatter(ga_csv['time'], ga_csv['data_area'], color='green', label='Enhanced Data Area')
-	pl[1,1].set_title("Data Area")
-
-	#pl[0,2].scatter(ga_csv['time'], ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
-	#pl[0,2].scatter(ga_csv['time'], ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
-	#pl[0,2].scatter(ga_csv['time'], ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
-	pl[0,2].scatter(ga_csv['time'], ga_fixed['IFOFF (V)'], label="IFOFF (V)")
-
-	pl[1,2].scatter(ga_csv['time'], ga_fixed['SIG (V)'], label="SIG (V)")
-
-
-	pl[1,0].set_title("Raw Sweeps")
-
-	pl[1,1].set_ylabel('Volt-Area')
-	pl[1,1].set_xlabel('Time')
-	pl[0,2].set_title("VME & Microwave Stuff")
-	pl[0,2].set_ylabel('Volts (V)')
-	pl[0,2].set_xlabel('Time')
-
-	pl[1,2].set_title("SIG")
-	pl[1,2].set_ylabel('Volts (V)')
-	pl[1,2].set_xlabel('Time')
-
-	pl[0,0].grid(True)
-	pl[1,0].grid(True)
-	pl[1,1].grid(True)
-	pl[1,2].grid(True)
-	pl[0,2].grid(True)
-	pl[0,1].grid(True)
-
 	for i, val in enumerate(todo):
 
 		t1 = time.time()
@@ -130,13 +74,15 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		with open(csvdirectory+val, 'r') as f:
 			df = pandas.read_csv(f)
 
-		ax[0,0].scatter(df[x], df["Third order Polynomial 0 Subtraction"], label='Fit Subtracted Signal', color='red')
+		ax[0,0].scatter(df[x], df["Fit 1 Subtraction"], label='Fit Subtracted Signal', color='red')
 		ax[0,0].legend(loc='best')
 		ax[0,0].set_title("Fit Subtracted Signal")
 		ax[0,0].set_ylabel('Volts (V)')
 		ax[0,0].set_xlabel('Frequency (MHz)')
-		ax[0,0].set_xlim(32.6,33.5)
-		ax[0,0].set_ylim(-.175, .25)
+		ax[1,0].set_xlim(32.4,33.4)
+
+		#ax[0,0].set_xlim(32.6,33.5)
+		ax[0,0].set_ylim(-.3, 2.3)
 
 
 
@@ -154,8 +100,10 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		ax[1,0].set_title("Raw Sweeps")
 		ax[1,0].scatter(df[x], df[bl], label='Baseline', color='blue')
 		ax[1,0].scatter(df[x], df[raw], label =''.join(list(val)[:-4]), color = 'red')
-		ax[1,0].set_xlim(32.6,33.5)
-		ax[1,0].set_ylim(-1, 1.3)
+		ax[1,0].set_xlim(32.4,33.4)
+		ax[1,0].set_ylim(-3.3, 3.3)
+
+		#ax[1,0].set_ylim(-1, 1.3)
 		ax[1,0].set_ylabel('Volt')
 		ax[1,0].set_xlabel('Frequency (MHz)')
 
@@ -239,8 +187,12 @@ timesteps = []
 keys = []
 
 for index in csvs:
-	timesteps.append(dffixed.loc[index, 'time'])
-	keys.append(index+'.csv')
+	try:
+		timesteps.append(dffixed.loc[index, 'time'])
+		keys.append(index+'.csv')
+	except KeyError as e:
+		print("Key error", e)
+		continue
 
 corrected_DF = pandas.DataFrame(dict(zip(['keys', 'time'],[keys, timesteps])))
 
@@ -249,14 +201,14 @@ timesteps = sorted_df['time'].to_list()
 files = sorted_df['keys'].to_list()
 
 indexes = forkitindexer(files)
-"""
-for two in indexes:
-	print([i for i in range(two[0], two[1]+1)])
 
-print(indexes)
+#for two in indexes:
+#	print([i for i in range(two[0], two[1]+1)])
 
-exit()
-#"""
+#print(indexes)
+
+#exit()
+#""
 #print(indexes)
 #exit()
 
@@ -266,7 +218,7 @@ matplotlib.use('Agg')
 
 
 
-with multiprocessing.Pool(processes=int(8*multiprocessing.cpu_count()/10)) as pool:
+with multiprocessing.Pool(processes=int(9*multiprocessing.cpu_count()/10)) as pool:
     result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, dffixed, index)) for index,value in enumerate(indexes)]
     pool.close()
     pool.join()
