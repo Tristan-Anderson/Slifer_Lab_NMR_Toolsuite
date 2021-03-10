@@ -13,8 +13,8 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
-csvdirectory = "graph_data/"
-globalcsv = "global_analysis_2.csv"
+csvdirectory = "../graph_data/"
+globalcsv = "../global_analysis_2.csv"
 
 def forkitindexer(filelist):
     """
@@ -30,7 +30,7 @@ def forkitindexer(filelist):
     return slicer
 
 def plotter(files, indexes, times, ga_csv, id_num):
-	dump = "dump3/"
+	dump = "../dump3/"
 	s,f = indexes
 	#sprint(files)
 	todo = files[s:f]
@@ -60,104 +60,118 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	raw = "Raw Potential (V)"
 	timedeltas = []
 
+	aig, pl = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
+
+	pl[0,0].set_title("Fit Subtracted Signal")
+	pl[0,0].set_ylabel('Volts (V)')
+	pl[0,0].set_xlabel('Frequency (MHz)')
+	pl[0,0].set_xlim(32.6,33.5)
+	pl[0,0].set_ylim(-.175, .25)
+
+
+
+	pl[0,1].set_title('Temperature')
+	pl[0,1].scatter(ga_csv['time'], ga_csv['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
+	#pl[0,2].scatter(ga_csv['time'], ga_csv['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
+	pl[0,1].scatter(ga_csv['time'], ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
+	pl[0,1].scatter(ga_csv['time'], ga_csv['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
+	pl[0,1].scatter(ga_csv['time'], ga_csv['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
+	pl[0,1].set_ylim(-.5, 7)
+	pl[0,1].set_ylabel('Kelvin (K)')
+	pl[0,1].set_xlabel('Time')
+
+	pl[1,0].set_xlim(32.6,33.5)
+	pl[1,0].set_ylim(-1, 1.3)
+	pl[1,0].set_ylabel('Volt')
+	pl[1,0].set_xlabel('Frequency (MHz)')
+
+
+	pl[1,1].scatter(ga_csv['time'], ga_csv['data_area'], color='green', label='Enhanced Data Area')
+	pl[1,1].set_title("Data Area")
+
+	#pl[0,2].scatter(ga_csv['time'], ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
+	#pl[0,2].scatter(ga_csv['time'], ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
+	#pl[0,2].scatter(ga_csv['time'], ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
+	pl[0,2].scatter(ga_csv['time'], ga_fixed['IFOFF (V)'], label="IFOFF (V)")
+
+	pl[1,2].scatter(ga_csv['time'], ga_fixed['SIG (V)'], label="SIG (V)")
+
+
+	pl[1,0].set_title("Raw Sweeps")
+
+	pl[1,1].set_ylabel('Volt-Area')
+	pl[1,1].set_xlabel('Time')
+	pl[0,2].set_title("VME & Microwave Stuff")
+	pl[0,2].set_ylabel('Volts (V)')
+	pl[0,2].set_xlabel('Time')
+
+	pl[1,2].set_title("SIG")
+	pl[1,2].set_ylabel('Volts (V)')
+	pl[1,2].set_xlabel('Time')
+
+	pl[0,0].grid(True)
+	pl[1,0].grid(True)
+	pl[1,1].grid(True)
+	pl[1,2].grid(True)
+	pl[0,2].grid(True)
+	pl[0,1].grid(True)
+
+
+
 	for i, val in enumerate(todo):
 
 		t1 = time.time()
 
-		fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
-
+		fig = aig
+		ax = pl
 
 		fig.suptitle(str(times[s+i]))
-
-		
 
 		with open(csvdirectory+val, 'r') as f:
 			df = pandas.read_csv(f)
 
+
 		ax[0,0].scatter(df[x], df["Third order Polynomial 0 Subtraction"], label='Fit Subtracted Signal', color='red')
-		ax[0,0].legend(loc='best')
-		ax[0,0].set_title("Fit Subtracted Signal")
-		ax[0,0].set_ylabel('Volts (V)')
-		ax[0,0].set_xlabel('Frequency (MHz)')
-		ax[0,0].set_xlim(32.6,33.5)
-		ax[0,0].set_ylim(-.175, .25)
-
-
-
-		ax[0,1].set_title('Temperature')
-		ax[0,1].scatter(ga_csv['time'], ga_csv['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
-		#ax[0,2].scatter(ga_csv['time'], ga_csv['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
-		ax[0,1].scatter(ga_csv['time'], ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
-		ax[0,1].scatter(ga_csv['time'], ga_csv['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
-		ax[0,1].scatter(ga_csv['time'], ga_csv['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
-		ax[0,1].set_ylim(-.5, 7)
-		ax[0,1].set_ylabel('Kelvin (K)')
-		ax[0,1].set_xlabel('Time')
-
-
-		ax[1,0].set_title("Raw Sweeps")
 		ax[1,0].scatter(df[x], df[bl], label='Baseline', color='blue')
 		ax[1,0].scatter(df[x], df[raw], label =''.join(list(val)[:-4]), color = 'red')
-		ax[1,0].set_xlim(32.6,33.5)
-		ax[1,0].set_ylim(-1, 1.3)
-		ax[1,0].set_ylabel('Volt')
-		ax[1,0].set_xlabel('Frequency (MHz)')
-
-
-		ax[1,1].scatter(ga_csv['time'], ga_csv['data_area'], color='green', label='Enhanced Data Area')
-		ax[1,1].set_title("Data Area")
-		ax[1,1].legend(loc='best')
+		
+		
 		ax[1,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'data_area'], color='magenta', label='Current sweep')
-		ax[1,1].set_ylabel('Volt-Area')
-		ax[1,1].set_xlabel('Time')
-
-
-
-
-		ax[0,2].scatter(ga_csv['time'], ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
-		ax[0,2].scatter(ga_csv['time'], ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
-		ax[0,2].scatter(ga_csv['time'], ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
-		ax[0,2].scatter(ga_csv['time'], ga_fixed['IFOFF (V)'], label="IFOFF (V)")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
+		
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
 		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta')
-		ax[0,2].grid(True)
-		ax[0,2].legend(loc='best')
-		ax[0,2].set_title("VME & Microwave Stuff")
-		ax[0,2].set_ylabel('Volts (V)')
-		ax[0,2].set_xlabel('Time')
+		
 
-		ax[1,2].scatter(ga_csv['time'], ga_fixed['SIG (V)'], label="SIG (V)")
 		ax[1,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'SIG (V)'], color='magenta', label="Current Sweep")
-		ax[1,2].grid(True)
-		ax[1,2].legend(loc='best')
-		ax[1,2].set_title("SIG")
-		ax[1,2].set_ylabel('Volts (V)')
-		ax[1,2].set_xlabel('Time')
-
-
+		
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T3 (K)'], color='magenta', label="Current Sweep")
 		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F10 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F11 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCCS.T2 (K)'], color='magenta')
 		
-		ax[0,0].grid(True)
+		
 		ax[1,0].grid(True)
-		ax[1,1].grid(True)
-		ax[0,1].grid(True)
+		ax[0,0].grid(True)
 
 		ax[0,1].legend(loc='best')
 		ax[0,0].legend(loc='best')
 		ax[1,0].legend(loc='best')
 		ax[1,1].legend(loc='best')
+		ax[0,2].legend(loc='best')
+		ax[1,2].legend(loc='best')
+		ax[1,1].legend(loc='best')
+		ax[0,0].legend(loc='best')
 		
 
 
 		plt.savefig(dump+str("{0:04d}".format(s+i)))
-		plt.clf()
-		plt.close('all')
+		ax[0,0].clear()
+		ax[1,0].clear()
+		#plt.clf()
+		#plt.close('all')
 
 		t2 = time.time()
 
@@ -200,10 +214,10 @@ for two in indexes:
 print(indexes)
 
 exit()
-#""
-print(indexes)
-exit()
-"""
+#"""
+#print(indexes)
+#exit()
+
 #for index,value in enumerate(indexes):
 #	plotter(files, value, timesteps, dffixed, 0)
 matplotlib.use('Agg')
