@@ -13,9 +13,12 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
-csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
+#csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+#globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
+csvdirectory = "../graph_data/"
+globalcsv = "../global_analysis_2.csv"
 dump = "../dump3/"
+karlmethod = 'saveme.csv'
 def forkitindexer(filelist):
     """
         Return a list of tuples of indecies that divide the passed
@@ -50,6 +53,24 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	ga_csv = ga_csv.fillna(0)
 
 	
+
+	deltasx = 'time'
+	deltasy = 'sum'
+
+	with open(karlmethod, 'r') as f:
+		deltas = pandas.read_csv(f)
+	deltas[deltasx] = pandas.to_datetime(deltas[deltasx],format="%Y-%m-%d %H:%M:%S")
+
+	deltas = deltas.sort_values(by=deltasx)
+	deltastime = deltas[deltasx]
+	deltas = deltas.set_index(deltasx)
+
+	meandy = deltas[deltasy].mean()
+	print(meandy)
+
+
+
+	
 	gasorted = ga_csv.sort_values(by='time')
 	timesteps = gasorted['time'].to_list()
 	
@@ -58,6 +79,8 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	x = "MHz"
 	bl = "BL Potential (V)"
 	raw = "Raw Potential (V)"
+	#yfitsub = 'Fit 1 Subtraction' #2020_9_12
+	yfitsub = 'Third order Polynomial 0 Subtraction' #2020_12_10
 	timedeltas = []
 
 	for i, val in enumerate(todo):
@@ -74,7 +97,12 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		with open(csvdirectory+val, 'r') as f:
 			df = pandas.read_csv(f)
 
-		ax[0,0].scatter(df[x], df["Fit 1 Subtraction"], label='Fit Subtracted Signal', color='red')
+		ss = ga_fixed.loc[times[s+i], 'sigstart']
+		sf = ga_fixed.loc[times[s+i], 'sigfinish']
+		signal_removed_df = df[(df[x]>ss) & (df[x]<sf)]
+
+		ax[0,0].scatter(df[x], df[yfitsub], label='User Selected Region', color='blue')
+		ax[0,0].scatter(signal_removed_df[x], signal_removed_df[yfitsub], label='Fit Subtracted Signal', color='red')
 		ax[0,0].legend(loc='best')
 		ax[0,0].set_title("Fit Subtracted Signal")
 		ax[0,0].set_ylabel('Volts (V)')
@@ -132,12 +160,12 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		ax[0,2].set_ylabel('Volts (V)')
 		ax[0,2].set_xlabel('Time')
 
-		ax[1,2].scatter(ga_csv['time'], ga_fixed['SIG (V)'], label="SIG (V)")
-		ax[1,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'SIG (V)'], color='magenta', label="Current Sweep")
+		ax[1,2].set_ylim(-.5,-1.5)
+		ax[1,2].scatter(deltastime, deltas[deltasy], label="Karl's Metric")
+		ax[1,2].scatter(timesteps[s+i], deltas.loc[times[s+i], deltasy], color='magenta', label="Current Sweep")
 		ax[1,2].grid(True)
 		ax[1,2].legend(loc='best')
-		ax[1,2].set_title("SIG")
-		ax[1,2].set_ylabel('Volts (V)')
+		ax[1,2].set_title("Poor-fit indicator prototype")
 		ax[1,2].set_xlabel('Time')
 
 
