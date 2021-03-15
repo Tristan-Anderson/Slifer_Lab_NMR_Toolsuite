@@ -88,8 +88,8 @@ def plotter(files, indexes, times, ga_csv, id_num):
 
 		ax[0,1].set_title('Temperature')
 		ax[0,1].scatter(ga_csv['time'], ga_csv['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
-		#ax[0,2].scatter(ga_csv['time'], ga_csv['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
-		ax[0,1].scatter(ga_csv['time'], ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
+		ax[0,2].scatter(ga_csv['time'], ga_csv['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
+		#ax[0,1].scatter(ga_csv['time'], ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
 		ax[0,1].scatter(ga_csv['time'], ga_csv['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
 		ax[0,1].scatter(ga_csv['time'], ga_csv['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
 		ax[0,1].set_ylim(-.5, 7)
@@ -101,7 +101,7 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		ax[1,0].scatter(df[x], df[bl], label='Baseline', color='blue')
 		ax[1,0].scatter(df[x], df[raw], label =''.join(list(val)[:-4]), color = 'red')
 		ax[1,0].set_xlim(32.4,33.4)
-		ax[1,0].set_ylim(-3.3, 3.3)
+		ax[1,0].set_ylim(-4, 3.5)
 
 		#ax[1,0].set_ylim(-1, 1.3)
 		ax[1,0].set_ylabel('Volt')
@@ -142,8 +142,8 @@ def plotter(files, indexes, times, ga_csv, id_num):
 
 
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T3 (K)'], color='magenta', label="Current Sweep")
-		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
-		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F10 (K)'], color='magenta')
+		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
+		#ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F10 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F11 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCCS.T2 (K)'], color='magenta')
 		
