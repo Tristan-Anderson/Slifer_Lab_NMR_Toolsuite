@@ -834,6 +834,7 @@ def gff(df, start, finish, fitname, **kwargs):
             print("*ADVICE: Check your fit function, did the function fail to fit?")
             print("*ADVICE: No entry exists by the name \'"+str(y)+"\'")
             #print("***: Aborting.")
+            
     else:
         ydata = df[y].values
 
@@ -888,7 +889,7 @@ def gff(df, start, finish, fitname, **kwargs):
             # We try to fit the data that we sliced from above.
             var, pcov = fit(eval(f_name), x_data_for_fit, y_data_for_fit, p0=p0, bounds=bounds)
             #print(f_name, var)
-        except:  # If we failed fitting
+        except Exception as e:  # If we failed fitting
             rawsigfit = {}
             fig, ax = plt.subplots(figsize=(fig_size_x, fig_size_y))
             ax.scatter(xdata, ydata, c='black', s=2 * binning, label="Data")
@@ -899,6 +900,7 @@ def gff(df, start, finish, fitname, **kwargs):
             ax.legend(loc='best')
             fig.suptitle(plttitle)
             if gui:
+                print(e)
                 print("***ERROR: Main fit subtraction failed for", f_name, '\n')
                 return df, fig, chsq, rawsigfit, True
 
