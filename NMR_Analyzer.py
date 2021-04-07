@@ -1105,6 +1105,7 @@ def gff(df, start, finish, fitname, **kwargs):
         ax.set_xlabel(x)
         ax.legend(loc='best')
         #print("Made it here")
+        ax.grid(True)
         return df, fig, chsq, rawsigfit, False
 
     else:

@@ -33,9 +33,12 @@ If you want to edit the primary and secondary thermistors - edit them here.
 dmsa_time_colname = "Time"
  
 # What is the primary thermistor? 
+
+#dmsa_primary_thermometer_colname = "CCCCS.T3 (K)"
 dmsa_primary_thermometer_colname = "CCX.T3 (K)"
 
 # What is the secondary thermistor?
+#dmsa_secondary_thermometer_colname = "Vapor Pressure (K)"
 dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
 
 # What is the magnet PSU reading?
@@ -155,4 +158,10 @@ gi_centroid = "Sweep Centroid"
 gi_width = "Sweep Width"
 gi_TE = "TEvalue"
 
+####################################################################
+###                    Spin Extractor                            ###
+####################################################################
 
+agui_se_time = gi_time
+agui_se_yaxdef = gi_scaled_polarization
+agui_se_yaxfallback = gi_dataarea

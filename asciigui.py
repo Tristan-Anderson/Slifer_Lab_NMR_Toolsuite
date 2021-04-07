@@ -6,7 +6,7 @@ tja1015@wildats.unh.edu
 Proceed Formally.
 """
 import NMR_Analyzer as v
-import daq_muncher, directory_sorter,sweep_averager,global_interpreter
+import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor
 from matplotlib import pyplot as plt
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
 
@@ -232,7 +232,23 @@ class AsciiGUI():
             except ValueError:
                 print("ValueError, improper-input. Numbers only please, within the appropriate range.")
 
-            
+    def getMDY(self, end=False):
+        x = ''
+        date = None
+        while type(date) != datetime.datetime:
+            try:
+                if end:
+                    print("Press ENTER if the start and end DATE are the same.")
+                k = input("Your Date: ")
+                if end and k == '':
+                    return None
+                date = datetime.datetime.strptime(k, "%m/%d/%Y")
+                return date
+            except KeyboardInterrupt:
+                print("Inturrupt Recieved")
+                raise KeyboardInterrupt
+            except:
+                print("Invalid Format. Enter date in MM/DD/YYYY format.")
 
 
 def NMRAnalyzer(args):
@@ -254,8 +270,7 @@ class nmrAnalyser(AsciiGUI):
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
             self.mainloop()
-
-        
+       
     def overrideRootDir(self, override):
         self.rootdir = override
         pass
@@ -981,13 +996,13 @@ class nmrAnalyser(AsciiGUI):
 
         if len(k) != 0:
             with open(k[0]+'.csv', 'w') as f:
-                self.df.to_csv(f)
+                self.df.to_csv(f,index=False)
             v.add_entry(*k, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
         elif appendme is not None:
             v.add_entry(*headers, headers=headers if h is not None else h, appendme=appendme)
         else:
             with open(self.instancename+'.csv', 'w') as f:
-                self.df.to_csv(f)
+                self.df.to_csv(f,index=False)
             v.add_entry(*c, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
 
     def __forkitindexer__(self, filelist):
@@ -1005,6 +1020,7 @@ class nmrAnalyser(AsciiGUI):
 
     def saveBoth(self):
         pass
+
 
 class daqExtractor(AsciiGUI):
     def __init__(self, args):
@@ -1069,6 +1085,7 @@ class daqExtractor(AsciiGUI):
         else:
             self.filelocation = self.selection+'/'
             daq_muncher.directory(self.selection, self.fdump, self.rootdir)
+
 
 class dirSorter(AsciiGUI):
     def __init__(self, args):
@@ -1166,7 +1183,8 @@ class sweepAverager(AsciiGUI):
         locationmsg = "Select directory for averaging"
         startmsg = "Start the avergaing process"
 
-        choice = {'updatelocation':[locationmsg, self.updateLocation], "execute":[startmsg, self.execute]}
+        choice = {'updatelocation':[locationmsg, self.updateLocation], "execute":[startmsg, self.execute], 
+                  }
 
         key = self.dict_selector(choice)
 
@@ -1256,11 +1274,511 @@ class globalInterpreter(AsciiGUI):
         print("Enhanced Global analysis complete.")
 
 
+def SpinCurves(args):
+    instance = spinCurves(args)
+    del instance
+    print("Feature not entirely implemented.")
+
+class spinCurves(AsciiGUI):
+    def __init__(self, args):
+        super().__init__(args, getrootdir=True)
+        self.title = "Spin Curve"
+        self.df = pandas.DataFrame()
+        self.selection="None"
+
+        self.HasTimes = False
+        self.Hasplots = False
+
+        self.sh, self.sm, self.ss, self.fh, self.fm, self.es = None,None,None,None,None,None
+
+        self.time = variablenames.agui_se_time
+        self.yax = variablenames.agui_se_yaxdef
+        self.spinup= True
+
+        self.mainloop()
+
+    def mainloop(self):
+        self.getSelection()
+        self.selectDate()
+        try:
+            while True:
+                self.currentSettings()
+                if self.Hasplots:
+                    self.figure.show()
+                self.choices()
+                plt.close('all')
+                plt.clf()
+        except KeyboardInterrupt:
+            print("Keyboard Inturrupt recieved. Returning...")
+
+    def currentSettings(self):
+        cols = self.df.columns.values.tolist()
+        self.announcement("Available DF Columns:")
+        for index, i in enumerate(cols):
+            print(i, end='\t')
+            if index % 4 == 0:
+                print('')
+        print("")
+        self.announcement("Current Settings:")
+        print("Current File:", self.selection)
+        print("Selected y-axis:", self.yax)
+        print("Selected x-axis:", self.time)
+        print("Current plot Title:", self.title)
+        print("Current time selection:")
+        if self.HasTimes:
+            print("Start:", self.start.strftime('%m/%d/%Y %H:%M:%S'))
+            print("End:", self.end.strftime('%m/%d/%Y %H:%M:%S'))
+
+        self.ensure_yax()
+        if self.HasTimes:
+            self.preview()
+
+    def choices(self):
+        selectionmsg = "Select Parsed DAQ file OR Raw Global interpreter file"
+        settitlemsg = "Set title for graph"
+        selectdatemsg = "Set new time region"
+        selectstarttime = "Set start time"
+        setstartdate = "Set start date"
+        updateEndTime = "Set end time"
+        updateEndDate = "Set end date"
+        executemsg = "Fit the plot"
+        toggleupdownmsg = "Toggle Spin up / Spin Down mode"
+
+        c = {"SelectCSV":[selectionmsg, self.getSelection],
+            "TimeSelection":[selectdatemsg, self.selectDate],
+            "SetTitle":[settitlemsg, self.settitle],
+            "toggleSpinCurve":[toggleupdownmsg, self.togglespin],
+            'updateStartTime':[selectstarttime, self.updateStartTime],
+            'updateStartDate':[setstartdate, self.updateStartDate],
+            'updateEndTime':[updateEndTime, self.updateEndTime],
+            'updateEndDate':[updateEndDate, self.updateEndDate],
+            'fitcurve':[executemsg, self.execute]
+                }
+
+        key = self.dict_selector(c)
+        f = c[key][1]
+        f()
+
+    def updateStartTime(self):
+        print("START TIME: Enter the number of seconds:")
+        self.ss = int(self.getNumInRange(0, 59))
+        print("START TIME: Enter the number of minutes:")
+        self.sm = int(self.getNumInRange(0,59))
+        print("START TIME:  Enter the number of hours:")
+        self.sh = int(self.getNumInRange(0,23))
+
+        self.updatestart()
+
+    def updateStartDate(self):
+        self.header("START DATE: Enter the START date in MM/DD/YYYY format")
+
+        self.start_date = self.getMDY()
+        self.Sd, self.Sm, self.Sy =  int(self.start_date.strftime('%d')), int(self.start_date.strftime('%m')),  int(self.start_date.strftime("%Y"))
+
+        self.updatestart()
+
+    def updateEndTime(self):
+        print("END TIME: Enter the number of seconds:")
+        self.es = int(self.getNumInRange(0, 59))
+        print("END TIME: Enter the number of minutes:")
+        self.fm = int(self.getNumInRange(0,59))
+        print("END TIME: Enter the number of hours:")
+        self.fh = int(self.getNumInRange(0,23))
+
+        self.updateend()
+
+    def updateEndDate(self):
+        self.header("END DATE: Enter the END date in MM/DD/YYYY format")
+
+        self.end_date = self.getMDY(end=True)
+        if self.end_date == None:
+            self.end_date = self.start_date 
+
+        self.Fd, self.Fm, self.Fy = int(self.end_date.strftime('%d')), int(self.end_date.strftime('%m')),  int(self.end_date.strftime("%Y"))
+
+        self.updateend()
+
+    def togglespin(self):
+        print("Currently in", "Spin Up" if self.spinup else "Spin Down", "Mode")
+        self.spinup = not self.spinup
+        print("Switching to", "Spin Up" if self.spinup else "Spin Down", "Mode")
+
+    def settitle(self):
+        print("Current plot title is: ", self.title)
+        self.title = input("Input title: ")
+
+    def getSelection(self):
+        self.selection = self.fileDirectorySelector()
+        self.updateDF()
+        print("made it")
+        self.ensure_yax()
+
+    def updateDF(self):
+        with open(self.selection, 'r') as f:
+            self.df = pandas.read_csv(f)
+
+    def ensure_yax(self):
+        cols = self.df.columns.values.tolist()
+        if self.yax not in cols:
+            print("WARNING! current y-axis selection is NOT in the selected dataframe.")
+            print("PLEASE select y-axis column in dataframe:")
+            self.updateyax()
+
+    def updateyax(self):
+        print('Current y-axis is', self.yax, 'which is not in the current dataframe. Please select an option that is.')
+
+        cols = self.df.columns.values.tolist()
+        msg = "Column in Dataframe"
+        the_choices = {}
+        for i in cols:
+            the_choices[i] = [msg]
+
+        k = self.dict_selector(the_choices)
+        print("Column updated to", k)
+        self.yax = k
+
+    def preview(self):
+        self.Hasplots = True
+
+        self.figure = spin_extractor.previewdata_gui(self.selection, self.title, self.Sd, self.Sm, self.Sy, self.sh,
+                             self.sm,  self.fh,self.fm, self.yax, self.time, ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy, preview=True)
+
+    def selectDate(self):
+        self.HasTimes = True
+        self.updateStartDate()
+
+        self.updateStartTime()
+        
+        self.updateEndDate()
+
+        self.updateEndTime()
+        
+        
+    def updatestart(self):
+        self.start = self.start_date + datetime.timedelta(hours=0 if self.sh is None else self.sh, minutes=0 if self.sm is None else self.sm, seconds=0 if self.ss is None else self.ss)
+
+    def updateend(self):
+        self.end = self.end_date + datetime.timedelta(hours=0 if self.fh is None else self.fh, minutes=0 if self.fm is None else self.fm, seconds=0 if self.es is None else self.es)
+
+
+    def execute(self):
+        self.Hasplots = True
+        self.figure = spin_extractor.getupdown(self.selection, self.title, self.Sd, self.Sm, self.Sy, 
+                    self.sh, self.sm,  self.fh,self.fm, self.yax, self.time, up=self.spinup, 
+                    ss=self.ss, fs=self.es, Fd=self.Fd, Fm=self.Fm, Fy=self.Fy)
+
+
+class omniVIEW(AsciiGUI):
+    def __init__(self, args):
+        pass
+
+
+    def omniview_gui(self, user_start, user_end, thermistors, xaxis, **kwargs):
+        #       
+        #       An in-memory way of viewing data from a particular timerange
+        #
+        comments=kwargs.pop("comments",False)
+        save_fig=kwargs.pop("save_fig",False)
+        dpi_val=kwargs.pop("dpi_val",150)
+        gui=kwargs.pop("gui",False)
+        ylabel=kwargs.pop("ylabel", "Ohms")
+
+        plt.close('all')
+        plt.clf()
+        gc.collect()
+        font = {'size': 4}
+        plt.rc('font', **font)
+        
+        y_sarebad = False
+        x_sarebad = False
+
+        try:
+            self.df
+        except AttributeError:
+            self.load_experimental_data()
+
+        start_date = min(self.df[self.SliferLabTimeDefaultLabel])
+        end_date = max(self.df[self.SliferLabTimeDefaultLabel])
+        start_index = self.df[self.df[self.SliferLabTimeDefaultLabel]==start_date].index.to_list()[0]
+        end_index = self.df[self.df[self.SliferLabTimeDefaultLabel]==end_date].index.to_list()[0]
+        max_datapoints = 3000
+
+        if user_start < user_end:
+            fig = plt.figure(figsize=(fig_x_dim,fig_y_dim), dpi=dpi_val)
+            if comments:
+                print("Comments have been turned on")
+                canvas = fig.add_subplot(111)
+                graph = fig.add_subplot(211)
+                footnotes = fig.add_subplot(212)
+                footnotes.axis('off')
+                canvas.axis('off')
+            else:
+                graph = fig.add_subplot(111)
+            
+
+            # __nearest(self, test_val, iterable)
+            print("Locating nearest raw data-frame start index from user provided time")
+            data_start_index = self.df[self.df[self.SliferLabTimeDefaultLabel] == self.__nearest(user_start, self.df[self.SliferLabTimeDefaultLabel])].index.to_list()[0]
+            print("Start index located.", data_start_index)
+            print("Locating nearest raw data-frame end index from user provided time")
+            data_end_index = self.df[self.df[self.SliferLabTimeDefaultLabel] == self.__nearest(user_end, self.df[self.SliferLabTimeDefaultLabel])].index.to_list()[0]
+            print("End index located.", data_end_index)
+            delta = data_end_index-data_start_index
+            index_modulus = (delta*(len(thermistors)-1))/max_datapoints
+
+            
+            if index_modulus <= 1:
+                df_yslice = self.df.iloc[data_start_index:data_end_index:1]
+            else:
+                df_yslice = self.df.iloc[data_start_index:data_end_index:round(index_modulus)]
+            
+            df_yslice = df_yslice.convert_dtypes()
+            df_xslice = self.df.loc[df_yslice.index.tolist(),xaxis].to_numpy() # GENERALIZE it.
+            df_timeslice = self.df.loc[df_yslice.index.tolist(),self.SliferLabTimeDefaultLabel]
+
+
+            if self.SliferLabTimeDefaultLabel not in xaxis:
+                df_xsclice = self.__fix_dfslice(df_xslice)
+                try:
+                    df_xslice = df_xslice.astype(float)
+                except ValueError as e:
+                    x_sarebad = True
+                    print("Can not convert", xaxis, "To numeric. X-Axis tick errors may occur.")
+            yvals = {}
+            for column in thermistors:
+                if self.SliferLabTimeDefaultLabel not in column:
+                    yvals[column] = self.__fix_dfslice(df_yslice[column])
+
+            k = len(df_xslice)
+            
+            if comments:
+                print("Querrying Logbook start")
+                logbook_start = self.__nearest(user_start, self.logbook_df[self.SliferLabTimeDefaultLabel])
+                print("Querrying Logbook end")
+                logbook_end = self.__nearest(user_end, self.logbook_df[self.SliferLabTimeDefaultLabel])
+                logbook_start_index = self.logbook_df[self.logbook_df[self.SliferLabTimeDefaultLabel] == logbook_start].index[0]
+                logbook_end_index = self.logbook_df[self.logbook_df[self.SliferLabTimeDefaultLabel] == logbook_end].index[0]
+                logbook_slice = self.logbook_df[logbook_start_index:logbook_end_index]
+                print("Commenting Graph.")
+                canvas, graph = self.__commenter(canvas, graph, logbook_slice, 
+                                             df_timeslice, rng_ss=data_start_index, 
+                                             rng_ee=data_end_index, avg=90, dpi_val=dpi_val
+                                             )
+
+
+            print("Sliced", k, "datapoints from", delta, "Total datapoints", "between", user_start, "and", user_end)
+            graph.title.set_text("Data between "+user_start.strftime("%m/%d/%Y, %H:%M:%S")+" and "+user_end.strftime("%m/%d/%Y, %H:%M:%S"))
+            graph.set_xlabel(xaxis)
+            graph.set_ylabel(ylabel)
+            
+
+            for column in thermistors:
+                graph.scatter(df_xslice,yvals[column], label=column, s=3)
+            
+            if self.SliferLabTimeDefaultLabel in xaxis:
+                graph.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%Y/%m/%d %H:%M'))
+                graph.xaxis_date()
+                pass
+
+            if y_sarebad:
+                yticks = graph.get_yticks()
+                cool_yticks = [yticks[i] for i in range(0,len(yticks), int(len(yticks)/10)+1)]
+                graph.set_yticks(cool_yticks)
+            if x_sarebad:
+                xticks = graph.get_xticks()
+                cool_xticks = [xticks[i] for i in range(0,len(xticks), int(len(xticks)/10)+1)]
+                graph.set_xticks(cool_xticks)
+
+
+            graph.legend(loc='best')
+
+
+            if save_fig == True:
+                plt.savefig(user_start.strftime("%m_%d_%Y_%H_%M_%S")+"_to_"+user_end.strftime("%m_%d_%Y_%H_%M_%S_"))
+            elif gui:
+                return fig
+            else:
+                plt.show()
+        else:
+            print("Bad Date selection.")  
+
+
+    def __fix_dfslice(self,dfslice):
+        a2 = []
+        for index, value in enumerate(dfslice):
+            to_fix = list(str(value))
+            to_delete = []
+            offs = []
+            ##### Mark all non-alphanumerica special characters for deletion #####
+            for index,character in enumerate(to_fix):
+                if re.search(r'[\!\@\#\$\%\^\&\*\(\)\=\{\}\[\]\ \+]', character):
+                    to_delete.append(index)
+            ######################################################################
+            if "off" in value or "Off" in value:
+                # Set all offs to zero.
+                offs.append(index)
+                to_fix = ['0']
+            else:
+                for i in sorted(to_delete,reverse=True):
+                    if i not in offs:
+                        del to_fix[i]
+            #print(index, "".join(to_fix))
+            a2.append("".join(to_fix))
+        return numpy.array(a2,dtype=numpy.float64)
+
+
+    def __commenter(self, canvas, graph, logbook_slice, df_timeslice, rng_ss=0, keywords=[], rng_ee=0, avg=0, dpi_val=300):
+        # THERE IS CURRENTLY A BUG WHERE IF COMMENTS ARE SET TO TRUE, IN THE GUI DATE-GRAPHER THIS THING WILL DROP TIMESTAMPS
+        # ON THE COMMENTS OF THE FIGURES. I HAVE YET TO FIND OUT WHAT IS CAUSING THAT, BUT FOR NOW THE PROGRAM WORKS. 
+        #
+        """
+        orig_x_dim = 32
+        orig_y_dim = 18
+        fig_x_basic_info = (0.25/16)*fig_x_dim
+        fig_y_basic_info = (8.1/9)*fig_y_dim
+        fig_x_end_range_data = (13/16)*fig_x_dim
+        fig_x_start_range_data = (1.75/16)*fig_x_dim
+        fig_y_range_data = (4.3/9)*fig_y_dim
+        fig_x_logbook_comment = (0.25/16)*fig_x_dim
+        fig_y_logbook_comment = (4.25/9)*fig_y_dim
+        fig_x_timestamp = (0.25/16)*fig_x_dim
+        fig_y_anchor_timestamp = (4.1/9)*fig_y_dim
+        fig_y_step_timestamp = (.15/18)*fig_y_dim
+        fig_x_comment_start = (1.2/16)*fig_x_dim
+        """
+        maxcolumnlen=30
+
+
+        fig_x_timestamp = fig_x_dim/640
+        fig_y_anchor_timestamp = 55*fig_y_dim/128
+        fig_y_step_timestamp = 2*fig_y_dim/135
+        fig_x_comment_start = 5*fig_x_dim/64
+        fig_x_comment_rowshift = 85*fig_x_dim/256
+
+
+        avg_comments = []
+        poi = True
+        v = 0
+        n = 0
+        was = False
+        shift = False
+        shift_2 = False
+        trip = True
+        for index, row in logbook_slice.iterrows():
+            modified_comment, y = self.graph_comment_formater(row["Comment"])
+            v += y # Current line
+            timestamp = row[self.SliferLabTimeDefaultLabel]
+            have_i_printed = False
+            old_v = v
+            old_n = n
+            if v > maxcolumnlen:
+                if not shift:
+                    fig_x_comment_start += fig_x_comment_rowshift
+                    fig_x_timestamp += fig_x_comment_rowshift
+                    shift = True
+                elif not shift_2 and v > 2*maxcolumnlen:
+                    fig_x_comment_start += fig_x_comment_rowshift
+                    fig_x_timestamp += fig_x_comment_rowshift
+                    shift_2 = True
+                
+                if v > 2*maxcolumnlen:
+                    v -= 2*maxcolumnlen
+                    n -= 2*maxcolumnlen
+                else:
+                    v -= (maxcolumnlen+1)
+                    n -= (maxcolumnlen+1)
+            try:
+                if df_timeslice[rng_ss] <= timestamp and timestamp <= df_timeslice[rng_ee-1]:
+                    canvas.annotate(
+                        timestamp, 
+                        xy=(fig_x_timestamp*dpi_val,(fig_y_anchor_timestamp-fig_y_step_timestamp*n)*dpi_val), 
+                        xycoords='figure pixels', color="green") 
+                    avg_comments.append(n)
+                else:
+                    canvas.annotate(
+                        timestamp, 
+                        xy=(fig_x_timestamp*dpi_val,(fig_y_anchor_timestamp-fig_y_step_timestamp*n)*dpi_val), 
+                        xycoords='figure pixels')
+            except KeyError:
+                if trip:
+                    print("WARNING: Slicing miss-match. IGNORE if using Date Grapher with comments.")
+                    trip = False
+            n = old_n
+            n += 1
+            n += y
+            if any(x in str(row["Comment"]) for x in keywords):
+                if min(df_timeslice) <= row[self.SliferLabTimeDefaultLabel] and row[self.SliferLabTimeDefaultLabel] <= max(df_timeslice): 
+                    canvas.annotate(
+                        modified_comment, 
+                        xy=(fig_x_comment_start*dpi_val,(fig_y_anchor_timestamp-fig_y_step_timestamp*v)*dpi_val),
+                        xycoords='figure pixels', color='goldenrod')
+                    x_loc = int(self.logbook_df[self.logbook_df["Comment"] == row["Comment"]].index[0])
+                    logbook_hit_date = self.logbook_df.loc[x_loc, self.SliferLabTimeDefaultLabel]
+                    graph.plot(
+                        logbook_hit_date,
+                        avg, 'ro',
+                        color="goldenrod", ms=10, label=("Keyword Hit") if poi else None)
+                    poi = False
+                    have_i_printed = True
+            if v in avg_comments:
+                for index in avg_comments:
+                    if v == index:
+                        canvas.annotate(
+                            modified_comment, 
+                            xy=(fig_x_comment_start*dpi_val,(fig_y_anchor_timestamp-fig_y_step_timestamp*v)*dpi_val),
+                            xycoords='figure pixels', color='green')
+                    have_i_printed = True
+            elif not have_i_printed:
+                canvas.annotate(
+                    modified_comment, 
+                    xy=(fig_x_comment_start*dpi_val,(fig_y_anchor_timestamp-fig_y_step_timestamp*v)*dpi_val),
+                    xycoords='figure pixels')
+                have_i_printed = True
+            v = old_v
+            v += 1
+            if shift_2 and v > 3*maxcolumnlen:
+                print("WARNING: Out of lab-book comment space on figure. Consider selecting a narrower plotting range if labbook comment insight is critical.")
+                return canvas,graph
+
+        return canvas, graph
+
+
+    def convert_df_yslice(self, thermistor, data):
+        thermistors_in_file = ["CCS.F1","CCS.F2","CCS.F3","CCS.F4","AB.F5", "AB.F6", "CCS.F7", "CCS.F8","CCS.F9","CCS.F10", "CCS.F11", "CCS.S1", "CCS.S2", "CCS.S3"]
+        if thermistor in thermistors_in_file:
+            (a,b,c) = (self.coefficents_df.loc['a', thermistor], self.coefficents_df.loc['b', thermistor], self.coefficents_df.loc['c', thermistor])
+            data2 = data.apply(convert_to_k, args=(a,b,c))
+        else:
+            data2 = data.apply(convert_to_k_spect, args=(), thermistor=thermistor)
+        return data2
+
+
+    def graph_comment_formater(self, comment):
+        ls = list(str(comment))
+        n = 0
+        linelength = 69
+        to_rm = []
+        for element in range(0, len(ls)):
+            if re.search(r'[\_\+\*\[\]\$\^\(\)\{\}\|\\]', ls[element]):
+                    to_rm.append(element)
+            if element % linelength == 0 and element != 0:
+                if re.search('[a-zA-Z]', ls[element]):
+                    ls.insert(element-1, '-')
+                ls.insert(element, '\n')
+                n += 1
+        #print("".join(ls))
+        for i in sorted(to_rm,reverse=True):
+            del ls[i]
+        #print("".join(ls))
+        str_to_return = "".join(ls)
+        return str_to_return, n
+
+
 def main(args):
     def options():
         print("NMR Toolsuite options:")
-        functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
-        functionalities = ["NMRAnalyzer","DAQExtractor","DirSorter","SweepAverage","GlobalInterpreter"]
+        functions = [DAQExtractor, DirSorter, SweepAverager, NMRAnalyzer, GlobalInterpreter, SpinCurves]
+        functionalities = ["DAQExtractor","DirSorter","SweepAverager","NMRAnalyzer","GlobalInterpreter", "SpinCurves"]
 
         print('#'*(12+max([len(i) for i in functionalities])))
         print(str("{0:1}{2:^7}{0:1}{1:^"+str(2+max([len(i) for i in functionalities]))+"}{0:1}").format('#','Functionality',"Mode"))
@@ -1277,7 +1795,7 @@ def main(args):
             print("Invalid Input")
             return options()
 
-    functions = [NMRAnalyzer, DAQExtractor, DirSorter, SweepAverager, GlobalInterpreter]
+    functions = [DAQExtractor, DirSorter, SweepAverager, NMRAnalyzer, GlobalInterpreter,SpinCurves]
     optdict = dict(zip([i for i in range(len(functions))],functions))
     home = os.getcwd()
     while True:
