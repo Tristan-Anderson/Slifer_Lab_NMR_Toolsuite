@@ -33,9 +33,12 @@ If you want to edit the primary and secondary thermistors - edit them here.
 dmsa_time_colname = "Time"
  
 # What is the primary thermistor? 
+
+#dmsa_primary_thermometer_colname = "CCCCS.T3 (K)"
 dmsa_primary_thermometer_colname = "CCX.T3 (K)"
 
 # What is the secondary thermistor?
+#dmsa_secondary_thermometer_colname = "Vapor Pressure (K)"
 dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
 
 # What is the magnet PSU reading?
@@ -124,8 +127,8 @@ agui_impression = False
 ####################################################################
 
 ## Change the thermistor type here
-gi_primary_thermistor = "CCX.T3 (K)"
-gi_secondary_thermistor ="Vapor Pressure Temperature (K)"
+gi_primary_thermistor = dmsa_primary_thermometer_colname
+gi_secondary_thermistor =dmsa_secondary_thermometer_colname
 ##
 gi_time = 'time'
 gi_lorentzianarea_results = "Lorentzian Area"
@@ -134,8 +137,8 @@ gi_uncert_in_scaled_pol = "Uncert in Scaled polarization"
 gi_integrated_data_area_results = "Integrated Data Area"
 gi_ltz_area_results = "Lorentzian Area"
 gi_bviaI_results = 'B via I (T)'
-gi_primary_thermistor_results ="CCCS.T3 (K)"
-gi_secondary_thermistor_results = "VP (K)"
+gi_primary_thermistor_results =dmsa_primary_thermometer_colname
+gi_secondary_thermistor_results = dmsa_secondary_thermometer_colname
 gi_centroid_results = "sweep centroid"
 gi_width_results = "sweep width"
 gi_te_results ="TEvalue"

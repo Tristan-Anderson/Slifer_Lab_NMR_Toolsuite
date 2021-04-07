@@ -1,10 +1,17 @@
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 
+# Sept 14 2020 data
+#csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+#globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
+#dump = "../dump3/"
+#savefile = 'saveme_9_14.csv'
 
-csvdirectory = "../graph_data/"
-globalcsv = "../global_analysis_2.csv"
+# Dec 10 2020 data
+csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
+globalcsv = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
 dump = "../dump3/"
+savefile = 'saveme_12_10_20.csv'
 def forkitindexer(filelist):
     """
         Return a list of tuples of indecies that divide the passed
@@ -29,14 +36,14 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	#it = [i for i in range(s,f+1)]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
-	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
-			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
-			"CCCS.T2 (K)", "CCS.F11 (K)"]
-	for i in asd:
-		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
-	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	ga_csv = ga_csv.fillna(0)
+	#asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
+	#		"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
+	#		"CCCS.T2 (K)", "CCS.F11 (K)"]
+	#for i in asd:
+	#	ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
+	#ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	#ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	#ga_csv = ga_csv.fillna(0)
 
 	
 	gasorted = ga_csv.sort_values(by='time')
@@ -50,6 +57,8 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	timedeltas = []
 	values = []
 	xs = []
+	lmost = []
+	rmost = []
 
 	for i, val in enumerate(todo):
 		with open(csvdirectory+val, 'r') as f:
@@ -59,18 +68,20 @@ def plotter(files, indexes, times, ga_csv, id_num):
 		sf = ga_fixed.loc[times[s+i], 'sigfinish']
 		signal_removed_df = df[(df[x]<ss) & (df[x]>sf)]
 		values.append(df[raw].mean())
+		lmost.append(df.loc[0,raw])
+		rmost.append(df.loc[(len(df[raw])-1), raw])
 		xs.append(str(times[s+i]))
 	
-	v=pandas.DataFrame({'time':xs,'sum':values})
-	with open('saveme.csv', 'w') as f:
+	v=pandas.DataFrame({'time':xs,'sum':values, 'leftmost':lmost, 'rightmost':rmost})
+	with open(savefile, 'w') as f:
 		v.to_csv(f)
 	
 	#plt.scatter(x,values, label='data')
 	#plt.legend(loc='best')
 	#plt.savefig('nice')
 	#plt.show()
-	input("Please hold")
-	exit()
+	#input("Please hold")
+	#exit()
 
 
 

@@ -171,7 +171,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		sweep_width = df[variablenames.gi_width_results].values.astype(float)
 
 	df[variablenames.gi_time] = pandas.to_datetime(df[variablenames.gi_time], format="%Y-%m-%d %H:%M:%S")
-	df.sort_values(by=variablenames.gi_time)
+	df = df.sort_values(by=variablenames.gi_time)
 
 
 	dt_for_dmy = df.loc[1, variablenames.gi_time]
@@ -187,7 +187,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	results_df = pandas.DataFrame()
 	results_df[variablenames.gi_time] = df[variablenames.gi_time]
 
-	x = df[variablenames.gi_time].values
+	x = df[variablenames.gi_time].to_list()
+	#print(max(x), min(x))
 	y1a = df['B'].values
 	for index, val in enumerate(y1a):
 		if val == 'Off':
@@ -343,15 +344,15 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			#ax[5].grid(True)
 			#ax[5].scatter(x,constants, label="Calibration Constants (Are Averaged)", color="peru")
 			#ax[5].set_ylabel("Calibration Constants",color="peru")
-			tevaluesaxis = ax[5].twinx()
+			#tevaluesaxis = ax[5].twinx()
 			vix0 = tpol(y1b, y2)
 
 
 			#tevaluesaxis.scatter(x, vix0, label="TE Value via x0", color="mediumpurple")
 			#tevaluesaxis.errorbar(x, [TE_BEST for i in x], yerr=TE_UNCERT, color='hotpink', alpha=0.5, label="TE w/ Error")
 			#tevaluesaxis.set_ylabel("TE Value",color="mediumpurple")
-			tevaluesaxis.legend(loc='best')
-			tevaluesaxis.set_yscale('symlog')
+			#tevaluesaxis.legend(loc='best')
+			#tevaluesaxis.set_yscale('symlog')
 
 			results_df[variablenames.gi_teviax0_results] = vix0
 			#results_df["cal_constant"] = constants
@@ -393,7 +394,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		bviagmr.set_ylabel("B via x0 (T)",  color='slateblue')
 
 	
-	ax[1].scatter(x,t3y, label="CCCS.T3 (K)", color="maroon")
+	ax[1].scatter(x,t3y, label=variablenames.gi_primary_thermistor, color="maroon")
 	ax[1].scatter(x,vpy, label=variablenames.gi_secondary_thermistor,color="orange")
 	ax[1].set_ylabel('Kelvin')
 	ax[1].legend(loc='best')
@@ -476,17 +477,15 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	return False
 
 
-
 """
-Useage:
+#Useage:
 
 home= ""		# Where the interpreter will drop final results.
 datapath = ""	# Where the TE global analysis csv is
 
 # constants and teinfo are calibration parameters, and some statistics passed foward to the enhanced calculation
-constants, teinfo = collator(datapath, d,m,y,te=True, home=home, title="TE d-Prop", deuteron=True)
+constants, teinfo = collator(datapath,te=True, home=home, title="TE d-Prop", deuteron=True)
 
 datapath = ""	# Where the enhanced global analysis csv is
 collator(datapath, home=home, constant=constants, to_save=teinfo, title="ENHANCED d-Prop", deuteron=True)
 """
-
