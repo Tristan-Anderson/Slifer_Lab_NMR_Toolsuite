@@ -124,18 +124,21 @@ agui_impression = False
 ####################################################################
 
 ## Change the thermistor type here
-gi_primary_thermistor = "CCX.T3 (K)"
-gi_secondary_thermistor ="Vapor Pressure Temperature (K)"
+gi_primary_thermistor = dmsa_primary_thermometer_colname
+gi_secondary_thermistor =dmsa_secondary_thermometer_colname
 ##
 gi_time = 'time'
+
+## Anything with "results" in it, is the column names for the
+# files produced by the global interpreter.
 gi_lorentzianarea_results = "Lorentzian Area"
 gi_scaled_polarization = "Scaled Polarization (%)"
 gi_uncert_in_scaled_pol = "Uncert in Scaled polarization"
 gi_integrated_data_area_results = "Integrated Data Area"
 gi_ltz_area_results = "Lorentzian Area"
 gi_bviaI_results = 'B via I (T)'
-gi_primary_thermistor_results ="CCCS.T3 (K)"
-gi_secondary_thermistor_results = "VP (K)"
+gi_primary_thermistor_results =dmsa_primary_thermometer_colname
+gi_secondary_thermistor_results = dmsa_secondary_thermometer_colname
 gi_centroid_results = "sweep centroid"
 gi_width_results = "sweep width"
 gi_te_results ="TEvalue"
