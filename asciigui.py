@@ -265,7 +265,7 @@ class nmrAnalyser(AsciiGUI):
         self.hardinit = hardinit
         self.processes = 1
         self.servermode = False
-        self.failedfiles = []
+        #self.failedfiles = []
         if hardinit:
             self.servermode = args.servermode
             self.processes = int(8*multiprocessing.cpu_count()/10)
@@ -766,15 +766,11 @@ class nmrAnalyser(AsciiGUI):
         print("Filelist")
         print(self.filelist)
 
-    def getFailedFiles(self):
-        # Master-class calls this onto multi-threaded children
-        #   To aquire the files that failed fits.
-        return self.failedfiles
-
     def automate(self):
         """
             Replicated from the tkinter version of the gui
         """
+        self.failedfiles = []
         matplotlib.use('Agg') # Thwarts X-server Errors
         # Matplotlib is NOT thread-safe w/ known race conditions.
         # Care has been used to avoid these conditions (unique namespaces (instances of this class) should isolate mpl stacks from eachother.)
@@ -815,7 +811,7 @@ class nmrAnalyser(AsciiGUI):
         oh_indexes = self.__forkitindexer__(tefiles)
 
         # To be implemented later
-        self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
+        #self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
                           # if True: do not append to this list
                           # else: append filename to this bad larry
                           # rewrite the loop, and cycle back through
@@ -824,11 +820,11 @@ class nmrAnalyser(AsciiGUI):
                           # to the names of things.
         
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
-        self.workpool = {} 
+        self.workpool = [] 
         self.plottitle = self.instancename if self.plottitle == self.rawsigpath.split('/')[-1] else self.plottitle
         for index, value in enumerate(oh_indexes):
             (start, end) = value
-            self.workpool[index] = nmrAnalyser()
+            self.workpool.append(nmrAnalyser())
             self.workpool[index].overrideRootDir(self.rootdir)
             self.workpool[index].fetchArgs(fitnumber='fitnumber',
                 automatefits= self.automatefits,
@@ -859,24 +855,26 @@ class nmrAnalyser(AsciiGUI):
             result_objects = [pool.apply_async(self.workpool[index].automatedPKernel, args =(graphs, graphdata, home, index)) for index,value in enumerate(oh_indexes)]
             pool.close()
             pool.join()
-        # Keeper data / global analysis is in the results
         
 
         # Gets any and all failed fits.
-        for key in self.workpool:
-            self.failedfiles.append(self.workpool[key].getFailedFiles())
+        results = [r.get() for r in result_objects]
+        for results_df, failedfiles in results:
+            self.analysisfile.append(results_df)
+            self.failedfiles.append(failedfiles)
+        #print(result_objects.getFailedFiles())
 
-        """
-        """
+        
+        
         # HERE LIES THE FIT FAIL CATCHER / REVIEWER.
         # The user will need to put in some extra elbow grease here to encourage the 
-        """
         #self.failedfiles = [File that failed, [(program function name, fit-label)...], start index, end index, item number in sweep]
         
         enter_proper_pool = {}
 
         # Create translation between failed sweep numbers, and workpools to
         # track what work has been done where.
+
         for index, i in enumerate(oh_indexes):
             beginning_range = i[0]
             end_range = i[1]
@@ -886,10 +884,21 @@ class nmrAnalyser(AsciiGUI):
 
 
         while len(self.failedfiles) >= 1:
-            job = self.failedfiles[-1]
+            print(self.failedfiles)
+            for index,value in enumerate(self.failedfiles):
+                files_that_failed, automatefits,start_index, end_index, item_number = value[0], value[1], value[2], value[3], value[4]
+            #files_that_failed, automatefits,start_index, end_index, item_number = self.failedfiles
+            print(files_that_failed, automatefits, start_index, end_index, item_number)
+            exit()
+            for key in self.workpool:
+                for failed_trash in self.workpool[key].getFailedFiles():
+                    if failed_trash not in self.failedfiles:
+                        self.failedfiles.append(failed_trash)
 
 
-        """
+        
+        # Keeper data / global analysis is in the results
+
         results = [r.get() for r in result_objects]
 
         # Cleanup behind ourselves.
@@ -910,8 +919,15 @@ class nmrAnalyser(AsciiGUI):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
         self.analysisfile = pandas.DataFrame()
         self.dataset = {}
+        self.failedfiles = []
 
-        self.item = int(self_itemseed) if self_itemseed is not None else self.item
+        try:
+            item_is_list = False
+            self.item = int(self_itemseed) if self_itemseed is not None else self.item
+        except TypeError:
+            if type(self_itemseed) == list:
+                item_is_list = True
+
         originalplottitle = self.plottitle
         npriev = self.startcolumn[0]
         
@@ -941,105 +957,97 @@ class nmrAnalyser(AsciiGUI):
             self.updateIndecies()
 
             # As the user fit more than one function to the dataframe
-            if not failed:
-                for index, tupp in enumerate(self.automatefits):
-                    f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
-                                # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
-                    n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
-                                # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
-                    self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
-                                    self.df, self.start_index, self.end_index, fit_sans_signal=True,
-                                    function=[f], fitname=n, x=self.xname,
-                                    binning=self.binning, gui=True, redsig=True, 
-                                    y=npriev, plottitle=self.plottitle
-                                    )
-                    #print("Did Fail Fit:", self.didfailfit)
-                    if self.didfailfit:
-                        print(file.split('/')[-1], "failed in fitting", npriev, 'with function name', n)
-                        self.item += 1
-                        break
-                    self.e_f0= rawsigfit.pop('e_f0', None)
-                    self.e_w=rawsigfit.pop("e_w", None)
-                    self.e_kmax=rawsigfit.pop('e_kmax', None)
-                    self.e_theta=rawsigfit.pop("e_theta", None)
-                    # Save tupp[1], because if we loop again, we're gonna need to fit subtract fit-subtracted data,
-                    #  otherwise the user overwrites their last fit.
-                    npriev = tupp[1]
-                else:
-                    """
-                        This is the start of a for-else statment.
-                        The else statement is reached when the for loop iterates
-                        successfully (without breaking)
-                    """
-                    # Save the figure
-                    os.chdir(graphs)
-                    filename = self.instancename+" S"+str(self.item)
+            
+            for index, tupp in enumerate(self.automatefits):
+                f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
+                            # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
+                n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
+                            # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
+                self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
+                                self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                                function=[f], fitname=n, x=self.xname,
+                                binning=self.binning, gui=True, redsig=True, 
+                                y=npriev, plottitle=self.plottitle
+                                )
+                #print("Did Fail Fit:", self.didfailfit)
+                if self.didfailfit:
+                    print(file.split('/')[-1], "failed in fitting", npriev, 'with function name', n)
+                    # [File that failed, [(program function name, fit-label)...], start index, end index, item number in sweep]
+                    print(file, self.automatefits, self.start_index, self.end_index, self.item)
+                    self.failedfiles.append([file, self.automatefits, self.start_index, self.end_index, self.item])
 
-                    self.saveFig(filename=filename+'.png', automated=True) # UNCOMMENT TO SAVE EVERYTHING.
-
-                    """#######################################
-                    # A section dedicated to second-time-arrounders.
-                    if type(self.tlorentzian_chisquared) == float:
-                        if self.tlorentzian_chisquared > 1.5:
-                            self.failedfiles.append([file, self.item])
-                            print("Poor chisquared fit while fitting: ", file)
-                            #self.savefig(automated=True, p_title=originalplottitle+" S"+str(self.item))
-                            self.item+=1
-                            return False
-                        elif self.tlorentzian_chisquared <= 1.5:
-                            self.savefig(automated=True, p_title=originalplottitle+" S"+str(self.item))
+                    if item_is_list:
+                        self.item = self_itemseed[i]
                     else:
-                        self.failedfiles.append([file, self.item])
-                        self.item+=1
-                        return False
-                    #######################################"""
+                        self.item += 1
+                    break
+                self.e_f0= rawsigfit.pop('e_f0', None)
+                self.e_w=rawsigfit.pop("e_w", None)
+                self.e_kmax=rawsigfit.pop('e_kmax', None)
+                self.e_theta=rawsigfit.pop("e_theta", None)
+                # Save tupp[1], because if we loop again, we're gonna need to fit subtract fit-subtracted data,
+                #  otherwise the user overwrites their last fit.
+                npriev = tupp[1]
+            else:
+                """
+                    This is the start of a for-else statment.
+                    The else statement is reached when the for loop iterates
+                    successfully (without breaking)
+                """
+                # Save the figure
+                os.chdir(graphs)
+                filename = self.instancename+" S"+str(self.item)
 
-                    # This is here so that i can recreate this order within the loop
-                    try:
-                        self.B = round(self.I/9.7332, 4)
-                        self.tevalue = v.tpol(self.B, self.T)
-                    except TypeError:
-                        print(id_num,"WARNING: TE value Failed, indicating that B, or T was not of proper type.")
-                        self.B = self.I
-                        self.tevalue = 0
+                self.saveFig(filename=filename+'.png', automated=True) # UNCOMMENT TO SAVE EVERYTHING.
 
-                    # Headers for the global analysis file
-                    headers = variablenames.na_global_analysis_headers
+                # This is here so that i can recreate this order within the loop
+                try:
+                    self.B = round(self.I/9.7332, 4)
+                    self.tevalue = v.tpol(self.B, self.T)
+                except TypeError:
+                    print(id_num,"WARNING: TE value Failed, indicating that B, or T was not of proper type.")
+                    self.B = self.I
+                    self.tevalue = 0
 
-                    # Write to the global_analysis file
-                    c = [self.instancename + " S"+str(self.item),  self.material_type,
-                     self.te_date, self.vnavme, self.baselinepath, self.rawsigpath, self.xmin, self.xmax,
-                     self.signalstart,self.signalend, self.blskiplines,
-                     self.rawsigskiplines, str(self.B),
-                     str(self.T), self.primary_thermistor, self.secondary_thermistor, self.tevalue,
-                     self.dataarea, self.ltzian_integration, self.data_cal_constant,
-                     self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
-                     self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared,
-                     self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
-                    
-                    os.chdir(graphdata)
-                    with open(filename+'.csv', 'w') as f:
-                        self.df.to_csv(f)
+                # Headers for the global analysis file
+                headers = variablenames.na_global_analysis_headers
 
-                    self.analysisfile = self.analysisfile.append(pandas.DataFrame(dict(zip(headers,c)), index=[0]))
-                    
+                # Write to the global_analysis file
+                c = [self.instancename + " S"+str(self.item),  self.material_type,
+                 self.te_date, self.vnavme, self.baselinepath, self.rawsigpath, self.xmin, self.xmax,
+                 self.signalstart,self.signalend, self.blskiplines,
+                 self.rawsigskiplines, str(self.B),
+                 str(self.T), self.primary_thermistor, self.secondary_thermistor, self.tevalue,
+                 self.dataarea, self.ltzian_integration, self.data_cal_constant,
+                 self.fit_cal_constant, self.ltzian_a, self.ltzian_w, self.ltzian_x0,
+                 self.tlorentzian_chisquared, self.sigma_error, self.sigmaforchisquared,
+                 self.klorentzian_chisquared, self.centroid, self.spread, self.e_f0, self.e_w, self.e_kmax, self.e_theta]
+                
+                os.chdir(graphdata)
+                with open(filename+'.csv', 'w') as f:
+                    self.df.to_csv(f)
+
+                self.analysisfile = self.analysisfile.append(pandas.DataFrame(dict(zip(headers,c)), index=[0]))
+                if item_is_list: 
+                    self.item = self_itemseed[i]
+                else:
                     self.item+=1
-                    # Free your mind (memory)
-                    self.figure.clf()
-                    plt.close(self.figure)
-                    #self.canvas.destroy()
-                    gc.collect()
+                # Free your mind (memory)
+                self.figure.clf()
+                plt.close(self.figure)
+                #self.canvas.destroy()
+                gc.collect()
 
-                    t2 = time.time()
-                    timedeltas.append(t2-t1)
-                    print('ID:', id_num, ":", (i+1), "of", todo, '['+str(round((i+1)*100/todo,4))+'%]', "ETA: ", round((todo-(i+1))*numpy.mean(timedeltas),1), 's')
-                    continue
+                t2 = time.time()
+                timedeltas.append(t2-t1)
+                print('ID:', id_num, ":", (i+1), "of", todo, '['+str(round((i+1)*100/todo,4))+'%]', "ETA: ", round((todo-(i+1))*numpy.mean(timedeltas),1), 's')
+                continue
 
-            # [File that failed, [(program function name, fit-label)...], start index, end index, item number in sweep]
-            self.failedfiles.append([file, self.automatefits, self.start_index, self.end_index, self.item])
+            continue
+
 
         else:
-            return self.analysisfile
+            return self.analysisfile, self.failedfiles
 
     def addEntry(self, k=[], h=None, addition='',dontwrite=False, appendme=None):
        # as the headers list in vna_visualizer.py
