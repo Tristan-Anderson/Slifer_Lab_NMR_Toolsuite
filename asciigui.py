@@ -265,7 +265,8 @@ class nmrAnalyser(AsciiGUI):
         self.hardinit = hardinit
         self.processes = 1
         self.servermode = False
-        #self.failedfiles = []
+        self.analysisfile = pandas.DataFrame()
+        self.failedfiles = []
         if hardinit:
             self.servermode = args.servermode
             self.processes = int(8*multiprocessing.cpu_count()/10)
@@ -317,6 +318,7 @@ class nmrAnalyser(AsciiGUI):
         self.startcolumn = kwargs.pop('startcolumn',[])
         self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
         self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
+        self.self_itemseed = kwargs.pop('the_new_list', None)
 
         
         self.filelist = kwargs.pop('filelist', [])
@@ -461,14 +463,23 @@ class nmrAnalyser(AsciiGUI):
         else:
             self.figure = graph
 
-    def mainloop(self):
+    def mainloop(self, failedfit=False):
         try:
-            self.getBaseline()
-            them = '/'.join(self.baselinepath.split('/')[:-1])
-            os.chdir(them)
-            os.chdir('..')
-            self.getRawsig()
-            self.fetchArgs()
+            if not failedfit:
+                self.getBaseline()
+                them = '/'.join(self.baselinepath.split('/')[:-1])
+                os.chdir(them)
+                os.chdir('..')
+                self.getRawsig()
+                self.fetchArgs()
+            else:
+                self.blSkipLinesGetter()
+                self.rawsigSkipLinesGetter()
+                self.updateDataFrame()
+                
+                #self.updateMaterialType()
+                #self.updateInstanceName()
+                self.updateGraph()
             while True:
                 if not self.servermode:
                     self.figure.show()
@@ -478,12 +489,14 @@ class nmrAnalyser(AsciiGUI):
                 self.header("Data frame head")
                 print("#"*70)
                 print(self.df.head(3))
-                self.allchoices()
+                _ = self.allchoices(failedfit)
+                if _ == "Repeat process by 100 demons is a good song":
+                    break
         except KeyboardInterrupt:
             print("Keyboard Inturrupt recieved in mainloop. Exiting.")
             return True
 
-    def allchoices(self):
+    def allchoices(self, failedfit):
         nameinstancemsg = "Label this current analysis cycle in the global analysis file."
         mumsg= 'Toggles between two available mu values for the TE equation'
         binningmsg = 'Bin width for the data'
@@ -503,27 +516,46 @@ class nmrAnalyser(AsciiGUI):
         updatebaselinemsg = "Update baseline file"
         updaterawsigmsg = "Update signal file"
         changematerialmsg = "Update Material Type"
-        choices = {
-                "binning":[binningmsg, self.setBinning],
-                'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
-                'fit subtraction':[fit_subtractionmsg, self.fitSubtract],
-                'toggleintegrate':[integratemsg, self.toggleIntegrate],
-                'fitlorentziancurve':[lorentzian_rawfitmsg, self.toggleLorentzian],
-                'x-data':[xnamemsg, self.changexname],
-                'y-data':[ynamemsg, self.changeyname],
-                'xlabel':[xaxlabelmsg, self.changexlabel],
-                'ylabel':[yaxlabelmsg, self.changeylabel],
-                'plottitle':[titlemsg, self.changetitle],
-                'togglemu':[mumsg, self.adjustmu],
-                'savefiganddata':[savefiganddatamsg,self.saveBoth],
-                'automate':[automatemsg, self.automate],
-                "updatebaseline":[updatebaselinemsg, self.getBaseline],
-                "updaterawsignal":[updaterawsigmsg, self.getRawsig],
-                "updatematerial":[changematerialmsg, self.updateMaterialType],
-                "nameinstance":[nameinstancemsg, self.setInstanceName]}
+        if failedfit:
+            choices = {
+                    "binning":[binningmsg, self.setBinning],
+                    'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
+                    'fit subtraction':[fit_subtractionmsg, self.fitSubtract],
+                    'toggleintegrate':[integratemsg, self.toggleIntegrate],
+                    'fitlorentziancurve':[lorentzian_rawfitmsg, self.toggleLorentzian],
+                    'x-data':[xnamemsg, self.changexname],
+                    'y-data':[ynamemsg, self.changeyname],
+                    'automate':[automatemsg, self.dudToReturnTrue]}
+        else:
+            choices = {
+                    "binning":[binningmsg, self.setBinning],
+                    'signal highlighting':[signalstartendmsg, self.changeSignalStartEnd],
+                    'fit subtraction':[fit_subtractionmsg, self.fitSubtract],
+                    'toggleintegrate':[integratemsg, self.toggleIntegrate],
+                    'fitlorentziancurve':[lorentzian_rawfitmsg, self.toggleLorentzian],
+                    'x-data':[xnamemsg, self.changexname],
+                    'y-data':[ynamemsg, self.changeyname],
+                    'xlabel':[xaxlabelmsg, self.changexlabel],
+                    'ylabel':[yaxlabelmsg, self.changeylabel],
+                    'plottitle':[titlemsg, self.changetitle],
+                    'togglemu':[mumsg, self.adjustmu],
+                    'savefiganddata':[savefiganddatamsg,self.saveBoth],
+                    'automate':[automatemsg, self.automate],
+                    "updatebaseline":[updatebaselinemsg, self.getBaseline],
+                    "updaterawsignal":[updaterawsigmsg, self.getRawsig],
+                    "updatematerial":[changematerialmsg, self.updateMaterialType],
+                    "nameinstance":[nameinstancemsg, self.setInstanceName]}
         key = self.dict_selector(choices)
         f = choices[key][1]
-        f()
+        if failedfit:
+            _ = f()
+            if _ == "Repeat process by 100 demons is a good song":
+                return "Repeat process by 100 demons is a good song"
+        else:
+            f()
+
+    def dudToReturnTrue(self):
+        return 'Repeat process by 100 demons is a good song'
 
     def currentSettings(self):
         self.header("Current Settings:")
@@ -770,12 +802,11 @@ class nmrAnalyser(AsciiGUI):
         """
             Replicated from the tkinter version of the gui
         """
-        self.failedfiles = []
+        
         matplotlib.use('Agg') # Thwarts X-server Errors
         # Matplotlib is NOT thread-safe w/ known race conditions.
         # Care has been used to avoid these conditions (unique namespaces (instances of this class) should isolate mpl stacks from eachother.)
         # Let me know if I missed any.
-        self.analysisfile = pandas.DataFrame()
         
         ##################################################
         # Ensure Directories exist where we can put file #
@@ -795,6 +826,7 @@ class nmrAnalyser(AsciiGUI):
         os.chdir(home)
         graphs = home+"/graphs/" 
         graphdata = home+"/graph_data/" 
+
 
         tedirectory = "/".join(self.rawsigpath.split('/')[:-1])
 
@@ -856,53 +888,33 @@ class nmrAnalyser(AsciiGUI):
             pool.close()
             pool.join()
         
-
-        # Gets any and all failed fits.
-        results = [r.get() for r in result_objects]
-        for results_df, failedfiles in results:
-            self.analysisfile.append(results_df)
-            self.failedfiles.append(failedfiles)
-        #print(result_objects.getFailedFiles())
-
-        
+        del self.workpool 
         
         # HERE LIES THE FIT FAIL CATCHER / REVIEWER.
         # The user will need to put in some extra elbow grease here to encourage the 
         #self.failedfiles = [File that failed, [(program function name, fit-label)...], start index, end index, item number in sweep]
         
-        enter_proper_pool = {}
+        # Gets any and all failed fits.
+        results = [r.get() for r in result_objects]
+        for results_df, failedfiles in results:
+            self.analysisfile.append(results_df)
+            self.failedfiles.append(failedfiles)
 
-        # Create translation between failed sweep numbers, and workpools to
-        # track what work has been done where.
-
-        for index, i in enumerate(oh_indexes):
-            beginning_range = i[0]
-            end_range = i[1]
-            keys = [k for k in range(beginning_range, end_range+1)]
-            values = [index for trash_variable in range(beginning_range, end_range+1)]
-            enter_proper_pool.update(dict(zip(keys,values)))
-
-
-        while len(self.failedfiles) >= 1:
-            print(self.failedfiles)
-            for index,value in enumerate(self.failedfiles):
-                files_that_failed, automatefits,start_index, end_index, item_number = value[0], value[1], value[2], value[3], value[4]
-            #files_that_failed, automatefits,start_index, end_index, item_number = self.failedfiles
-            print(files_that_failed, automatefits, start_index, end_index, item_number)
-            exit()
-            for key in self.workpool:
-                for failed_trash in self.workpool[key].getFailedFiles():
-                    if failed_trash not in self.failedfiles:
-                        self.failedfiles.append(failed_trash)
-
-
+        #print(self.failedfiles)
+        #print(all([len(trash_failed_files) > 0 for trash_failed_files in self.failedfiles]))
+        #print("Setting empty lists")
+        #self.failedfiles = [[] for trash in self.failedfiles]
+        #print(self.failedfiles)
+        #print(all([len(trash_failed_files) > 0 for trash_failed_files in self.failedfiles]))
         
+        while all([len(trash_failed_files) > 0 for trash_failed_files in self.failedfiles]):
+            self.automatefits = []
+            self.failedFitCatcher(graphs, graphdata, home)
+
         # Keeper data / global analysis is in the results
 
-        results = [r.get() for r in result_objects]
-
         # Cleanup behind ourselves.
-        del self.workpool 
+        
 
         # extract then merge individual results into a keeper data
         for i in results:
@@ -912,8 +924,8 @@ class nmrAnalyser(AsciiGUI):
         self.addEntry(appendme=self.analysisfile)
         exit()
 
-    def automatedPKernel(self, graphs, graphdata, home, id_num):
-        return self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num)
+    def automatedPKernel(self, graphs, graphdata, home, id_num,self_itemseed=None):
+        return self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num, self_itemseed=self.self_itemseed)
 
     def repeatAdNauseum(self, filelist, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
@@ -973,7 +985,7 @@ class nmrAnalyser(AsciiGUI):
                 if self.didfailfit:
                     print(file.split('/')[-1], "failed in fitting", npriev, 'with function name', n)
                     # [File that failed, [(program function name, fit-label)...], start index, end index, item number in sweep]
-                    print(file, self.automatefits, self.start_index, self.end_index, self.item)
+                    #print(file, self.automatefits, self.start_index, self.end_index, self.item)
                     self.failedfiles.append([file, self.automatefits, self.start_index, self.end_index, self.item])
 
                     if item_is_list:
@@ -1079,6 +1091,70 @@ class nmrAnalyser(AsciiGUI):
 
     def saveBoth(self):
         pass
+
+    def failedFitCatcher(self, graphs, graphdata, home):
+        failedfiles, failed_fits, failed_sindexes, failed_eindex, failed_itemnos = [],[],[],[],[]
+        for workpool_list in self.failedfiles:
+            for failed_file, failed_automatefits, failed_startindex, failed_endindex, failed_itemno in workpool_list:
+                failedfiles.append(failed_file)
+                failed_fits.append(failed_automatefits)
+                failed_sindexes.append(failed_startindex)
+                failed_eindex.append(failed_endindex)
+                failed_itemnos.append(failed_itemno)
+        #print(failedfiles, failed_fits, failed_sindexes, failed_eindex, failed_itemnos, sep='\n'+"#"*50+"\n")
+        #exit()
+
+        self.failedfiles = []
+        # Now that we've collected the critical data, we need to
+        #       reinitalize this current instance by executing a customized mainloop.
+
+        matplotlib.use("TkAgg")
+        self.xname= variablenames.agui_xname_default
+        self.yname= variablenames.agui_yname_default
+        self.rawsigpath = failedfiles[0]
+        self.mainloop(failedfit=True)
+
+        failed_multi_threaded_indexes = self.__forkitindexer__(failed_itemnos)
+        self.workpool = {}
+        for index, value in enumerate(failed_multi_threaded_indexes):
+            (start, end) = value
+            self.workpool[index] = nmrAnalyser()
+            self.workpool[index].overrideRootDir(self.rootdir)
+            self.workpool[index].fetchArgs(fitnumber='fitnumber',
+                automatefits= self.automatefits,
+                material_type = self.material_type,
+                mutouse= self.mutouse,
+                binning= self.binning,
+                integrate= self.integrate,
+                vnavme= self.vnavme,
+                signalstart= self.signalstart,
+                signalend=self.signalend,
+                fitlorentzian= self.fitlorentzian,
+                xname= self.xname,
+                xaxlabel= self.xaxlabel,
+                yname= self.yname,
+                yaxlabel= self.yaxlabel,
+                xmin= self.xmin,
+                xmax= self.xmax,
+                startcolumn= self.startcolumn,
+                instancename= self.instancename,
+                title= self.plottitle,
+                isautomated= True,
+                filelist = ([failedfiles[start] if start==end else failedfiles[start:end]]),
+                rawsigpath = failedfiles[start],
+                baselinepath = self.baselinepath,
+                the_new_list=[failed_itemnos[start] if start==end else failed_itemnos[start:end]])
+            self.workpool[index].updateItemSeed(start)
+
+        with multiprocessing.Pool(processes=self.processes) as pool:
+            result_objects = [pool.apply_async(self.workpool[index].automatedPKernel, args =(graphs, graphdata, home, index)) for index,value in enumerate(failed_multi_threaded_indexes)]
+            pool.close()
+            pool.join()
+
+        results = [r.get() for r in result_objects]
+        for results_df, failedfiles in results:
+            self.analysisfile.append(results_df)
+            self.failedfiles.append(failedfiles)
 
 
 class daqExtractor(AsciiGUI):
