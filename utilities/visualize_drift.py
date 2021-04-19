@@ -22,7 +22,7 @@ from matplotlib import pyplot as plt
 #poor_fit_ym, poor_fit_YM = -1.6,-.8
 
 # Dec 10 2020 data
-csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data"
+"""csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
 globalcsv = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
 yfitsub = 'Third order Polynomial 0 Subtraction' #2020_12_10
 karlmethod = 'datasets/2020_12_10/saveme_12_10_20.csv'
@@ -30,8 +30,18 @@ spline_df_location = 'datasets/2020_12_10/spline_df.csv'
 fitsub_xm, fitsub_XM = 32.6,33.5
 fitsub_ym, fitsub_YM = -.3, .35
 rawsig_ym, rawsig_YM = -4, 3.5
-poor_fit_ym, poor_fit_YM = -.5,0
+poor_fit_ym, poor_fit_YM = -.5,0"""
 
+# Dec 3 2020 Data
+csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
+globalcsv = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction' #2020_12_10
+karlmethod = 'datasets/2020_12_10/saveme_12_10_20.csv'
+spline_df_location = 'datasets/2020_12_10/spline_df.csv'
+fitsub_xm, fitsub_XM = 32.15,33.8
+fitsub_ym, fitsub_YM = -.5, .5
+rawsig_ym, rawsig_YM = 0, 10
+poor_fit_ym, poor_fit_YM = -.5,0
 
 dump = "../dump3/"
 
@@ -73,7 +83,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 		
 
-		with open(csvdirectory+'/'+val, 'r') as f:
+		with open(csvdirectory+val, 'r') as f:
 			df = pandas.read_csv(f)
 
 		ss = ga_fixed.loc[times[s+i], 'sigstart']

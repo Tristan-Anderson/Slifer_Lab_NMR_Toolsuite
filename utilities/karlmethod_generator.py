@@ -4,14 +4,18 @@ from matplotlib import pyplot as plt
 # Sept 14 2020 data
 #csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
 #globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
-#dump = "../dump3/"
 #savefile = 'saveme_9_14.csv'
-
 # Dec 10 2020 data
-csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
-globalcsv = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
+#csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
+#globalcsv = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
+#savefile = 'saveme_12_10_20.csv'
+# Dec 3 2020
+csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
+globalcsv = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
+savefile = 'saveme_12_3_20.csv'
+
+
 dump = "../dump3/"
-savefile = 'saveme_12_10_20.csv'
 def forkitindexer(filelist):
     """
         Return a list of tuples of indecies that divide the passed
@@ -111,7 +115,8 @@ for index in csvs:
 		continue
 
 corrected_DF = pandas.DataFrame(dict(zip(['keys', 'time'],[keys, timesteps])))
-
+print(correc)
+print(corrected_DF)
 sorted_df = corrected_DF.sort_values(by='time')
 timesteps = sorted_df['time'].to_list()
 files = sorted_df['keys'].to_list()
