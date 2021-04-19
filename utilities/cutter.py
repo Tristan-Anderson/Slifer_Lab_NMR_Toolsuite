@@ -389,4 +389,4 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 
 	return xdata_for_fit
 
-main()
+#main()

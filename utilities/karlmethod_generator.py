@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 # Dec 3 2020
 csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
 globalcsv = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
-savefile = 'saveme_12_3_20.csv'
+savefile = '../datasets/dec_2020/data_record_12-3-2020/saveme_12_3_20.csv'
 
 
 dump = "../dump3/"
@@ -40,14 +40,14 @@ def plotter(files, indexes, times, ga_csv, id_num):
 	#it = [i for i in range(s,f+1)]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
-	#asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
-	#		"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
-	#		"CCCS.T2 (K)", "CCS.F11 (K)"]
-	#for i in asd:
-	#	ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
-	#ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	#ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	#ga_csv = ga_csv.fillna(0)
+	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
+			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
+			"CCCS.T2 (K)", "CCS.F11 (K)"]
+	for i in asd:
+		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
+	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv = ga_csv.fillna(0)
 
 	
 	gasorted = ga_csv.sort_values(by='time')
@@ -115,8 +115,7 @@ for index in csvs:
 		continue
 
 corrected_DF = pandas.DataFrame(dict(zip(['keys', 'time'],[keys, timesteps])))
-print(correc)
-print(corrected_DF)
+#print(corrected_DF)
 sorted_df = corrected_DF.sort_values(by='time')
 timesteps = sorted_df['time'].to_list()
 files = sorted_df['keys'].to_list()

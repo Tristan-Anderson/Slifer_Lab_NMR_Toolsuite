@@ -25,13 +25,12 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 
 	"""
 	primary_df = fetch_df(primary_path)
+	print(primary_df)
 	primary_df[shared_column] = pandas.to_datetime(primary_df['time'], format="%Y-%m-%d %H:%M:%S")
 	primary_df = primary_df.sort_values(by=shared_column)
-	print('primary', primary_df)
 
 	indexes_to_grab = primary_df.loc[:, shared_column]
 	secondary_df = fetch_df(secondary_path)#, delimiter='\t')
-	print('secondary_df', secondary_df)
 
 
 	#### Subject of frequenct problems right here child right here:
@@ -46,16 +45,16 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 
  	"""
 	secondary_df[shared_column] = pandas.to_datetime(secondary_df['Time'], format="%m/%d/%Y %I:%M:%S %p")
+	#if "Time" in secondary_df.columns.tolist():
+	#	secondary_df.drop('Time', inplace=True;)
 	#####
-
-	
-
 	secondary_df = secondary_df.sort_values(by=shared_column)
 
+	print(primary_df)
 	primary_df = primary_df.set_index(shared_column)
 	secondary_df = secondary_df.set_index(shared_column)
 
-
+	print(primary_df)
 	for i in desired_columns:
 		"""
 			Using the intersection (subsection) of common timestamps
@@ -66,7 +65,7 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 			*Brain implodes* 
 		"""
 		primary_df.loc[primary_df.index.intersection(indexes_to_grab), i] = secondary_df.loc[secondary_df.index.intersection(indexes_to_grab), i]
-
+	print(primary_df)
 	return primary_df
 
 
