@@ -13,35 +13,128 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 # Sept 14 2020 data
-#csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-#globalcsv = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
-#yfitsub = 'Fit 1 Subtraction' #2020_9_12
-#karlmethod = 'saveme9_14.csv'
-#fitsub_xm, fitsub_XM = 32.4,33.4 
-#fitsub_ym, fitsub_YM= -.2, 1.3
-#poor_fit_ym, poor_fit_YM = -1.6,-.8
+"""
+csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
+globalcsv2 = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
+yfitsub = 'Fit 1 Subtraction'
+karlmethod = 'saveme9_14.csv'
+spline_df_location = "datasets/2020_9_14/spline_df_saved_9_14.csv"
+rawsig_ym, rawsig_YM = -4, 4
+fitsub_xm, fitsub_XM = 32.4,33.4 
+fitsub_ym, fitsub_YM= -.2, 1.3
+poor_fit_ym, poor_fit_YM = -1.6,-.8"""
 
+
+
+# Dec 3 2020 Data
+"""
+csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
+globalcsv2 = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = '../datasets/dec_2020/data_record_12-3-2020/saveme_12_3_20.csv'
+spline_df_location = '../datasets/dec_2020/data_record_12-3-2020/spline_df.csv'
+fitsub_xm, fitsub_XM = 32.55,33.45
+fitsub_ym, fitsub_YM = -.4, .2
+rawsig_ym, rawsig_YM = -2, 2
+poor_fit_ym, poor_fit_YM = -1,1
+"""
+# Dec 4 2020 Data
+"""
+rootdir = "../datasets/dec_2020/data_record_12-4-2020/analysis/polarization/"
+csvdirectory = rootdir+"graph_data/"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_4_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.55,33.45
+fitsub_ym, fitsub_YM = -.4, .2
+rawsig_ym, rawsig_YM = -2, 2
+poor_fit_ym, poor_fit_YM = -1,1
+"""
+
+"""
+rootdir = "../datasets/dec_2020/data_record_12-7-2020/analysis/Enhanced/"
+# Dec 7 2020
+csvdirectory = rootdir+"graph_data/"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_7_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 31.85,32.55
+fitsub_ym, fitsub_YM = -.3, .2
+rawsig_ym, rawsig_YM = -2, 2
+poor_fit_ym, poor_fit_YM = -.6,-.1
+"""
+# Dec 8 2020
+"""rootdir = "../datasets/dec_2020/data_record_12-8-2020/analysis/enhanced/"
+csvdirectory = rootdir+"graph_data/"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_8_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 212.45,212.94
+fitsub_ym, fitsub_YM = -.01, .02
+rawsig_ym, rawsig_YM = -.3, .3
+poor_fit_ym, poor_fit_YM = -.018,-.01
+"""
+# Dec 9 2020
+"""
+rootdir = "../datasets/dec_2020/data_record_12-9-2020/video/"
+csvdirectory = rootdir+"graph_data/"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_9_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 212.45,212.94
+fitsub_ym, fitsub_YM = -.01, .02
+rawsig_ym, rawsig_YM = -.3, .3
+poor_fit_ym, poor_fit_YM = -.018,-.01
+poor_fit_ym, poor_fit_YM = -.005,-.03
+"""
 # Dec 10 2020 data
-"""csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
-globalcsv = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
-yfitsub = 'Third order Polynomial 0 Subtraction' #2020_12_10
+"""
+csvdirectory = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/graph_data/"
+globalcsv2 = "../datasets/dec_2020/data_record_12-10-2020/video_analysis/global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
 karlmethod = 'datasets/2020_12_10/saveme_12_10_20.csv'
 spline_df_location = 'datasets/2020_12_10/spline_df.csv'
 fitsub_xm, fitsub_XM = 32.6,33.5
-fitsub_ym, fitsub_YM = -.3, .35
+fitsub_ym, fitsub_YM = -.2, .25
 rawsig_ym, rawsig_YM = -4, 3.5
-poor_fit_ym, poor_fit_YM = -.5,0"""
-
-# Dec 3 2020 Data
-csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
-globalcsv = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
-yfitsub = 'Third order Polynomial 0 Subtraction' #2020_12_10
-karlmethod = 'datasets/2020_12_10/saveme_12_10_20.csv'
-spline_df_location = 'datasets/2020_12_10/spline_df.csv'
-fitsub_xm, fitsub_XM = 32.15,33.8
-fitsub_ym, fitsub_YM = -.5, .5
-rawsig_ym, rawsig_YM = 0, 10
 poor_fit_ym, poor_fit_YM = -.5,0
+"""
+
+# Dec 11 2020 data
+"""
+rootdir = "../datasets/dec_2020/data_record_12-11-2020/video/"
+daqdatafile = "../datasets/dec_2020/rawdata/data_record_12-11-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_9_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,0
+"""
+# Sept 12 2020 data
+
+rootdir = "../datasets/sep_2020/data_record_9-12-2020/video/"
+daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-12-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_12_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+
+
 
 dump = "../dump3/"
 
@@ -58,12 +151,17 @@ def forkitindexer(filelist):
     slicer.append([floordiv*(p-1), p*floordiv+int(modulus)-1])
     return slicer
 
-def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltastime):
+def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltastime, tkbackend):
 	deltasx = 'time'
 	deltasy = 'sum'
 	x = "MHz"
 	bl = "BL Potential (V)"
 	raw = "Raw Potential (V)"
+
+	if tkbackend == 'on':
+		pass
+	elif tkbackend == 'off':
+		matplotlib.use('Agg')
 	
 
 	s,f = indexes
@@ -96,7 +194,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[0,0].set_title("Fit Subtracted Signal")
 		ax[0,0].set_ylabel('Volts (V)')
 		ax[0,0].set_xlabel('Frequency (MHz)')
-		ax[0,0].set_xlim(fitsub_xm, fitsub_XM) 
+		#ax[0,0].set_xlim(fitsub_xm, fitsub_XM) 
 		ax[0,0].set_ylim(fitsub_ym, fitsub_YM)
 		
 
@@ -117,7 +215,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[1,0].scatter(df[x], df[bl], label='Baseline', color='blue')
 		ax[1,0].scatter(df[x], df[raw], label =''.join(list(val)[:-4]), color = 'red')
 		#ax[1,0].set_xlim(32.4,33.4)#2020_9_12
-		ax[1,0].set_xlim(fitsub_xm, fitsub_XM) #2020_12_10
+		#ax[1,0].set_xlim(fitsub_xm, fitsub_XM) #RESET
 		ax[1,0].set_ylim(rawsig_ym, rawsig_YM)
 
 		#ax[1,0].set_ylim(-1, 1.3)
@@ -135,14 +233,14 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 
 
-		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
-		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
-		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
+		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
+		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
+		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
 		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['IFOFF (V)'], label="IFOFF (V)")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta')
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
+		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
+		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta', label="Current Sweep")
 		ax[0,2].grid(True)
 		ax[0,2].legend(loc='best')
 		ax[0,2].set_title("VME & Microwave Stuff")
@@ -160,7 +258,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T3 (K)'], color='magenta', label="Current Sweep")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
+		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
 		#ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F10 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F11 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCCS.T2 (K)'], color='magenta')
@@ -177,7 +275,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		
 
 
-		plt.savefig(dump+str("{0:04d}".format(s+i)))
+		plt.savefig(dump+str("{0:05d}".format(s+i)))
 		plt.clf()
 		plt.close('all')
 
@@ -196,7 +294,7 @@ def get_csv_files():
 	return csvs
 
 def get_global_analysis():
-	with open(globalcsv, 'r') as f:
+	with open(globalcsv2, 'r') as f:
 		df = pandas.read_csv(f)
 
 	name = 'name'
@@ -204,9 +302,239 @@ def get_global_analysis():
 	#	which reflects the file names gotten in the function get_csv_files()
 	dffixed = df.set_index(name)
 
+
 	return dffixed
 	
 def sync_timestamps_with_csv_filenames(dffixed, csvs):
+	timesteps = []
+	keys = []
+
+	for i, index in enumerate(csvs):
+		try:
+			timesteps.append(dffixed.loc[index, 'time'])
+			keys.append(index+'.csv')
+		except KeyError as e:
+			print("Key error", e, "file exists, but no entry in global analysis.")
+			continue
+
+
+
+	corrected_DF = pandas.DataFrame(dict(zip(['keys', 'time'],[keys, timesteps])))
+	sorted_df = corrected_DF.sort_values(by='time')
+
+	return sorted_df
+
+def cutter(ga_csv, sorted_df, tolerance):
+	#edited =True
+	import cutter as cutter2
+
+	minn = -.3
+	maxx=-.23
+	deltasx = 'time'
+	deltasy = 'sum'
+	deltasmin = 'spline min'
+	deltasmax = 'spline max'
+	x = "MHz"
+	bl = "BL Potential (V)"
+	raw = "Raw Potential (V)"
+	edited = input("do you need to subsect (CUT) the data? [Y/N]: ")
+	edited = True if edited.upper() == 'Y' else False	
+
+	try:
+		with open(spline_df_location, 'r') as f:
+			deltas = pandas.read_csv(f)
+	except:
+		if edited:
+			deltas = cutter2.main(tolerance=tolerance)
+			with open(spline_df_location, 'w') as f:
+				deltas.to_csv(f)
+		else:
+			deltas = sorted_df
+
+	deltas = deltas.sort_values(by=deltasx)	
+	deltas[deltasx] = pandas.to_datetime(deltas[deltasx],format="%Y-%m-%d %H:%M:%S")
+	
+
+	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
+	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
+			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
+			"CCCS.T2 (K)", "CCS.F11 (K)"]
+	for i in asd:
+		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
+	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv = ga_csv.fillna(0)
+	ga_csv = ga_csv.sort_values(by='time')	
+	
+	# Sycronize indecies
+	deltas = deltas.set_index(deltasx)
+	ga_fixed = ga_csv.set_index('time')
+	sorted_df['time'] = pandas.to_datetime(sorted_df['time'],format="%Y-%m-%d %H:%M:%S")
+	sorted_df = sorted_df.set_index('time')
+
+	# Merge the dataframes
+	ga_fixed = ga_fixed.merge(deltas,left_index=True, right_index=True, how = 'right')
+	#ga_fixed = ga_fixed.merge(sorted_df,left_index=True, right_index=False, how = 'right')
+	ga_fixed = ga_fixed.join(sorted_df)
+	
+	# Take "Cuts" (in python/R/SQL language: take a subset based on VALUE critera)
+
+	if edited:
+		deltas =deltas[(deltas[deltasy]>deltas[deltasmin])&(deltas[deltasy]<deltas[deltasmax])]
+		ga_fixed =ga_fixed[(ga_fixed[deltasy]>ga_fixed[deltasmin])&(ga_fixed[deltasy]<ga_fixed[deltasmax])]
+
+		deltastime = deltas.index.tolist()
+		timesteps = ga_fixed.index.tolist()
+
+		sorted_df = pandas.DataFrame({'time':timesteps, 'keys':ga_fixed['keys'].to_list()})
+	else:
+		deltastime = deltas.index.tolist()
+		timesteps = ga_fixed.index.tolist()
+
+
+	return ga_fixed, deltas, timesteps, deltastime, sorted_df
+
+def fetch_df(path, delimiter=','):
+	try:
+		with open(path, 'r') as f:
+			df = pandas.read_csv(f, delimiter=delimiter)
+		return df
+	except FileNotFoundError:
+		print("Can not find path")
+
+def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_column="time"):
+	"""
+
+	--> Primary path is the global analysis file produced by analyzing NMR spectra
+	--> Secondary path is the raw-data file recorded by the DAQ.
+	--> Desired columns is a list of columns that you want to MIGRATE from the 
+			raw-data file INTO the global analysis file.
+
+	--> Shared column needs to be some form of timestamp.
+
+	"""
+	primary_df = fetch_df(primary_path)
+	print(primary_df)
+	primary_df[shared_column] = pandas.to_datetime(primary_df['Time'], format="%Y-%m-%d %H:%M:%S")
+	primary_df = primary_df.sort_values(by=shared_column)
+
+	indexes_to_grab = primary_df.loc[:, shared_column]
+	"""
+		if you get an index error, double check the delimeter of 
+		the secondary path (the DAQ csv). If you see things like:
+		9830  12/7/2020 11:59:58 PM\t3690248398.062093\tOff\...
+		in the print statement, then make sure the delimeter is correct
+
+	"""
+	############ begin problem child ####################
+	secondary_df = fetch_df(secondary_path)#, delimiter='\t')
+	#secondary_df = secondary_df.loc[:, ~secondary_df.columns.str.contains('^Unnamed')]
+	############ End problem child ####################
+
+	print(secondary_df)
+
+
+	#### Subject of frequenct problems right here child right here:
+	"""
+		1) is the delimeter correct for primary/secondary dataframes correct?
+			- If yes, but still get ValueError: time data doesn't match format
+			----> Ensure format
+			- if we STILL fail:
+		2) Duplicate the secondary file on your hard-disk removing extrenuous columns
+			using software like excel, or libre office.
+		3) If that doesn't work: give up.
+
+ 	"""
+	secondary_df[shared_column] = pandas.to_datetime(secondary_df['Time'], format="%m/%d/%Y %I:%M:%S %p")
+	#if "Time" in secondary_df.columns.tolist():
+	#	secondary_df.drop('Time', inplace=True;)
+	#####
+	secondary_df = secondary_df.sort_values(by=shared_column)
+
+	print(primary_df)
+	primary_df = primary_df.set_index(shared_column)
+	secondary_df = secondary_df.set_index(shared_column)
+
+	print(primary_df)
+	for i in desired_columns:
+		"""
+			Using the intersection (subsection) of common timestamps
+			in both the global analysis and raw-data dataframes
+			Assign for each column in the global analysis dataframe,
+			data we want to fetch from the raw-data dataframe.
+
+			*Brain implodes* 
+		"""
+		primary_df.loc[primary_df.index.intersection(indexes_to_grab), i] = secondary_df.loc[secondary_df.index.intersection(indexes_to_grab), i]
+	print(primary_df)
+	return primary_df
+
+def metric_getter(files, indexes, times, ga_csv, id_num):
+	
+	s,f = indexes
+	todo = files[s:f]
+
+	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
+	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
+			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
+			"CCCS.T2 (K)", "CCS.F11 (K)"]
+	for i in asd:
+		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
+	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
+	ga_csv = ga_csv.fillna(0)
+
+	
+	gasorted = ga_csv.sort_values(by='time')
+	timesteps = gasorted['time'].to_list()
+	
+	ga_fixed = ga_csv.set_index('time')
+
+	x = "MHz"
+	bl = "BL Potential (V)"
+	raw = "Raw Potential (V)"
+	timedeltas = []
+	values = []
+	xs = []
+	lmost = []
+	rmost = []
+	meanie = []
+
+	for i, val in enumerate(todo):
+		with open(csvdirectory+val, 'r') as f:
+			df = pandas.read_csv(f)
+
+		ss = ga_fixed.loc[times[s+i], 'sigstart']
+		sf = ga_fixed.loc[times[s+i], 'sigfinish']
+		signal_removed_df = df[(df[x]<ss) & (df[x]>sf)]
+
+		lm = df.loc[0,raw]
+		rm = df.loc[(len(df[raw])-1), raw]
+		values.append(df[raw].mean())
+		lmost.append(lm)
+		rmost.append(rm)
+		meanie.append((lm+rm)/2)
+		xs.append(str(times[s+i]))
+	
+	v=pandas.DataFrame({'time':xs,'sum':values, 'leftmost':lmost, 'rightmost':rmost, 'mean':meanie})
+	with open(karlmethod, 'w') as f:
+		v.to_csv(f)
+
+def main_metric_generator():
+	csvs = []
+	for root, dirs, files in os.walk(csvdirectory):
+		for f in files:
+			if f.endswith('.csv'):
+				csvs.append(''.join(list(f)[:-4]))
+
+	with open(globalcsv2, 'r') as f:
+		df = pandas.read_csv(f)
+
+
+	name = 'name'
+
+	dffixed = df.set_index(name)
+
 	timesteps = []
 	keys = []
 
@@ -220,82 +548,29 @@ def sync_timestamps_with_csv_filenames(dffixed, csvs):
 
 	corrected_DF = pandas.DataFrame(dict(zip(['keys', 'time'],[keys, timesteps])))
 	sorted_df = corrected_DF.sort_values(by='time')
+	timesteps = sorted_df['time'].to_list()
+	files = sorted_df['keys'].to_list()
 
-	return sorted_df
+	indexes = forkitindexer(files)
 
-def cutter(ga_csv, sorted_df):
-	edited =True
-	import cutter as cutter2
+	metric_getter(files, [0,len(files)-1], timesteps, dffixed, 0)
 
-	minn = -.3
-	maxx=-.23
+def main_df_column_merger():
 
-	deltasx = 'time'
-	deltasy = 'sum'
-	deltasmin = 'spline min'
-	deltasmax = 'spline max'
-	x = "MHz"
-	bl = "BL Potential (V)"
-	raw = "Raw Potential (V)"
-	
-	try:
-		if True:
-			with open(spline_df_location, 'r') as f:
-				deltas = pandas.read_csv(f)
-	except:
-		deltas = cutter2.main()
+	primary_df = merger(\
+			# Global analysis file
+			globalcsv,
+			# Daq data file
+			daqdatafile,
+			['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
+			"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
+			"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
+			"CCCS.T2 (K)", "CCS.F11 (K)"])
 
-	print(deltas)
+	with open(globalcsv2, 'w') as f:
+		primary_df.to_csv(f)
 
-	deltas = deltas.sort_values(by=deltasx)	
-	deltas[deltasx] = pandas.to_datetime(deltas[deltasx],format="%Y-%m-%d %H:%M:%S")
-	
-	#print(ga_csv)
-
-	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
-	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
-			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
-			"CCCS.T2 (K)", "CCS.F11 (K)"]
-	for i in asd:
-		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
-	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	ga_csv.replace(to_replace='Off', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
-	ga_csv = ga_csv.fillna(0)
-	ga_csv = ga_csv.sort_values(by='time')	
-	#print(ga_csv)
-	
-	# Sycronize indecies
-	deltas = deltas.set_index(deltasx)
-	ga_fixed = ga_csv.set_index('time')
-	sorted_df['time'] = pandas.to_datetime(sorted_df['time'],format="%Y-%m-%d %H:%M:%S")
-	sorted_df = sorted_df.set_index('time')
-
-	#print(ga_fixed)
-	# Merge the dataframes
-	ga_fixed = ga_fixed.merge(deltas,left_index=True, right_index=True, how = 'right')
-	#ga_fixed = ga_fixed.merge(sorted_df,left_index=True, right_index=False, how = 'right')
-	ga_fixed = ga_fixed.join(sorted_df)
-	
-	print(ga_fixed)
-	# Take "Cuts" (in python/R/SQL language: take a subset based on VALUE critera)
-	if edited:
-		deltas =deltas[(deltas[deltasy]>deltas[deltasmin])&(deltas[deltasy]<deltas[deltasmax])]
-		ga_fixed =ga_fixed[(ga_fixed[deltasy]>ga_fixed[deltasmin])&(ga_fixed[deltasy]<ga_fixed[deltasmax])]
-
-		deltastime = deltas.index.tolist()
-		timesteps = ga_fixed.index.tolist()
-
-		sorted_df = pandas.DataFrame({'time':timesteps, 'keys':ga_fixed['keys'].to_list()})
-	else:
-		deltastime = deltas.index.tolist()
-		timesteps = ga_fixed.index.tolist()
-
-	print(ga_fixed)
-
-	return ga_fixed, deltas, timesteps, deltastime, sorted_df
-
-
-def main():
+def main_videomaker(tolerance):
 	# Get the sweep Data
 	csvs = get_csv_files()
 	# Get the global analysis file
@@ -303,9 +578,9 @@ def main():
 	# Synchronize timestamps with filenames 
 	sorted_df = sync_timestamps_with_csv_filenames(dffixed, csvs)
 
-	ga_fixed, deltas, timesteps, deltastime, sorted_df_draft = cutter(dffixed, sorted_df)
+	ga_fixed, deltas, timesteps, deltastime, sorted_df_draft = cutter(dffixed, sorted_df, tolerance)
 
-
+	
 	#timesteps = sorted_df['time'].to_list()
 	files = sorted_df_draft['keys'].to_list()
 	#print(files)
@@ -320,14 +595,29 @@ def main():
 	#print(indexes)
 	#exit()
 	#for index,value in enumerate(indexes):
-	#	plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime)
+	#	plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime, 'on')
 	#matplotlib.use('Agg')
 
 
 
 	with multiprocessing.Pool(processes=int(9*multiprocessing.cpu_count()/10)) as pool:
-	    result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, ga_fixed, index, deltas, timesteps, deltastime)) for index,value in enumerate(indexes)]
+	    result_objects = [pool.apply_async(plotter, args =(files, value, timesteps, ga_fixed, index, deltas, timesteps, deltastime, 'off')) for index,value in enumerate(indexes)]
 	    pool.close()
 	    pool.join()
 
-main()
+
+
+print("#"*50)
+print("#",15*" ", "Start Merging", 15*" ","#")
+print("#"*50)
+if not os.path.isfile(globalcsv2):
+	main_df_column_merger()
+print("#"*50)
+print("#",15*" ", "Start Metric", 15*" ","#")
+print("#"*50)
+if not os.path.isfile(karlmethod):
+	main_metric_generator()
+print("#"*50)
+print("#",15*" ", "Start Video", 15*" ","#")
+print("#"*50)
+main_videomaker(tolerance=.3)

@@ -106,15 +106,8 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 				df = pandas.read_csv(f)	
 
 
-		# Header from global_analysis files.
-		rows_to_keep =["name", variablenames.gi_time, "B", "ltzian_area", "data_area", variablenames.gi_centroidlabel, variablenames.gi_primary_thermistor,
-								variablenames.gi_secondary_thermistor, "TEvalue"]
-		mhz_to_b = 42.58
+		mhz_to_b = 42.58 if not deuteron else 6.536
 
-		rows_to_delete = []
-		for column in df:
-			if column not in rows_to_keep:
-				rows_to_delete.append(column)
 
 		# Pull out the data needed to do the analysis from our file.
 		if not deuteron:
@@ -444,7 +437,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		#	of a dominating lorentzian curve, and a secondary gaussian distribution
 
 		ax[3].scatter(x, relative_error, label="Reduced Relative Chi-Square", color='peru')
-		ax[3].set_yscale('logit')	# Not the BEST scale that I should be using. Please find an alternative.
+		#ax[3].set_yscale('logit')	# Not the BEST scale that I should be using. Please find an alternative.
 		"""try:
 			ax[4].scatter(x, y1, label="Lorentzian Centroid (x0)", color='green')
 		except IndexError:

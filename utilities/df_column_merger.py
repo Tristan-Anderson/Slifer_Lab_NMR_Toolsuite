@@ -26,11 +26,23 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 	"""
 	primary_df = fetch_df(primary_path)
 	print(primary_df)
-	primary_df[shared_column] = pandas.to_datetime(primary_df['time'], format="%Y-%m-%d %H:%M:%S")
+	primary_df[shared_column] = pandas.to_datetime(primary_df['Time'], format="%Y-%m-%d %H:%M:%S")
 	primary_df = primary_df.sort_values(by=shared_column)
 
 	indexes_to_grab = primary_df.loc[:, shared_column]
+	"""
+		if you get an index error, double check the delimeter of 
+		the secondary path (the DAQ csv). If you see things like:
+		9830  12/7/2020 11:59:58 PM\t3690248398.062093\tOff\...
+		in the print statement, then make sure the delimeter is correct
+
+	"""
+	############ begin problem child ####################
 	secondary_df = fetch_df(secondary_path)#, delimiter='\t')
+	#secondary_df = secondary_df.loc[:, ~secondary_df.columns.str.contains('^Unnamed')]
+	############ End problem child ####################
+
+	print(secondary_df)
 
 
 	#### Subject of frequenct problems right here child right here:
@@ -68,14 +80,17 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 	print(primary_df)
 	return primary_df
 
+def main_df_column_merger():
 
+	primary_df = merger(\
+			# Global analysis file
+			"/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/data_record_12-11-2020/video/global_analysis.csv",
+			# Daq data file
+			"/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/rawdata/data_record_12-11-2020_abridged.csv",
+			['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
+			"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
+			"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
+			"CCCS.T2 (K)", "CCS.F11 (K)"])
 
-
-primary_df = merger("/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/data_record_12-3-2020/global_analysis.csv", "/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/rawdata/data_record_12-3-2020_abriged.csv",
-		['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
-		"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
-		"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
-		"CCCS.T2 (K)", "CCS.F11 (K)"])
-
-with open("/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv", 'w') as f:
-	primary_df.to_csv(f)
+	with open("/home/kb/research/wdirs/NMR_Toolsuite/datasets/dec_2020/data_record_12-11-2020/video/global_analysis_2.csv", 'w') as f:
+		primary_df.to_csv(f)

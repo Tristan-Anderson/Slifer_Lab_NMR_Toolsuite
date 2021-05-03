@@ -30,7 +30,7 @@ If you want to edit the primary and secondary thermistors - edit them here.
 """
 ####################################################################
 # In the DAQ csv, what is the time column labeled?
-dmsa_time_colname = "Time"
+dmsa_time_colname = "time"
  
 # What is the primary thermistor? 
 
@@ -80,7 +80,7 @@ na_vme_yaxis_default = "Potential (V)"
 
 na_vme_xaxis_default = "MHz"
 
-na_global_analysis_headers = ["name", "material", "time", "dtype", "blpath", "rawpath", "xmin",
+na_global_analysis_headers = ["name", "material", "Time", "dtype", "blpath", "rawpath", "xmin",
                "xmax", "sigstart", "sigfinish", "blskiplines",
                'rawsigskiplines', "B", "T", dmsa_primary_thermometer_colname,
                dmsa_secondary_thermometer_colname,
@@ -130,7 +130,7 @@ agui_impression = False
 gi_primary_thermistor = dmsa_primary_thermometer_colname
 gi_secondary_thermistor =dmsa_secondary_thermometer_colname
 ##
-gi_time = 'time'
+gi_time = dmsa_time_colname
 
 ## Anything with "results" in it, is the column names for the
 # files produced by the global interpreter.

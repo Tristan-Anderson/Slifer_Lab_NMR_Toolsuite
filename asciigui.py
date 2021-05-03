@@ -943,12 +943,6 @@ class nmrAnalyser(AsciiGUI):
             self.automatefits = []
             self.failedFitCatcher(graphs, graphdata, home)
         
-
-        # extract then merge individual results into a keeper data
-        for results_df, _ in results:
-            self.analysisfile = self.analysisfile.append(results_df,ignore_index=True)
-        
-        print(self.analysisfile)
         input('Press any key to continue')
         self.addEntry(appendme=self.analysisfile)
         exit()
@@ -1198,7 +1192,7 @@ class nmrAnalyser(AsciiGUI):
                 results = [r.get() for r in result_objects]
 
             for results_df, failedfiles in results:
-                self.analysisfile.append(results_df)
+                self.analysisfile = self.analysisfile.append(results_df)
                 self.failedfiles.append(failedfiles)
         elif testval == "giveUpRefitting":
             # let the function die, and this'll break the while-loop.

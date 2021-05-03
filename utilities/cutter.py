@@ -273,10 +273,9 @@ class ripItUp(AsciiGUI):
 		self.path_data_to_subset = self.fileDirectorySelector()
 		self.data_to_subset = self.getcsv(self.path_data_to_subset)
 
-	def select_n_points(self):
+	def select_n_points(self, tolerance):
 		x = 'time'
 		y = 'sum'
-		tolerance = .045
 
 		self.data_to_subset[x] = pandas.to_datetime(self.data_to_subset[x], format="%Y-%m-%d %H:%M:%S")
 		self.data_to_subset = self.data_to_subset.sort_values(by=x)
@@ -284,6 +283,8 @@ class ripItUp(AsciiGUI):
 		min_xdata = min(self.data_to_subset[x])
 		xdata_for_fit = get_x_for_fit(self.data_to_subset, min_xdata.day, min_xdata.month, min_xdata.year, x)
 		by_index = int(len(xdata_for_fit)/8)
+		#print(xdata_for_fit)
+		#print(self.data_to_subset[x])
 
 		self.data_to_subset['Fittting x'] = xdata_for_fit
 
@@ -300,7 +301,7 @@ class ripItUp(AsciiGUI):
 		ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
 		ax.set_ylabel("Subset Metric")
 		#ax.set_ylim(-1.6, -.6) # 9_14
-		ax.set_ylim(-.5, -.1)   # 12_10_20
+		#ax.set_ylim(-.5, -.1)   # 12_10_20
 		ax.grid(True)
 		ax.legend(loc='best')
 
@@ -342,7 +343,8 @@ class ripItUp(AsciiGUI):
 		ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
 		ax.set_ylabel("Subset Metric")
 		#ax.set_ylim(-1.6, -.6) # 9_14
-		ax.set_ylim(-.5, -.1) # 12_10_20
+		#ax.set_ylim(-.5, -.1) # 12_10_20
+
 		ax.legend(loc='best')
 		ax.grid(True)
 		plt.show()
@@ -350,13 +352,14 @@ class ripItUp(AsciiGUI):
 		print("Selected data is in a dataframe, and now returning.")
 		with open('spline_df_for_ellie.csv', 'w') as f:
 			self.data_to_subset.to_csv(f)
+		os.chdir(self.cwd)
 		return self.data_to_subset
 		#exit()
 
 
-def main():
+def main(tolerance=.3):
 	a = ripItUp([])
-	df = a.select_n_points()
+	df = a.select_n_points(tolerance)
 	return df
 
 def nearest(test_val, iterable): 
@@ -370,6 +373,7 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 	
 	"""
 
+
 	end_time = (max(trimmed[t].tolist())-datetime.datetime(year=Sy, month=Sm, day=Sd)).total_seconds()
 	
 	start_time = (min(trimmed[t].tolist())-datetime.datetime(year=Sy, month=Sm, day=Sd)).total_seconds()
@@ -377,15 +381,18 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 	timestamp_list = trimmed[t].tolist()
 	timesteps = []
 
+	"""
+	# I found a brilliant way to overcomplicate things,
+	#	And I leave this here for future reference.
 	for index, val in enumerate(timestamp_list):
-		if index == len(timestamp_list)-1:
+		if index == len(timestamp_list)-2:
 			break
 		timesteps.append((timestamp_list[index+1]-val).total_seconds())
 		
-	avg_timestep = numpy.mean(timesteps)
+	avg_timestep = numpy.mean(timesteps)"""
 
-	xdata_for_fit = numpy.arange(start_time, end_time, avg_timestep).tolist()
-	xdata_for_fit.append(xdata_for_fit[-1]+avg_timestep)
+	xdata_for_fit = numpy.arange(start_time, end_time, (end_time-start_time)/len(timestamp_list)).tolist()
+
 
 	return xdata_for_fit
 
