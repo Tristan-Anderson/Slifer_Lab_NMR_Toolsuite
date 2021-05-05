@@ -291,64 +291,78 @@ class ripItUp(AsciiGUI):
 
 		graphed_xticks = [xdata_for_fit[by_index*i] for i in range(8)]
 		xtick_conversion = [self.data_to_subset.loc[by_index*i,x].strftime("%Y-%m-%d %H:%M") for i in range(8)]
+		total_spline_approved = False	
+		while total_spline_approved != True:
+			plt.close()
+			fig, ax = plt.subplots(figsize=(11,8.5))
+			
+			ax.scatter(xdata_for_fit, self.data_to_subset[y], color='blue', label=y)
+			#plt.xticks(ticks=graphed_xticks, labels=[])
+			ax.set_title("Data to fit")
+			ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
+			ax.set_ylabel("Subset Metric")
+			#ax.set_ylim(-1.6, -.6) # 9_14
+			#ax.set_ylim(-.5, -.1)   # 12_10_20
+			ax.grid(True)
+			ax.legend(loc='best')
 
-		fig, ax = plt.subplots(figsize=(11,8.5))
+			#plt.show()
+			self.header("Choose 25 datapoints on the graph by clicking it.")
+			try:
+				tuples = plt.ginput(25, timeout=0)
+			except Exception as e:
+				print(e)
 
-		
-		ax.scatter(xdata_for_fit, self.data_to_subset[y], color='blue', label=y)
-		#plt.xticks(ticks=graphed_xticks, labels=[])
-		ax.set_title("Data to fit")
-		ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
-		ax.set_ylabel("Subset Metric")
-		#ax.set_ylim(-1.6, -.6) # 9_14
-		#ax.set_ylim(-.5, -.1)   # 12_10_20
-		ax.grid(True)
-		ax.legend(loc='best')
+			#print(tuples)
+			#sorted_tuples = tuples.sort(key=lambda x: x[0])
+			#print(sorted_tuples)
 
-		#plt.show()
-		self.header("Choose 25 datapoints on the graph by clicking it.")
-		try:
-			tuples = plt.ginput(25)
-		except Exception as e:
-			print(e)
+			xdata,ydata = map(list,zip(*tuples))
+			try:
+				ppoly_instance = spline(xdata,ydata)
+			except ValueError as e:
+				print(e, "Retry selection.")
+				continue
 
-		#print(tuples)
-		#sorted_tuples = tuples.sort(key=lambda x: x[0])
-		#print(sorted_tuples)
+			self.data_to_subset['spline'] = ppoly_instance(xdata_for_fit)
 
-		xdata,ydata = map(list,zip(*tuples))
-		print(xdata)
-		print(ydata)
-		ppoly_instance = spline(xdata,ydata)
+			contourline = self.data_to_subset['spline'].values
+			
+			useraccepted = False
+			while useraccepted != True:
+				cmin = contourline-tolerance
+				cmax = contourline+tolerance
+				self.data_to_subset['spline min'] =cmin
+				self.data_to_subset['spline max'] =cmax
 
-		self.data_to_subset['spline'] = ppoly_instance(xdata_for_fit)
+				plt.close()
+				fig, ax = plt.subplots(figsize=(11,8.5))
 
-		contourline = self.data_to_subset['spline'].values
-		cmin = contourline-tolerance
-		cmax = contourline+tolerance
+				ax.fill_between(xdata_for_fit, cmin, cmax, color='aqua', alpha=0.5, label='Acceptance region')
 
-		self.data_to_subset['spline min'] =cmin
-		self.data_to_subset['spline max'] =cmax
+				ax.scatter(xdata_for_fit, self.data_to_subset[y], color='blue', label=y)
+				ax.plot(xdata_for_fit, self.data_to_subset['spline'], color='magenta', label='Cubic Spline')
+				#plt.xticks(ticks=graphed_xticks, labels=[])
+				ax.set_title("Data to fit")
+				ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
+				ax.set_ylabel("Subset Metric")
+				#ax.set_ylim(-1.6, -.6) # 9_14
+				#ax.set_ylim(-.5, -.1) # 12_10_20
 
+				ax.legend(loc='best')
+				ax.grid(True)
+				plt.show()
+				useraccepted = input("Do you need to update the width of the acceptance region? [Y/N]: ")
+				useraccepted = False if useraccepted.upper() == 'Y' else True
+				if not useraccepted:
+					print("Current tolerance region is:", tolerance, 'wide.')
+					try:
+						tolerance = float(input("Enter new tolerance: "))
+					except ValueError:
+						print("Improper value.")
 
-		plt.clf()
-		fig, ax = plt.subplots(figsize=(11,8.5))
-
-		ax.fill_between(xdata_for_fit, cmin, cmax, color='aqua', alpha=0.5, label='Acceptance region')
-
-		ax.scatter(xdata_for_fit, self.data_to_subset[y], color='blue', label=y)
-		ax.plot(xdata_for_fit, self.data_to_subset['spline'], color='magenta', label='Cubic Spline')
-		#plt.xticks(ticks=graphed_xticks, labels=[])
-		ax.set_title("Data to fit")
-		ax.set_xlabel("Seconds since "+str(min_xdata.month)+'/'+str(min_xdata.day)+ '/'+ str(min_xdata.year))
-		ax.set_ylabel("Subset Metric")
-		#ax.set_ylim(-1.6, -.6) # 9_14
-		#ax.set_ylim(-.5, -.1) # 12_10_20
-
-		ax.legend(loc='best')
-		ax.grid(True)
-		plt.show()
-		input('Press Enter to continue')
+			total_spline_approved = input("Do you accept the current spline? [Y/N]: ")
+			total_spline_approved = True if total_spline_approved.upper() == 'Y' else False
 		print("Selected data is in a dataframe, and now returning.")
 		with open('spline_df_for_ellie.csv', 'w') as f:
 			self.data_to_subset.to_csv(f)

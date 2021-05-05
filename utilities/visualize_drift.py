@@ -120,7 +120,7 @@ rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,0
 """
 # Sept 12 2020 data
-
+"""
 rootdir = "../datasets/sep_2020/data_record_9-12-2020/video/"
 daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-12-2020_abridged.csv"
 csvdirectory = rootdir+"graph_data/"
@@ -130,6 +130,21 @@ yfitsub = 'Third order Polynomial 0 Subtraction'
 karlmethod = rootdir+'saveme_9_12_20.csv'
 spline_df_location = rootdir+'spline_df.csv'
 fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+"""
+# Sept 11 2020 data
+
+rootdir = "../datasets/sep_2020/data_record_9-11-2020/video/"
+daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-11-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_11_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 31.95,32.85
 fitsub_ym, fitsub_YM = -.2, .25
 rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,.4
@@ -163,11 +178,8 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 	elif tkbackend == 'off':
 		matplotlib.use('Agg')
 	
-
 	s,f = indexes
 	todo = files[s:f]
-
-
 	timedeltas = []
 
 	for i, val in enumerate(todo):
@@ -176,10 +188,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 		fig, ax = plt.subplots(nrows=2, ncols=3, figsize=(16, 8), constrained_layout=True)
 
-
 		fig.suptitle(str(times[s+i]))
-
-		
 
 		with open(csvdirectory+val, 'r') as f:
 			df = pandas.read_csv(f)
@@ -194,34 +203,24 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[0,0].set_title("Fit Subtracted Signal")
 		ax[0,0].set_ylabel('Volts (V)')
 		ax[0,0].set_xlabel('Frequency (MHz)')
-		#ax[0,0].set_xlim(fitsub_xm, fitsub_XM) 
 		ax[0,0].set_ylim(fitsub_ym, fitsub_YM)
 		
-
-
-
 		ax[0,1].set_title('Temperature')
 		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
 		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
-		#ax[0,1].scatter(ga_fixed.index.tolist(), ga_csv['CCS.F10 (K)'], color='brown', label='CCS.F10 (K)')
 		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
 		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
 		ax[0,1].set_ylim(-.5, 7)
 		ax[0,1].set_ylabel('Kelvin (K)')
 		ax[0,1].set_xlabel('Time')
 
-
 		ax[1,0].set_title("Raw Sweeps")
 		ax[1,0].scatter(df[x], df[bl], label='Baseline', color='blue')
 		ax[1,0].scatter(df[x], df[raw], label =''.join(list(val)[:-4]), color = 'red')
-		#ax[1,0].set_xlim(32.4,33.4)#2020_9_12
-		#ax[1,0].set_xlim(fitsub_xm, fitsub_XM) #RESET
 		ax[1,0].set_ylim(rawsig_ym, rawsig_YM)
 
-		#ax[1,0].set_ylim(-1, 1.3)
 		ax[1,0].set_ylabel('Volt')
 		ax[1,0].set_xlabel('Frequency (MHz)')
-
 
 		ax[1,1].scatter(ga_fixed.index.tolist(), ga_fixed['data_area'], color='green', label='Enhanced Data Area')
 		ax[1,1].set_title("Data Area")
@@ -230,16 +229,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[1,1].set_ylabel('Volt-Area')
 		ax[1,1].set_xlabel('Time')
 
-
-
-
-		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Diode Tune (V)'], label="Diode Tune (V)")
-		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['Phase Tune (V)'], label="Phase Tune (V)")
-		#ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['UCA Voltage (V)'], label="UCA Voltage (V)")
 		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['IFOFF (V)'], label="IFOFF (V)")
-		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'UCA Voltage (V)'], color='magenta', label="Current Sweep")
-		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Phase Tune (V)'], color='magenta',)
-		#ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'Diode Tune (V)'], color='magenta')
 		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta', label="Current Sweep")
 		ax[0,2].grid(True)
 		ax[0,2].legend(loc='best')
@@ -256,10 +246,8 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[1,2].set_title("Poor-fit indicator prototype")
 		ax[1,2].set_xlabel('Time')
 
-
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T3 (K)'], color='magenta', label="Current Sweep")
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
-		#ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F10 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F11 (K)'], color='magenta')
 		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCCS.T2 (K)'], color='magenta')
 		
@@ -272,8 +260,6 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[0,0].legend(loc='best')
 		ax[1,0].legend(loc='best')
 		ax[1,1].legend(loc='best')
-		
-
 
 		plt.savefig(dump+str("{0:05d}".format(s+i)))
 		plt.clf()
@@ -325,7 +311,6 @@ def sync_timestamps_with_csv_filenames(dffixed, csvs):
 	return sorted_df
 
 def cutter(ga_csv, sorted_df, tolerance):
-	#edited =True
 	import cutter as cutter2
 
 	minn = -.3
@@ -339,17 +324,17 @@ def cutter(ga_csv, sorted_df, tolerance):
 	raw = "Raw Potential (V)"
 	edited = input("do you need to subsect (CUT) the data? [Y/N]: ")
 	edited = True if edited.upper() == 'Y' else False	
-
-	try:
-		with open(spline_df_location, 'r') as f:
-			deltas = pandas.read_csv(f)
-	except:
-		if edited:
+	if edited:
+		try:
+			with open(spline_df_location, 'r') as f:
+				deltas = pandas.read_csv(f)
+		except:
 			deltas = cutter2.main(tolerance=tolerance)
 			with open(spline_df_location, 'w') as f:
 				deltas.to_csv(f)
-		else:
-			deltas = sorted_df
+	else:
+		with open(karlmethod, 'r') as f:
+			deltas = pandas.read_csv(f)
 
 	deltas = deltas.sort_values(by=deltasx)	
 	deltas[deltasx] = pandas.to_datetime(deltas[deltasx],format="%Y-%m-%d %H:%M:%S")
@@ -585,8 +570,8 @@ def main_videomaker(tolerance):
 	files = sorted_df_draft['keys'].to_list()
 	#print(files)
 	#exit()
-	print("###"*10)
-	print(files)
+	#print("###"*10)
+	#print(files)
 	#print(sorted_df_draft)
 	#print(sorted_time_copy)
 	#exit()
