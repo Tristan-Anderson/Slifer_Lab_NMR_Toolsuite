@@ -34,6 +34,10 @@ def shelf(location, **ts):
 	hours = ts.pop("hours",0)
 	minutes = ts.pop("minutes",0)
 	seconds = ts.pop("seconds",0)
+	if hours==minutes==seconds==0:
+		print("Invalid selection of time width.")
+		print("Escaping.")
+		return False
 	timestep = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
 	for (dirpath, dirnames, filenames) in os.walk(location):
 		fnames = filenames
@@ -54,18 +58,23 @@ def shelf(location, **ts):
 		#Form the naming for the directory
 		ampm = datetime.datetime.strftime(stepalldates, "%p")
 		ap = "p" if ampm == "PM" else "a"
-		directoryname = datetime.datetime.strftime(prevstepalldates,"%m%d_%H%M%S_")+datetime.datetime.strftime(stepalldates,"%H%M%S")+ap+'/'
+		#directoryname = datetime.datetime.strftime(prevstepalldates,"%m%d_%H%M%S_")+datetime.datetime.strftime(stepalldates,"%H%M%S")+ap+'/'
 
 		
 
 		# Select the right files to move
 		files_to_move = []
+		subsection = []
 		for index, date in enumerate(alldates):
 			# If the specific date is within the correct range
 			if date >= prevstepalldates and date <= stepalldates:
-				# add it to the list of files to move.
+				# collect a subsection
+				subsection.append(date)
+				# add the subsection to the list of files to move.
 				files_to_move.append(datetime.datetime.strftime(date, "%Y_%m_%d_%H_%M_%S"))
 		if len(files_to_move) > 0:
+			directoryname = datetime.datetime.strftime(min(subsection),"%m%d_%H%M%S_")+datetime.datetime.strftime(max(subsection),"%m%d_%H%M%S")+ap+'/'
+
 			#print(len(files_to_move), "creating", directoryname)
 			# Make the directory
 			try:
@@ -111,3 +120,11 @@ def unshelf(location):
 		os.rmdir(d)
 	os.chdir(home)
 	print("Unshelving Complete.")
+
+"""
+USEAGE:
+
+shelf(PATH, hours=h, minutes=m, seconds=s)
+unshelf(PATH)
+
+"""

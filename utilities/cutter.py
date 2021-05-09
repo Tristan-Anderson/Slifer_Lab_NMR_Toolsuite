@@ -276,6 +276,7 @@ class ripItUp(AsciiGUI):
 	def select_n_points(self, tolerance):
 		x = 'time'
 		y = 'sum'
+		n = 25
 
 		self.data_to_subset[x] = pandas.to_datetime(self.data_to_subset[x], format="%Y-%m-%d %H:%M:%S")
 		self.data_to_subset = self.data_to_subset.sort_values(by=x)
@@ -303,13 +304,18 @@ class ripItUp(AsciiGUI):
 			ax.set_ylabel("Subset Metric")
 			#ax.set_ylim(-1.6, -.6) # 9_14
 			#ax.set_ylim(-.5, -.1)   # 12_10_20
+			try:
+
+				ax.scatter(xdata,ydata, color='red', label='Last Spline Selection')
+			except:
+				pass
 			ax.grid(True)
 			ax.legend(loc='best')
 
 			#plt.show()
 			self.header("Choose 25 datapoints on the graph by clicking it.")
 			try:
-				tuples = plt.ginput(25, timeout=0)
+				tuples = plt.ginput(n, timeout=0)
 			except Exception as e:
 				print(e)
 
@@ -363,6 +369,13 @@ class ripItUp(AsciiGUI):
 
 			total_spline_approved = input("Do you accept the current spline? [Y/N]: ")
 			total_spline_approved = True if total_spline_approved.upper() == 'Y' else False
+			if total_spline_approved == False:
+				nnew = input("Do you need to increase number of spline points? [Y/N]: ")
+				nnew = True if nnew.upper() == 'Y' else False
+				if nnew:
+					print("Current number of user-selected points is:", n)
+					n = int(input("Input the number of desired points: "))
+
 		print("Selected data is in a dataframe, and now returning.")
 		with open('spline_df_for_ellie.csv', 'w') as f:
 			self.data_to_subset.to_csv(f)

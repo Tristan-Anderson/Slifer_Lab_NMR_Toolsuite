@@ -13,17 +13,20 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
 from matplotlib import pyplot as plt
 # Sept 14 2020 data
-"""
-csvdirectory = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/graph_data/"
-globalcsv2 = "../datasets/sep_2020/data_record_9-14-2020/914_701a_to_915_405p_enhanced/global_analysis_2.csv"
-yfitsub = 'Fit 1 Subtraction'
-karlmethod = 'saveme9_14.csv'
-spline_df_location = "datasets/2020_9_14/spline_df_saved_9_14.csv"
+
+rootdir = "../datasets/sep_2020/data_record_9-14-2020/video/"
+flist = ['data_record_9-14-2020_abridged.csv', 'data_record_9-15-2020_abridged.csv']
+daqdatafile = ["../datasets/sep_2020/rawdata/"+i for i in flist]
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+"saveme_9_14.csv"
+spline_df_location = rootdir+"spline_df_saved_9_14.csv"
 rawsig_ym, rawsig_YM = -4, 4
 fitsub_xm, fitsub_XM = 32.4,33.4 
-fitsub_ym, fitsub_YM= -.2, 1.3
-poor_fit_ym, poor_fit_YM = -1.6,-.8"""
-
+fitsub_ym, fitsub_YM= -.2, 1.5
+poor_fit_ym, poor_fit_YM = -1.6,-.8
 
 
 # Dec 3 2020 Data
@@ -135,7 +138,7 @@ rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,.4
 """
 # Sept 11 2020 data
-
+"""
 rootdir = "../datasets/sep_2020/data_record_9-11-2020/video/"
 daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-11-2020_abridged.csv"
 csvdirectory = rootdir+"graph_data/"
@@ -148,8 +151,22 @@ fitsub_xm, fitsub_XM = 31.95,32.85
 fitsub_ym, fitsub_YM = -.2, .25
 rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,.4
-
-
+"""
+# Sept 13 2020 Dat
+"""
+rootdir = "../datasets/sep_2020/data_record_9-13-2020/video/"
+daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-13-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_13_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 31.95,32.85
+fitsub_ym, fitsub_YM = -.05, .5
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+"""
 
 dump = "../dump3/"
 
@@ -224,7 +241,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 		ax[1,1].scatter(ga_fixed.index.tolist(), ga_fixed['data_area'], color='green', label='Enhanced Data Area')
 		ax[1,1].set_title("Data Area")
-		ax[1,1].legend(loc='best')
+		ax[1,1].set_ylim(-.075,.15)
 		ax[1,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'data_area'], color='magenta', label='Current sweep')
 		ax[1,1].set_ylabel('Volt-Area')
 		ax[1,1].set_xlabel('Time')
@@ -237,8 +254,8 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[0,2].set_ylabel('Volts (V)')
 		ax[0,2].set_xlabel('Time')
 
-		ax[1,2].set_ylim(poor_fit_ym, poor_fit_YM)
-		ax[1,2].scatter(deltastime, deltas[deltasy], label="Karl's Metric")
+		#ax[1,2].set_ylim(poor_fit_ym, poor_fit_YM)
+		ax[1,2].scatter(deltastime, deltas[deltasy], label="Signal-Wing avg value")
 		if timesteps[s+i] in deltastime:
 			ax[1,2].scatter(timesteps[s+i], deltas.loc[times[s+i], deltasy], color='magenta', label="Current Sweep")
 		ax[1,2].grid(True)
@@ -411,10 +428,23 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 		in the print statement, then make sure the delimeter is correct
 
 	"""
-	############ begin problem child ####################
-	secondary_df = fetch_df(secondary_path)#, delimiter='\t')
-	#secondary_df = secondary_df.loc[:, ~secondary_df.columns.str.contains('^Unnamed')]
-	############ End problem child ####################
+
+	if type(secondary_path) == list:
+		things_to_append = []
+		secondary_df = pandas.DataFrame()
+		for element in daqdatafile:
+			things_to_append.append(fetch_df(element))
+		for index, element in enumerate(things_to_append):
+			if index == 0:
+				secondary_df = element
+			else:
+				secondary_df = secondary_df.append(element)
+
+	else:
+		############ begin problem child ####################
+		secondary_df = fetch_df(secondary_path)#, delimiter='\t')
+		#secondary_df = secondary_df.loc[:, ~secondary_df.columns.str.contains('^Unnamed')]
+		############ End problem child ####################
 
 	print(secondary_df)
 
@@ -542,15 +572,20 @@ def main_metric_generator():
 
 def main_df_column_merger():
 
+	"""
+			TODO: implement a way to merge more than one
+			DAQ data record into a global analysis file.
+	"""
+	columns_to_keep = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
+				"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
+				"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
+				"CCCS.T2 (K)", "CCS.F11 (K)"]
 	primary_df = merger(\
 			# Global analysis file
 			globalcsv,
 			# Daq data file
 			daqdatafile,
-			['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
-			"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
-			"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
-			"CCCS.T2 (K)", "CCS.F11 (K)"])
+			columns_to_keep)
 
 	with open(globalcsv2, 'w') as f:
 		primary_df.to_csv(f)
