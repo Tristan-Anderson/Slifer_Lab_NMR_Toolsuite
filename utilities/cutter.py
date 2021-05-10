@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 """
 Tristan Anderson
 takc1nqa@gmail.com
+tanderson@vt.edu
 """
 
 """

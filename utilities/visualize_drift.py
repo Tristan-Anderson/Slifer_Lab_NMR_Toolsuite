@@ -1,6 +1,7 @@
 """
 Tristan Anderson
-tja1015@wildcats.unh.edu
+takc1nqa@gmail.com
+tanderson@vt.edu
 """
 
 """
