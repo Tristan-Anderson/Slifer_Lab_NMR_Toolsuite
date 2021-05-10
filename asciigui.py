@@ -945,7 +945,8 @@ class nmrAnalyser(AsciiGUI):
         
         input('Press any key to continue')
         self.addEntry(appendme=self.analysisfile)
-        exit()
+        matplotlib.use("TkAgg") # Turn plotting front-end back on.
+        raise KeyboardInterrupt # Get out of the mainloop.
 
     def automatedPKernel(self, graphs, graphdata, home, id_num,self_itemseed=None):
         return self.repeatAdNauseum(self.filelist,graphs, graphdata, home, id_num=id_num, self_itemseed=self.self_itemseed)
