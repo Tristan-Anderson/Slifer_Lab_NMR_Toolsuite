@@ -2,10 +2,12 @@ I develop features in each branch of the repository.
 
 I try to keep the main branch in a (sometimes fragile), but working state.
 
-Each branch represents the development and implementation of each feature. I usually
-work on one of these at a time.
-The most recent commit you see to the repository is probably the code
-that I'm currently working on.
+There is documentation in a pdf attached in this repo. Please read it.
+
+
+asciigui.py is the file that you want to execute. should you want to see the depreciated
+tkinter gui "gui.py" please checkout dd5f678183d06432a437c114b4eb973615f041a9. The last commit containing
+the graphical interface.
 
 Have fun!
 -T
