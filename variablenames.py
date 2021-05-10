@@ -1,6 +1,7 @@
 """
 Tristan Anderson
-tja1015@wildcats.unh.edu
+Tristan.Anderson@unh.edu
+tanderson@vt.edu
 
 Proceed Formally.
 """

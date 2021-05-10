@@ -1,11 +1,10 @@
-import numpy, pandas, os, variablenames
-from datetime import datetime
 """
 Tristan Anderson
-tja1015@wildcats.unh.edu
-
-Proceed Formally.
+Tristan.Anderson@unh.edu
+tanderson@vt.edu
 """
+import numpy, pandas, os, variablenames
+from datetime import datetime
 
 # Fortune:
 """

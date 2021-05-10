@@ -1,6 +1,7 @@
-# Tristan Anderson
-# tja1015@wildcats.unh.edu
-
+"""
+Tristan Anderson
+Tristan.Anderson@unh.edu
+tanderson@vt.edu
 """
 Sometimes, python lets you be just lazy enough to do something like this
 """
