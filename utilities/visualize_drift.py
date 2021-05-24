@@ -11,10 +11,12 @@ in tandem with the raw DAQ .csv to form an image sequence that captures the cool
 
 """
 
-import pandas, os, numpy, multiprocessing, numpy, time, matplotlib
+import pandas, os, numpy, multiprocessing, numpy, time, matplotlib, sys
 from matplotlib import pyplot as plt
+sys.path.insert(1, '..')
+import variablenames
 # Sept 14 2020 data
-
+"""
 rootdir = "../datasets/sep_2020/data_record_9-14-2020/video/"
 flist = ['data_record_9-14-2020_abridged.csv', 'data_record_9-15-2020_abridged.csv']
 daqdatafile = ["../datasets/sep_2020/rawdata/"+i for i in flist]
@@ -28,20 +30,22 @@ rawsig_ym, rawsig_YM = -4, 4
 fitsub_xm, fitsub_XM = 32.4,33.4 
 fitsub_ym, fitsub_YM= -.2, 1.5
 poor_fit_ym, poor_fit_YM = -1.6,-.8
-
+"""
 
 # Dec 3 2020 Data
-"""
-csvdirectory = "../datasets/dec_2020/data_record_12-3-2020/graph_data/"
-globalcsv2 = "../datasets/dec_2020/data_record_12-3-2020/global_analysis_2.csv"
+
+rootdir = "../datasets/dec_2020/data_record_12-3-2020/"
+daqdatafile = '../datasets/dec_2020/rawdata/data_record_12-3-2020_abriged.csv'
+csvdirectory = rootdir+"graph_data/"
+globalcsv2 = rootdir+"global_analysis_2.csv"
 yfitsub = 'Third order Polynomial 0 Subtraction'
-karlmethod = '../datasets/dec_2020/data_record_12-3-2020/saveme_12_3_20.csv'
-spline_df_location = '../datasets/dec_2020/data_record_12-3-2020/spline_df.csv'
+karlmethod = rootdir+'saveme_12_3_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
 fitsub_xm, fitsub_XM = 32.55,33.45
 fitsub_ym, fitsub_YM = -.4, .2
 rawsig_ym, rawsig_YM = -2, 2
 poor_fit_ym, poor_fit_YM = -1,1
-"""
+
 # Dec 4 2020 Data
 """
 rootdir = "../datasets/dec_2020/data_record_12-4-2020/analysis/polarization/"
@@ -51,17 +55,19 @@ yfitsub = 'Third order Polynomial 0 Subtraction'
 karlmethod = rootdir+'saveme_12_4_20.csv'
 spline_df_location = rootdir+'spline_df.csv'
 fitsub_xm, fitsub_XM = 32.55,33.45
-fitsub_ym, fitsub_YM = -.4, .2
+fitsub_ym, fitsub_YM = -.075, .075
 rawsig_ym, rawsig_YM = -2, 2
 poor_fit_ym, poor_fit_YM = -1,1
 """
 
+
+
+# Dec 7 2020
 """
 rootdir = "../datasets/dec_2020/data_record_12-7-2020/analysis/Enhanced/"
-# Dec 7 2020
 csvdirectory = rootdir+"graph_data/"
 globalcsv2 = rootdir+"global_analysis_2.csv"
-yfitsub = 'Third order Polynomial 0 Subtraction'
+yfitsub = 'Fit 1 Subtraction'
 karlmethod = rootdir+'saveme_12_7_20.csv'
 spline_df_location = rootdir+'spline_df.csv'
 fitsub_xm, fitsub_XM = 31.85,32.55
@@ -141,6 +147,36 @@ poor_fit_ym, poor_fit_YM = -.5,.4
 # Sept 11 2020 data
 """
 rootdir = "../datasets/sep_2020/data_record_9-11-2020/video/"
+daqdatafile = ["../datasets/sep_2020/rawdata/data_record_9-11-2020_abridged.csv", "../datasets/sep_2020/rawdata/data_record_9-10-2020_abridged.csv"]
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2_redo.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_12_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+"""
+# Sept 12 2020 data #FOR TE FIXING
+"""
+rootdir = "../datasets/sep_2020/data_record_9-12-2020_old_analysis/TE/"
+daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-12-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = "../datasets/sep_2020/data_record_9-12-2020_old_analysis/TE/912_536pTE/global_analysis.csv"
+globalcsv2 = "../datasets/sep_2020/data_record_9-12-2020_old_analysis/TE/912_536pTE/global_analysis_with_extra_stuff.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_12_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+"""
+# Sept 11 2020 data
+"""
+rootdir = "../datasets/sep_2020/data_record_9-11-2020/video/"
 daqdatafile = "../datasets/sep_2020/rawdata/data_record_9-11-2020_abridged.csv"
 csvdirectory = rootdir+"graph_data/"
 globalcsv = rootdir+"global_analysis.csv"
@@ -168,7 +204,82 @@ fitsub_ym, fitsub_YM = -.05, .5
 rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,.4
 """
+# Sept 15 2020 Data #enhanced
+"""
+rootdir = "../datasets/sep_2020/data_record_9-13-2020/video/"
+daqdatafile = ["../datasets/sep_2020/rawdata/data_record_9-15-2020_abridged.csv", "../datasets/sep_2020/rawdata/data_record_9-14-2020_abridged.csv"]
+csvdirectory = rootdir+"graph_data/"
+globalcsv = "../datasets/sep_2020/data_record_9-15-2020/video/global_analysis.csv"
+globalcsv2 = "../datasets/sep_2020/data_record_9-15-2020/video/global_analysis_long_fixed.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_13_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 31.95,32.85
+fitsub_ym, fitsub_YM = -.05, .5
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4
+"""
+# Sept 15 2020 Data #te
+"""
+rootdir = "../datasets/sep_2020/data_record_9-13-2020/video/"
+daqdatafile = ["../datasets/sep_2020/rawdata/data_record_9-15-2020_abridged.csv", "../datasets/sep_2020/rawdata/data_record_9-14-2020_abridged.csv"]
+csvdirectory = rootdir+"graph_data/"
+globalcsv = "../datasets/sep_2020/data_record_9-14-2020_old_analysis/700pte/7p_lab/global_analysis.csv"
+globalcsv2 = "../datasets/sep_2020/data_record_9-14-2020_old_analysis/700pte/7p_lab/global_analysis_long_fixed.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_9_13_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 31.95,32.85
+fitsub_ym, fitsub_YM = -.05, .5
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,.4"""
 
+
+# Dec 10 2020 Data null
+"""
+rootdir = "../datasets/dec_2020/data_record_12-10-2020/Complete_analysis/null_pure/"
+daqdatafile = "../datasets/dec_2020/rawdata/data_record_12-10-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_10_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,0
+"""
+# Dec 10 2020 Data
+"""
+rootdir = "../datasets/dec_2020/data_record_12-10-2020/Complete_analysis/enhanced_pure/"
+daqdatafile = "../datasets/dec_2020/rawdata/data_record_12-10-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Third order Polynomial 0 Subtraction'
+karlmethod = rootdir+'saveme_12_10_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,0
+"""
+# Dec 11 2020 Data
+"""
+rootdir = "../datasets/dec_2020/data_record_12-11-2020/video/"
+daqdatafile = "../datasets/dec_2020/rawdata/data_record_12-11-2020_abridged.csv"
+csvdirectory = rootdir+"graph_data/"
+globalcsv = rootdir+"global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Fit 1 Subtraction'
+karlmethod = rootdir+'saveme_12_11_20.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 32.6,33.5
+fitsub_ym, fitsub_YM = -.2, .25
+rawsig_ym, rawsig_YM = -4, 3.5
+poor_fit_ym, poor_fit_YM = -.5,0
+"""
 dump = "../dump3/"
 
 def forkitindexer(filelist):
@@ -242,7 +353,7 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 
 		ax[1,1].scatter(ga_fixed.index.tolist(), ga_fixed['data_area'], color='green', label='Enhanced Data Area')
 		ax[1,1].set_title("Data Area")
-		ax[1,1].set_ylim(-.075,.15)
+		#ax[1,1].set_ylim(-.025,.05)
 		ax[1,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'data_area'], color='magenta', label='Current sweep')
 		ax[1,1].set_ylabel('Volt-Area')
 		ax[1,1].set_xlabel('Time')
@@ -347,7 +458,7 @@ def cutter(ga_csv, sorted_df, tolerance):
 			with open(spline_df_location, 'r') as f:
 				deltas = pandas.read_csv(f)
 		except:
-			deltas = cutter2.main(tolerance=tolerance)
+			deltas = cutter2.main(tolerance=tolerance, neededpath=karlmethod, global_analysis=globalcsv2)
 			with open(spline_df_location, 'w') as f:
 				deltas.to_csv(f)
 	else:
@@ -390,6 +501,16 @@ def cutter(ga_csv, sorted_df, tolerance):
 		timesteps = ga_fixed.index.tolist()
 
 		sorted_df = pandas.DataFrame({'time':timesteps, 'keys':ga_fixed['keys'].to_list()})
+
+		trashlist = []
+		for index,value in enumerate(ga_fixed['keys']):
+			try:
+				trashlist.append(''.join(list(value)[:-4]))
+			except:
+				trashlist.append('')
+		with open(rootdir+"global_analysis_cleaned.csv", 'w') as f:
+			ga_fixed.to_csv(f, columns=[])
+
 	else:
 		deltastime = deltas.index.tolist()
 		timesteps = ga_fixed.index.tolist()
@@ -418,7 +539,7 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 	"""
 	primary_df = fetch_df(primary_path)
 	print(primary_df)
-	primary_df[shared_column] = pandas.to_datetime(primary_df['Time'], format="%Y-%m-%d %H:%M:%S")
+	primary_df[shared_column] = pandas.to_datetime(primary_df[variablenames.vd_GA_timecol], format="%Y-%m-%d %H:%M:%S")
 	primary_df = primary_df.sort_values(by=shared_column)
 
 	indexes_to_grab = primary_df.loc[:, shared_column]
@@ -429,7 +550,7 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 		in the print statement, then make sure the delimeter is correct
 
 	"""
-
+	# Implemented the multiple-file method of merging daq files.
 	if type(secondary_path) == list:
 		things_to_append = []
 		secondary_df = pandas.DataFrame()
@@ -461,7 +582,7 @@ def merger(primary_path:str, secondary_path:str, desired_columns:list, shared_co
 		3) If that doesn't work: give up.
 
  	"""
-	secondary_df[shared_column] = pandas.to_datetime(secondary_df['Time'], format="%m/%d/%Y %I:%M:%S %p")
+	secondary_df[shared_column] = pandas.to_datetime(secondary_df[variablenames.vd_DAQDATA_timecol], format="%m/%d/%Y %I:%M:%S %p")
 	#if "Time" in secondary_df.columns.tolist():
 	#	secondary_df.drop('Time', inplace=True;)
 	#####
@@ -615,8 +736,10 @@ def main_videomaker(tolerance):
 	indexes = forkitindexer(files)
 	#print(indexes)
 	#exit()
-	#for index,value in enumerate(indexes):
-	#	plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime, 'on')
+	"""
+	for index,value in enumerate(indexes):
+		plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime, 'on')
+	"""
 	#matplotlib.use('Agg')
 
 
@@ -633,6 +756,7 @@ print("#",15*" ", "Start Merging", 15*" ","#")
 print("#"*50)
 if not os.path.isfile(globalcsv2):
 	main_df_column_merger()
+
 print("#"*50)
 print("#",15*" ", "Start Metric", 15*" ","#")
 print("#"*50)

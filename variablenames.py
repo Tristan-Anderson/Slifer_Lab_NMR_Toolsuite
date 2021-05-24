@@ -32,16 +32,16 @@ If you want to edit the primary and secondary thermistors - edit them here.
 """
 ####################################################################
 # In the DAQ csv, what is the time column labeled?
-dmsa_time_colname = "Time"
+dmsa_time_colname = "time"
  
 # What is the primary thermistor? 
+dmsa_primary_thermometer_colname = "CCX.T3 (K)" #default 
+#dmsa_primary_thermometer_colname = "CCCCS.T3 (K)" #default 
 
-#dmsa_primary_thermometer_colname = "CCCCS.T3 (K)"
-dmsa_primary_thermometer_colname = "CCX.T3 (K)"
 
 # What is the secondary thermistor?
-#dmsa_secondary_thermometer_colname = "Vapor Pressure (K)"
-dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)"
+dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)" # default
+#dmsa_secondary_thermometer_colname = "Vapor Pressure (K)" # default
 
 # What is the magnet PSU reading?
 dmsa_magnet_psu_amperage_colname = "Magnet Current (A)"
@@ -82,7 +82,7 @@ na_vme_yaxis_default = "Potential (V)"
 
 na_vme_xaxis_default = "MHz"
 
-na_global_analysis_headers = ["name", "material", "Time", "dtype", "blpath", "rawpath", "xmin",
+na_global_analysis_headers = ["name", "material", dmsa_time_colname, "dtype", "blpath", "rawpath", "xmin",
                "xmax", "sigstart", "sigfinish", "blskiplines",
                'rawsigskiplines', "B", "T", dmsa_primary_thermometer_colname,
                dmsa_secondary_thermometer_colname,
@@ -167,3 +167,8 @@ gi_TE = "TEvalue"
 agui_se_time = gi_time
 agui_se_yaxdef = gi_scaled_polarization
 agui_se_yaxfallback = gi_dataarea
+####################################################################
+###             Visualize Drift (Moviemaker)                     ###
+####################################################################
+vd_DAQDATA_timecol = "Time"
+vd_GA_timecol = dmsa_time_colname

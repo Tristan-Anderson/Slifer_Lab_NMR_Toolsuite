@@ -264,14 +264,19 @@ class ripItUp(AsciiGUI):
 	def __init__(self, args,**passed):
 		super().__init__(args, getrootdir=True)
 
-		self.cwd = os.getcwd()
+		self.path_data_to_cut = passed.pop("path_data_to_cut", '')
+		self.path_data_to_subset = passed.pop("path_data_to_subset", '')
 
-		self.header("Select larger dataset to take a subset of (i.e. global analysis)")
-		self.path_data_to_cut = self.fileDirectorySelector()
+
+		self.cwd = os.getcwd()
+		if self.path_data_to_cut == '':
+			self.header("Select larger dataset to take a subset of (i.e. global analysis)")
+			self.path_data_to_cut = self.fileDirectorySelector()
 		self.data_to_cut = self.getcsv(self.path_data_to_cut)
 
-		self.header('Now select simple dataset to use as a criteria for the larger datatset')
-		self.path_data_to_subset = self.fileDirectorySelector()
+		if self.path_data_to_subset == '':
+			self.header('Now select simple dataset to use as a criteria for the larger datatset')
+			self.path_data_to_subset = self.fileDirectorySelector()
 		self.data_to_subset = self.getcsv(self.path_data_to_subset)
 
 	def select_n_points(self, tolerance):
@@ -385,8 +390,8 @@ class ripItUp(AsciiGUI):
 		#exit()
 
 
-def main(tolerance=.3):
-	a = ripItUp([])
+def main(tolerance=.3, neededpath='', global_analysis=''):
+	a = ripItUp([], path_data_to_cut=global_analysis, path_data_to_subset=neededpath)
 	df = a.select_n_points(tolerance)
 	return df
 
@@ -420,7 +425,17 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 	avg_timestep = numpy.mean(timesteps)"""
 
 	xdata_for_fit = numpy.arange(start_time, end_time, (end_time-start_time)/len(timestamp_list)).tolist()
+	if len(xdata_for_fit) != len(timestamp_list):
+		if len(xdata_for_fit) > len(timestamp_list):
+			xdata_for_fit = xdata_for_fit[:len(timestamp_list)]
+		else:
 
+			print("#"*50,"\n xdata for fit len:", len(xdata_for_fit), '\n',xdata_for_fit)
+			print("#"*50,"\n timestamp list len:", len(timestamp_list), '\n', timestamp_list)
+
+			print("#"*50,"\n timestamp list len:", len(timestamp_list))
+			print("#"*50,"\n xdata for fit len:", len(xdata_for_fit))
+			raise ValueError("Can not get xdata for fit.")
 
 	return xdata_for_fit
 

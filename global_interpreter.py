@@ -27,6 +27,13 @@ plt.locator_params(axis='y', nbins=6)
 font = {'size': 12}
 rc('font', **font)
 
+def header(self, mystr):
+    s = 7
+    lstr = len(mystr) +2
+    width = lstr+s*2+2
+    print("@"*width)
+    print(str("{0:1}{2:^"+str(s)+"}{1:^"+str(lstr)+"}{2:^"+str(s)+"}{0:1}").format("@",mystr, ' '*s))
+    print("@"*width)
 
 def report(number, sigfigs=3):
 	# This reports significant figures
@@ -103,8 +110,10 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		pltsave = title if title is not None else pltsave
 		
 		with open(datapath, 'r') as f:
-				df = pandas.read_csv(f)	
+			df = pandas.read_csv(f)	
 
+		df[variablenames.gi_time] = pandas.to_datetime(df[variablenames.gi_time], format="%Y-%m-%d %H:%M:%S")
+		df = df.sort_values(by=variablenames.gi_time)
 
 		mhz_to_b = 42.58 if not deuteron else 6.536
 
@@ -122,8 +131,18 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
 		except ValueError as e:
 			if te:
-				vpy = df[variablenames.gi_secondary_thermistor].values.astype(float)
-				t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
+				try:
+					vpy = df[variablenames.gi_secondary_thermistor].values.astype(float)
+				except:
+					print("\n***ERROR: Backup to secondary thermistor failed")
+					print("ADVISORY: Setting secondary temperatures to 1K, hoping for the best\n")
+					vpy = numpy.array([1 for i in range(len(df[variablenames.gi_time]))])
+				try:
+					t3y = df[variablenames.gi_primary_thermistor].values.astype(float)
+				except:
+					print("\n***ERROR: Backup to secondary thermistor failed")
+					print("ADVISORY: Setting secondary temperatures to 1K, hoping for the best\n")
+					t3y = numpy.array([1 for i in range(len(df[variablenames.gi_time]))])
 				#If you got here, then you're missing some critical thermometry data
 				# in a global analysis csv.
 			else:
@@ -153,6 +172,10 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		#		This is the portion for the tertiary analysis
 		with open(prevanalized, 'r') as f:
 			df = pandas.read_csv(f)
+
+		df[variablenames.gi_time] = pandas.to_datetime(df[variablenames.gi_time], format="%Y-%m-%d %H:%M:%S")
+		df = df.sort_values(by=variablenames.gi_time)
+
 		y1a = df[variablenames.gi_bviaI_results].values
 		y1 = df[variablenames.gi_centroidlabel].values.astype(float)
 		#y1b = df[variablenames.gi_centroidlabel].values.astype(float)/mhz_to_b
@@ -163,8 +186,6 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		sweep_centroids = df[variablenames.gi_centroid_results].values.astype(float)
 		sweep_width = df[variablenames.gi_width_results].values.astype(float)
 
-	df[variablenames.gi_time] = pandas.to_datetime(df[variablenames.gi_time], format="%Y-%m-%d %H:%M:%S")
-	df = df.sort_values(by=variablenames.gi_time)
 
 
 	dt_for_dmy = df.loc[1, variablenames.gi_time]
@@ -181,7 +202,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	results_df[variablenames.gi_time] = df[variablenames.gi_time]
 
 	x = df[variablenames.gi_time].to_list()
-	#print(max(x), min(x))
+	print(max(x), min(x))
 	y1a = df['B'].values
 	for index, val in enumerate(y1a):
 		if val == 'Off':
@@ -289,6 +310,9 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			A_UNCERT = numpy.std(y3a)/(N)**.5			
 			CAL_BEST = TE_BEST/A_BEST
 			CAL_UNCERT = ((CAL_BEST**2)*(A_UNCERT/A_BEST)**2+(CAL_BEST**2)*(TE_UNCERT/TE_BEST)**2)**.5
+			checkfornans = [centertime.strftime("%Y-%m-%d %H:%M:%S"), material, report(T_BEST),"±", report(T_UNCERT),
+			report(B_x0_BEST), "±", report(B_x0_UNCERT),report(A_BEST),"±", report(A_UNCERT),report(TE_BEST),"±", TE_UNCERT,
+			report(CAL_BEST),"±", report(CAL_UNCERT)]
 
 			print("Date\tMaterial\tTemperature\tMagnetic Field\tArea\tTE\tCalibration Constant (% Polarization / (Volt-area))\nN_TE")
 			print(centertime.strftime("%Y-%m-%d %H:%M:%S"),end='\t')
@@ -299,14 +323,19 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			print(report(TE_BEST),"±", TE_UNCERT,end='\t')
 			print(report(CAL_BEST),"±", report(CAL_UNCERT),end='\t')
 			print(N)
+
+			if 'nan' in checkfornans:
+				header("WARNING")
+				header("Ensure that you're looking at the right data with the right mu.")
+				header("Try toggling Deuteron mu.")
 			
 	
 
 		fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
 		teinfo = [B_x0_BEST, B_x0_UNCERT, T_BEST, T_UNCERT, TE_BEST, TE_UNCERT, A_BEST, A_UNCERT, CAL_BEST, CAL_UNCERT]
 		
-		#ax[2].scatter(x,y3a, color="red")
-		ax[2].errorbar(x,y3a, yerr=numpy.std(y3a)/(len(y3a))**.5, color="red")
+		ax[2].scatter(x,y3a, color="red")
+		ax[2].errorbar(x,y3a, yerr=numpy.std(y3a)/(len(y3a))**.5, color="blue", alpha=.075)
 		ax[2].set_ylabel("Data Area", color="red")
 		#ax[2].set_ylim(-.01, .02)
 
@@ -324,15 +353,19 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			N = len(y3a)
 			print("N",N)
 
-			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
+
+			ax[2].errorbar(x,y3a*(CAL_BEST), yerr=y3a*(CAL_UNCERT),alpha=0.075, color='orange')
 			ax[2].scatter(x,y3a*CAL_BEST, color='blue',zorder=2, s=2)
+			#ax[2].set_ylim(-5, 32)
+			#ax[2].set_ylim(-5, 15)
+			#
 
 			# "BEST" is with uncert
 			results_df[variablenames.gi_scaled_polarization] = y3a*CAL_BEST
 			results_df[variablenames.gi_uncert_in_scaled_pol] = y3a*CAL_UNCERT
 		
 		else:
-			fig, ax = plt.subplots(nrows=6, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
+			fig, ax = plt.subplots(nrows=4, ncols=1, sharex=True, figsize=(8.5, 11), constrained_layout=True)
 
 			#ax[5].grid(True)
 			#ax[5].scatter(x,constants, label="Calibration Constants (Are Averaged)", color="peru")
@@ -366,11 +399,14 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 			ax[2].errorbar(x,y3*(CAL_BEST-CAL_UNCERT), yerr=y3a*(CAL_UNCERT),alpha=0.5, color='orange')
 			ax[2].scatter(x,y3*CAL_BEST, color='blue', zorder=2, s=2)
 
+
+
 			# "BEST" is with uncert
 			results_df[variablenames.gi_scaled_polarization] = y3*CAL_BEST
 			results_df[variablenames.gi_uncert_in_scaled_pol] = y3*CAL_UNCERT
 
 		ax[2].set_ylabel("Scaled Polarization (%)")
+
 	
 	# Begin ubiquitous stuff, and general useful data.
 	fig.suptitle(y+" "+m+" "+d+" "+pltsave)
@@ -401,9 +437,10 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		ax[2].grid(True)
 		ax[3].grid(True)
 		ax[3].legend(loc='best')
+		
 
 		if home is not None:
-			plt.savefig(home+d+"_"+pltsave)
+			plt.savefig(home+y+"_"+m+"_"+d+"_"+pltsave)
 			if prevanalized is None:
 				results_df[variablenames.gi_bviaI_results] = y1a
 				results_df[variablenames.gi_primary_thermistor_results] = t3y
@@ -414,7 +451,7 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 				results_df[variablenames.gi_centroidlabel] = None
 				results_df[variablenames.gi_centroid_results] = sweep_centroids
 				results_df[variablenames.gi_width_results] = sweep_width
-				with open(home+d+"_"+pltsave+".csv", 'w') as f:
+				with open(home+y+"_"+m+"_"+d+"_"+pltsave+".csv", 'w') as f:
 					results_df.to_csv(f, index=False)
 		else:
 			plt.savefig(datapath+pltsave, dpi=300)
@@ -435,8 +472,9 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		# A functional form that is better than the lorentzian is "Voight Curve"
 		#	which is a curve that's a linear combination of the convolutions
 		#	of a dominating lorentzian curve, and a secondary gaussian distribution
-
-		ax[3].scatter(x, relative_error, label="Reduced Relative Chi-Square", color='peru')
+		fit_metric = ax[3].twinx()
+		fit_metric.scatter(x, relative_error, label="Reduced Relative Chi-Square", color='peru')
+		fit_metric.set_ylabel('Reduced Relative Chi-Square', color='peru')
 		#ax[3].set_yscale('logit')	# Not the BEST scale that I should be using. Please find an alternative.
 		"""try:
 			ax[4].scatter(x, y1, label="Lorentzian Centroid (x0)", color='green')
@@ -454,17 +492,22 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 	ax[2].grid(True)
 	ax[3].grid(True)
 	ax[3].legend(loc='best')
+
+
+	#for i in ax:
+	#	ax[i].set_xlim([min(x), max(x)])
+	plt.gcf().autofmt_xdate()
 	
 
 	
 	
 
 	if home is not None:
-		plt.savefig(home+d+"_"+pltsave)
-		with open(home+d+"_"+pltsave+".csv", 'w') as f:
+		plt.savefig(home+y+"_"+m+"_"+d+"_"+pltsave)
+		with open(home+y+"_"+m+"_"+d+"_"+pltsave+".csv", 'w') as f:
 			results_df.to_csv(f, index=False)
 	else:
-		plt.savefig(datapath+pltsave, dpi=300)
+		plt.savefig(datapath+y+"_"+m+"_"+d+"_"+pltsave, dpi=300)
 	if te:
 		return constants, teinfo
 	return False

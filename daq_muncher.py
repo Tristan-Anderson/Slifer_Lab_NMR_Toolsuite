@@ -97,20 +97,28 @@ def file_muncher(df_path, data, fdump, dulya=False):
             if "NaN" in l[nmri:]:
                 # If we have a NaN in our DAQ NMR sweep, something VERY wrong happened.
                 #print("DAQ NMR Sweep Extractor: *** ERROR: NMR sweep had a NaN in line", index, "in file", df_path)
-                problem_children.append((index, df_path))
+                print(df_path.split('/')[-1],"had error on line", index)
+                continue
+            try:
+                NMR_DATA = numpy.array(l[nmri:], dtype=numpy.float64)
+                dt = datetime.strptime(l[timei],"%m/%d/%Y %I:%M:%S %p")
+            except ValueError as e:
+                # If we can't create the array of NMR data. Don't waste time making a file about it.
+                print(df_path.split('/')[-1],"had error on line", index, 'error:', e)
                 continue
             
             # Saves each sweep as an entry in a dictonary structure
             daq_dict[index] = {
-                variablenames.dmsa_time_colname:datetime.strptime(l[timei],"%m/%d/%Y %I:%M:%S %p"),
+                variablenames.dmsa_time_colname:dt,
                 variablenames.dmsa_secondary_thermometer_colname:l[vpti],               #### <- As should this.
                 variablenames.dmsa_magnet_psu_amperage_colname:l[mci],
-                variablenames.dmsa_terminal_colname:numpy.array(l[nmri:], dtype=numpy.float64),
+                variablenames.dmsa_terminal_colname:NMR_DATA,
                 variablenames.dmsa_primary_thermometer_colname:l[cccst3i],                                #### <- this should be user selected
                 variablenames.dmsa_sweep_centroid_colname:l[cfi],            
                 variablenames.dmsa_sweep_width_colname:l[fqsi],                              
                 variablenames.dmsa_system_status_colname:l[nmrsi]
                             }
+        
     # Backs out one level from the data directory        
     os.chdir('..')
 
@@ -210,7 +218,7 @@ def directory(datapath, filedump, cwd):
     # home
     raws = []
     for file in os.listdir(raw_data):   # Get all of the files
-        if file.endswith('.csv'):       # That end in csv
+        if file.endswith('.csv') and 'abridged' not in file:       # That end in csv
             raws.append(file)           # Append daq csv to a list
     # file dump
     os.chdir(fdump)                     # chdir into file dump

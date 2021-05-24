@@ -6,6 +6,13 @@ tanderson@vt.edu
 
 Proceed Formally.
 """
+
+# Fortune
+"""
+This universe shipped by weight, not by volume.  Some expansion of the
+contents may have occurred during shipment.
+"""
+
 import NMR_Analyzer as v
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor
 from matplotlib import pyplot as plt
