@@ -46,6 +46,7 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 print(int(index*10/(ten_percent)), "precent complete reading.")
             # If its the first line: we know its the header
             if index == 0:
+                topline = line
                 header = line.split('\t')
                 #print(header) # You can print this but it's just a list.
                 for index, val in enumerate(header):
@@ -89,16 +90,35 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 header = line.split('\t')[:-1]
                 continue
             l = line.split('\t')
-            if '\n' in l[timei]:
-                # If the Time column for some reason has a newline
-                # That means there's no data recorded after that entry which
-                # since it's always first means that theres no subsequent entries
-                continue
-            if "NaN" in l[nmri:]:
-                # If we have a NaN in our DAQ NMR sweep, something VERY wrong happened.
-                #print("DAQ NMR Sweep Extractor: *** ERROR: NMR sweep had a NaN in line", index, "in file", df_path)
-                print(df_path.split('/')[-1],"had error on line", index)
-                continue
+            try:
+                if '\n' in l[timei]:
+                    # If the Time column for some reason has a newline
+                    # That means there's no data recorded after that entry which
+                    # since it's always first means that theres no subsequent entries
+                    continue
+            except Exception as e:
+                print("Error occured in file:", df_path)
+                print("During Header-Parsing.")
+                print("Exception:", e)
+                print("File Header:", header)
+                print("Listed header (Look closely for POSIX CNTRL characters: \\t, \\n... etc)")
+                print(topline)
+                return True
+            try:
+                if "NaN" in l[nmri:]:
+                    # If we have a NaN in our DAQ NMR sweep, something VERY wrong happened.
+                    #print("DAQ NMR Sweep Extractor: *** ERROR: NMR sweep had a NaN in line", index, "in file", df_path)
+                    print(df_path.split('/')[-1],"had error on line", index)
+                    continue
+            except Exception as e:
+                print("Error occured in file:", df_path)
+                print("During Header-Parsing.")
+                print("Exception:", e)
+                print("File Header:", header)
+                print("Listed header (Look closely for POSIX CNTRL characters: \\t, \\n... etc)")
+                print(topline)
+                return True
+
             try:
                 NMR_DATA = numpy.array(l[nmri:], dtype=numpy.float64)
                 dt = datetime.strptime(l[timei],"%m/%d/%Y %I:%M:%S %p")
