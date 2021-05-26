@@ -101,7 +101,7 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 print("During Header-Parsing.")
                 print("Exception:", e)
                 print("File Header:", header)
-                print("Listed header (Look closely for POSIX CNTRL characters: \\t, \\n... etc)")
+                print("Listed header (Look closely for POSIX CNTRL and delimeter characters: \\t, \\n, \',\' ... etc)")
                 print(topline)
                 return True
             try:
@@ -115,7 +115,7 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 print("During Header-Parsing.")
                 print("Exception:", e)
                 print("File Header:", header)
-                print("Listed header (Look closely for POSIX CNTRL characters: \\t, \\n... etc)")
+                print("Listed header (Look closely for POSIX CNTRL and delimeter characters: \\t, \\n \',\'... etc)")
                 print(topline)
                 return True
 
