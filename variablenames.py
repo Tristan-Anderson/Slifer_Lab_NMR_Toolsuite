@@ -32,12 +32,12 @@ If you want to edit the primary and secondary thermistors - edit them here.
 """
 ####################################################################
 # In the DAQ csv, what is the time column labeled?
-dmsa_time_colname = "Time"
+dmsa_time_colname = "time"
 
  
 # What is the primary thermistor? 
 dmsa_primary_thermometer_colname = "CCX.T3 (K)" #default 
-#dmsa_primary_thermometer_colname = "CCCCS.T3 (K)" #For older datasets
+#dmsa_primary_thermometer_colname = "CCCS.T3 (K)" #For older datasets
 
 
 # What is the secondary thermistor?
