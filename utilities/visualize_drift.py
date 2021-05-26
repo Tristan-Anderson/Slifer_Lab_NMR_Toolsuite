@@ -280,7 +280,52 @@ fitsub_ym, fitsub_YM = -.2, .25
 rawsig_ym, rawsig_YM = -4, 3.5
 poor_fit_ym, poor_fit_YM = -.5,0
 """
+
+# Dec 19 2019 Data
+"""
+rootdir = "../datasets/dec_2019/vme_data/data_record_12-19-2019/"
+daqdatafile = rootdir+"../rawdata/data_record_12-19-2019_abridged.csv"
+csvdirectory = rootdir+"Results/enhanced/graph_data/"
+globalcsv = rootdir+"enhanced_global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Fit 1 Subtraction'
+karlmethod = rootdir+'saveme_12_19_19.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 212.7,213.15
+fitsub_ym, fitsub_YM = -.02, .04
+rawsig_ym, rawsig_YM = -.2, .2
+poor_fit_ym, poor_fit_YM = -.5,0
+"""
+
+# Dec 21 2019 Data
+
+rootdir = "../datasets/dec_2019/vme_data/data_record_12-21-2019/"
+daqdatafile = rootdir+"../rawdata/data_record_12-21-2019_abridged.csv"
+csvdirectory = rootdir+"results/enhanced/graph_data/"
+globalcsv = rootdir+"enhanced_global_analysis.csv"
+globalcsv2 = rootdir+"global_analysis_2.csv"
+yfitsub = 'Fit 1 Subtraction'
+karlmethod = rootdir+'saveme_12_19_19.csv'
+spline_df_location = rootdir+'spline_df.csv'
+fitsub_xm, fitsub_XM = 211.7,212.5
+fitsub_ym, fitsub_YM = -.02, .06
+rawsig_ym, rawsig_YM = -.2, .2
+poor_fit_ym, poor_fit_YM = -.5,0
+
 dump = "../dump3/"
+thermistor1 ="CCS.F11 (K)"
+thermistor2 ="CCS.F10 (K)"
+thermistor3 ="CCX.T1 (K)"
+thermistor4 ="CX.T2 (K)"
+NMR_Variable = "Diode Tune (V)"
+NMR_Tune = 'Phase Tune (V)'
+NMR_Performance_Metric = NMR_Variable#'IFOFF (V)'
+columns_to_absolutely_save = [thermistor1, NMR_Tune, NMR_Variable, thermistor2, 
+			thermistor3, "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
+			thermistor4]
+raw = "Potential (V)"
+x = "MHz"
+bl = "BL Potential (V)"
 
 def forkitindexer(filelist):
     """
@@ -298,9 +343,6 @@ def forkitindexer(filelist):
 def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltastime, tkbackend):
 	deltasx = 'time'
 	deltasy = 'sum'
-	x = "MHz"
-	bl = "BL Potential (V)"
-	raw = "Raw Potential (V)"
 
 	if tkbackend == 'on':
 		pass
@@ -335,10 +377,10 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[0,0].set_ylim(fitsub_ym, fitsub_YM)
 		
 		ax[0,1].set_title('Temperature')
-		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCX.T3 (K)'], color='red', label='CCX.T3 (K)')
-		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCX.T1 (K)'], color='orange', label='CCX.T1 (K)')
-		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCS.F11 (K)'], color='green', label='CCS.F11 (K)')
-		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed['CCCS.T2 (K)'], color='blue', label='CCCS.T2 (K)')
+		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed[thermistor2], color='red', label=thermistor2)
+		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed[thermistor3], color='orange', label=thermistor3)
+		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed[thermistor1], color='green', label=thermistor1)
+		ax[0,1].scatter(ga_fixed.index.tolist(), ga_fixed[thermistor4], color='blue', label=thermistor4)
 		ax[0,1].set_ylim(-.5, 7)
 		ax[0,1].set_ylabel('Kelvin (K)')
 		ax[0,1].set_xlabel('Time')
@@ -358,8 +400,8 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[1,1].set_ylabel('Volt-Area')
 		ax[1,1].set_xlabel('Time')
 
-		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed['IFOFF (V)'], label="IFOFF (V)")
-		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],'IFOFF (V)'], color='magenta', label="Current Sweep")
+		ax[0,2].scatter(ga_fixed.index.tolist(), ga_fixed[NMR_Performance_Metric], label=NMR_Performance_Metric)
+		ax[0,2].scatter(timesteps[s+i], ga_fixed.loc[times[s+i],NMR_Performance_Metric], color='magenta', label="Current Sweep")
 		ax[0,2].grid(True)
 		ax[0,2].legend(loc='best')
 		ax[0,2].set_title("VME & Microwave Stuff")
@@ -375,10 +417,10 @@ def plotter(files, indexes, times, ga_fixed, id_num, deltas, timesteps, deltasti
 		ax[1,2].set_title("Poor-fit indicator prototype")
 		ax[1,2].set_xlabel('Time')
 
-		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T3 (K)'], color='magenta', label="Current Sweep")
-		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCX.T1 (K)'], color='blue')
-		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCS.F11 (K)'], color='magenta')
-		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], 'CCCS.T2 (K)'], color='magenta')
+		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], thermistor2], color='magenta', label="Current Sweep")
+		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], thermistor3], color='blue')
+		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], thermistor1], color='magenta')
+		ax[0,1].scatter(timesteps[s+i], ga_fixed.loc[times[s+i], thermistor4], color='magenta')
 		
 		ax[0,0].grid(True)
 		ax[1,0].grid(True)
@@ -448,9 +490,7 @@ def cutter(ga_csv, sorted_df, tolerance):
 	deltasy = 'sum'
 	deltasmin = 'spline min'
 	deltasmax = 'spline max'
-	x = "MHz"
-	bl = "BL Potential (V)"
-	raw = "Raw Potential (V)"
+
 	edited = input("do you need to subsect (CUT) the data? [Y/N]: ")
 	edited = True if edited.upper() == 'Y' else False	
 	if edited:
@@ -470,9 +510,7 @@ def cutter(ga_csv, sorted_df, tolerance):
 	
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
-	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
-			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
-			"CCCS.T2 (K)", "CCS.F11 (K)"]
+	asd = columns_to_absolutely_save
 	for i in asd:
 		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
 	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
@@ -612,9 +650,7 @@ def metric_getter(files, indexes, times, ga_csv, id_num):
 	todo = files[s:f]
 
 	ga_csv['time'] = pandas.to_datetime(ga_csv['time'], format="%Y-%m-%d %H:%M:%S")
-	asd = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', "Diode Tune (V)", "CCX.T3 (K)", 
-			"CCX.T1 (K)", "SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)", 
-			"CCCS.T2 (K)", "CCS.F11 (K)"]
+	asd = columns_to_absolutely_save
 	for i in asd:
 		ga_csv[i] = pandas.to_numeric(ga_csv[i], errors='coerce')
 	ga_csv.replace(to_replace='Off\n', value=dict(zip(asd,[numpy.nan for a in asd])), inplace=True)
@@ -627,9 +663,6 @@ def metric_getter(files, indexes, times, ga_csv, id_num):
 	
 	ga_fixed = ga_csv.set_index('time')
 
-	x = "MHz"
-	bl = "BL Potential (V)"
-	raw = "Raw Potential (V)"
 	timedeltas = []
 	values = []
 	xs = []
@@ -698,10 +731,7 @@ def main_df_column_merger():
 			TODO: implement a way to merge more than one
 			DAQ data record into a global analysis file.
 	"""
-	columns_to_keep = ['CCS.F10 (K)','IFOFF (V)', 'Phase Tune (V)', 
-				"Diode Tune (V)", "CCX.T3 (K)", "CCX.T1 (K)", 
-				"SIG (V)", "UCA Voltage (V)", "Mmwaves Frequency (GHz)",
-				"CCCS.T2 (K)", "CCS.F11 (K)"]
+	columns_to_keep = columns_to_absolutely_save
 	primary_df = merger(\
 			# Global analysis file
 			globalcsv,
@@ -736,10 +766,8 @@ def main_videomaker(tolerance):
 	indexes = forkitindexer(files)
 	#print(indexes)
 	#exit()
-	"""
-	for index,value in enumerate(indexes):
-		plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime, 'on')
-	"""
+	#for index,value in enumerate(indexes):
+	#	plotter(files, value, timesteps, ga_fixed, 0, deltas, timesteps, deltastime, 'on')
 	#matplotlib.use('Agg')
 
 
