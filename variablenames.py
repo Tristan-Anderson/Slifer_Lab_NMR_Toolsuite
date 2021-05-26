@@ -32,7 +32,7 @@ If you want to edit the primary and secondary thermistors - edit them here.
 """
 ####################################################################
 # In the DAQ csv, what is the time column labeled?
-dmsa_time_colname = "time"
+dmsa_time_colname = "Time"
 
  
 # What is the primary thermistor? 
