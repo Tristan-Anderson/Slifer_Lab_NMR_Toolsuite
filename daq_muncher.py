@@ -254,11 +254,17 @@ def directory(datapath, filedump, cwd):
             # FileExistsError (Im pretty sure)
             pass
     print("Parsing", len(raws), ".csv files.")
-    with Pool(processes=processes) as pool:
-        result_objects = [pool.apply_async(file_muncher, args=(file, raw_data, fdump+dumps[index])) for index, file in enumerate(raws)]
-        pool.close()
-        pool.join()
-    results = [r.get() for r in result_objects if r.get() != False]
+    single_threading = True
+    if single_threading:
+        for index, file in enumerate(raws):
+            file_muncher(file, raw_data, fdump+dumps[index])
+    else:
+        
+        with Pool(processes=processes) as pool:
+            result_objects = [pool.apply_async(file_muncher, args=(file, raw_data, fdump+dumps[index])) for index, file in enumerate(raws)]
+            pool.close()
+            pool.join()
+        results = [r.get() for r in result_objects if r.get() != False]
     print("Complete.")
 
 def single_file(datafile, filedump):
