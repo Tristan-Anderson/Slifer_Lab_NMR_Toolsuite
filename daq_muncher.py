@@ -25,6 +25,8 @@ This program catagorizes the output files by "NMR Status", so when you set a
 directory that contains the .csv's, and a directory for the .ta1's
 """
 
+file_delimeter = '\t'
+
 def to_kelvin(c):
     return c+273.15
 
@@ -47,7 +49,7 @@ def file_muncher(df_path, data, fdump, dulya=False):
             # If its the first line: we know its the header
             if index == 0:
                 topline = line
-                header = line.split('\t')
+                header = line.split(file_delimeter)
                 #print(header) # You can print this but it's just a list.
                 for index, val in enumerate(header):
                     # Get the primary thermsitor
@@ -87,9 +89,9 @@ def file_muncher(df_path, data, fdump, dulya=False):
                     #   "TE", "Baseline", "Enhanced", "---": no_nmr_status
                     if val == variablenames.dmsa_system_status_colname:
                         nmrsi = index
-                header = line.split('\t')[:-1]
+                header = line.split(file_delimeter)[:-1]
                 continue
-            l = line.split('\t')
+            l = line.split(file_delimeter)
             try:
                 if '\n' in l[timei]:
                     # If the Time column for some reason has a newline
