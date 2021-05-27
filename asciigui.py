@@ -1365,6 +1365,7 @@ class sweepAverager(AsciiGUI):
 
 
     def mainloop(self):
+        self.updateLocation()
         try: 
             while True:
                 self.choices()
@@ -1386,8 +1387,7 @@ class sweepAverager(AsciiGUI):
         f()
 
     def updateLocation(self):
-        self.selection = self.fileDirectorySelector(dironly=True) + '/'
-        self.is_file = os.path.isfile(self.selection)
+        self.selection = self.fileDirectorySelector(dironly=True)
         print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
         if self.is_file:
             print("You selected an individual file. Please ONLY select a directory")
@@ -1395,8 +1395,11 @@ class sweepAverager(AsciiGUI):
             self.getSelection()
 
     def execute(self):
+        try:
+            self.selection
+        except AttributeError:
+            self.updateLocation()
         choice = {"nested":['Avarage sweeps in a nested directory, naming avg sweep after parent directory'], 'directory':['average single directory into a single file']}
-
         key = self.dict_selector(choice)
         if key == "directory":
             sweep_averager.avg_single_dir(self.selection)
