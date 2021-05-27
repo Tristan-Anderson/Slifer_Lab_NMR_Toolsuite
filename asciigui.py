@@ -42,14 +42,14 @@ class AsciiGUI():
         if self.hardinit:
             self.servermode = args.servermode
 
-    def fileDirectorySelector(self):
+    def fileDirectorySelector(self, dironly=False, fileonly=False):
         cwd = os.getcwd()
         status = True
         while status:
             fixeddirs, fixedfiles, cleanfiles, dirs = self.getdir(cwd)
             print("Current working Directory:", cwd)
             print("Enter choice in the format of: \'LineNum(f/d)\n ex: 1f")
-            status, path = self.choice(fixeddirs, fixedfiles, cleanfiles, dirs)
+            status, path = self.choice(fixeddirs, fixedfiles, cleanfiles, dirs, dironly=dironly, fileonly=fileonly)
             
             cwd = path
         return path
@@ -131,15 +131,15 @@ class AsciiGUI():
             print("Printing exceeded 100 lines.")
         return fixeddirs, fixedfiles, cleanfiles, dirs
 
-    def choice(self, fixeddirs, fixedfiles, cleanfiles, dirs):
+    def choice(self, fixeddirs, fixedfiles, cleanfiles, dirs, dironly, fileonly):
         c = input("Enter Choice: ")
-        if 'd' in c.lower():
+        if 'd' in c.lower() and not fileonly:
             item = int(c.split('d')[0])
             if item in range(len(dirs)):
                 newpath = fixeddirs[item]
                 os.chdir(newpath)
                 return True, os.getcwd()
-        elif 'f' in c.lower():
+        elif 'f' in c.lower() and not dironly:
             item = int(c.split('f')[0])
             if item in range(len(cleanfiles)):
                 newpath = fixedfiles[int(c.split('f')[0])]
@@ -147,10 +147,15 @@ class AsciiGUI():
         elif '..' == c:
             os.chdir(c)
             return True, os.getcwd()
-        elif 'ok' in c:
+        elif 'ok' in c and not fileonly: 
             print('okay. Saving current directory choice.')
             return False, os.getcwd()
         self.announcement("You selected " +c+ ' which is not a valid option.')
+        if dironly:
+            self.announcement("File browser is in DIRECTORY-only mode. Select a valid Directory.")
+        elif fileonly:
+            self.announcement("File browser is in FILE-only mode. Select a valid file.")
+
         return True, os.getcwd()
 
     def dict_selector(self, dic):
@@ -1296,9 +1301,9 @@ class dirSorter(AsciiGUI):
             return True
 
     def getSelection(self):
-        self.announcement("Pick directory or file to unpack")
-        self.selection = self.fileDirectorySelector()
-        self.selection += '/' # needed to make the fact this was a directory clear to the file organisers
+        self.announcement("Pick directory to sort")
+        self.selection = self.fileDirectorySelector(dironly=True)
+        #self.selection += '/' # needed to make the fact this was a directory clear to the file organisers
         self.is_file = os.path.isfile(self.selection)
         print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
         if self.is_file:
@@ -1381,7 +1386,7 @@ class sweepAverager(AsciiGUI):
         f()
 
     def updateLocation(self):
-        self.selection = self.fileDirectorySelector() + '/'
+        self.selection = self.fileDirectorySelector(dironly=True) + '/'
         self.is_file = os.path.isfile(self.selection)
         print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
         if self.is_file:
