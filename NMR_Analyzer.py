@@ -456,7 +456,7 @@ def vme_file_parser(filename, skiplines):
                     exit()
     master = pandas.DataFrame(file, columns=header)
     if len(master) < 25:
-        print("***** WARNING:", filename, "contains less than 25 datapoints, little BE CAREFUL during analysis")
+        print("**WARNING:", filename, "contains less than 25 datapoints, little BE CAREFUL during analysis")
         print("                  as this file may not contain interesting data.")
     # Convert this list of lists (lines) into a useful structure
     return master

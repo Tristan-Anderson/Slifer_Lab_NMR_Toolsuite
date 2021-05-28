@@ -110,7 +110,7 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 if "NaN" in l[nmri:]:
                     # If we have a NaN in our DAQ NMR sweep, something VERY wrong happened.
                     #print("DAQ NMR Sweep Extractor: *** ERROR: NMR sweep had a NaN in line", index, "in file", df_path)
-                    print(df_path.split('/')[-1],"had error on line", index)
+                    print(df_path.split('/')[-1],"had error on line", index, "(NaN's in the NMR data!)")
                     continue
             except Exception as e:
                 print("Error occured in file:", df_path)
@@ -127,6 +127,15 @@ def file_muncher(df_path, data, fdump, dulya=False):
             except ValueError as e:
                 # If we can't create the array of NMR data. Don't waste time making a file about it.
                 print(df_path.split('/')[-1],"had error on line", index, 'error:', e)
+                continue
+
+            if len(NMR_DATA) <25:
+                """
+                    In the future, if VNA, VME, and SIG data are recorded simoltaneously, and centralized into
+                    the DAQ csv the indexing of the line suchas: l[nmri:] is quite dangerous, as it'd slice
+                    all of the rest of the data after the column named "NMR Data..."
+                """
+                print(df_path.split('/')[-1],"had error on line", index, "(Less than 25 lines of NMR data exist on this line!)")
                 continue
             
             # Saves each sweep as an entry in a dictonary structure
