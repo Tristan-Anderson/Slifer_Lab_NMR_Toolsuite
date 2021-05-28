@@ -304,6 +304,15 @@ class nmrAnalyser(AsciiGUI):
         os.chdir(self.rootdir)
         self.announcement("Raw Signal path updated")
 
+    def refreshAnalysis(self):
+        self.automatefits = []
+        self.fitnumber = 0
+        self.xname = variablenames.agui_xname_default
+        self.yname = variablenames.agui_yname_default
+        self.blSkipLinesGetter()
+        self.rawsigSkipLinesGetter()
+        self.updateDataFrame()
+
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
         if self.isautomated:
@@ -574,6 +583,9 @@ class nmrAnalyser(AsciiGUI):
                 return _
         else:
             f()
+        if key in ["updatebaseline", "updaterawsignal"]:
+            self.refreshAnalysis()
+            self.updateGraph()
 
     def giveUpRefitting(self):
         return "giveUpRefitting"
@@ -884,15 +896,6 @@ class nmrAnalyser(AsciiGUI):
         
         # create a list of tuples that split the files between multiple threads
         oh_indexes = self.__forkitindexer__(tefiles)
-
-        # To be implemented later
-        #self.failedfiles = []  # TODO: pass quirky into this namespace, and pop a key "hassucceeded"
-                          # if True: do not append to this list
-                          # else: append filename to this bad larry
-                          # rewrite the loop, and cycle back through
-                          # this list. It will involve proper invoking of fetch_kwargs()
-                          # Which will be difficult to resolve logistically with self.item adding "S %ITEM"
-                          # to the names of things.
         
         # Used to create unique instance names so pandas doesn't overwrite identical entries. (also human readability)
         self.workpool = [] 
@@ -1005,7 +1008,7 @@ class nmrAnalyser(AsciiGUI):
             # Update the indecies
             self.updateIndecies()
 
-            # As the user fit more than one function to the dataframe
+            # Do multiple fits:
             
             for index, tupp in enumerate(self.automatefits):
                 f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
