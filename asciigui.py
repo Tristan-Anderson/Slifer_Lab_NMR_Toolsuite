@@ -647,9 +647,10 @@ class nmrAnalyser(AsciiGUI):
         self.updateGraph()
     
     def setBinning(self):
+        self.announcement('Please note that updating the data binning will reset the current session.')
         self.announcement('Current binning is '+str(self.binning)+'.')
         print('Please select new binning')
-        choices = 'hey'
+        choices = 'im a string.'
         while type(choices) != int:
             try:
                 choices = int(input("Enter bin width: "))
@@ -659,6 +660,7 @@ class nmrAnalyser(AsciiGUI):
             except ValueError as e:
                 print("Invalid input. Try again.", '\n'*2)
         self.binning = choices
+        self.refreshAnalysis()
         self.updateDataFrame()
         self.updateGraph()
 
