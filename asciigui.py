@@ -166,7 +166,7 @@ class AsciiGUI():
                 self.announcement("Invalid Choice.")
                 print(e)
                 return True, os.getcwd()
-                
+
         self.announcement("You selected " +c+ ' which is not a valid option.')
         if dironly:
             self.announcement("File browser is in DIRECTORY-only mode. Select a valid Directory.")
@@ -291,10 +291,11 @@ def NMRAnalyzer(args):
 
 class nmrAnalyser(AsciiGUI):
     def __init__(self,args=None, hardinit=False):
+        # Intialize critical variables
         self.rootdir = os.getcwd()
-        self.delimeter = '\t'
+        self.delimeter = variablenames.asciigui_default_delimiter
         self.hardinit = hardinit
-        self.processes = 1
+        self.processes = 1          # The number of processing threads
         self.servermode = False
         self.analysisfile = pandas.DataFrame()
         self.failedfiles = []
@@ -305,10 +306,12 @@ class nmrAnalyser(AsciiGUI):
             self.mainloop()
        
     def overrideRootDir(self, override):
+        # Used only for the automate method.
         self.rootdir = override
         pass
 
     def getBaseline(self):
+        # Gets the PATH for the baseline
         self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
         self.baselinepath = self.fileDirectorySelector(fileonly=True)
@@ -316,6 +319,7 @@ class nmrAnalyser(AsciiGUI):
         self.announcement("Baseline path updated")
 
     def getRawsig(self):
+        # Gets the PATH for the rawsig
         self.announcement("Update Raw Signal")
         print("Current working directory:",os.getcwd())
         self.rawsigpath = self.fileDirectorySelector(fileonly=True)
@@ -323,6 +327,9 @@ class nmrAnalyser(AsciiGUI):
         self.announcement("Raw Signal path updated")
 
     def refreshAnalysis(self):
+        # Resets basic settings in the instance needed for
+        #   when any nmr signal is re-loaded into the signal
+        #   or the user decides to re-bin the data.
         self.automatefits = []
         self.fitnumber = 0
         self.xname = variablenames.agui_xname_default
@@ -336,56 +343,67 @@ class nmrAnalyser(AsciiGUI):
         if self.isautomated:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
-        self.material_type = kwargs.pop('material_type', '')
-        self.fitnumber = kwargs.pop('fitnumber',0)
-        self.automatefits = kwargs.pop('automatefits',[])
-        self.mutouse= kwargs.pop('mutouse','proton')
-        self.binning= kwargs.pop('binning',1)
-        self.integrate= kwargs.pop('integrate', False)
+        self.material_type = kwargs.pop('material_type', '')    # User defined that tagges NMR sweeps in global_analysis
+        self.fitnumber = kwargs.pop('fitnumber',0)              # The user does not see this, but it is used to generate unique names during fit and fit subtractions.
+        self.automatefits = kwargs.pop('automatefits',[])       # Is the list that the program tracks to apply fits during the automate method
+        self.mutouse= kwargs.pop('mutouse','proton')            # string that controls what statistcs are used in TE equation. (spin 1/2 v. spin 1)
+        self.binning= kwargs.pop('binning',1)                   # Binning of NMR data
+        self.integrate= kwargs.pop('integrate', False)          # Shading of NMR user selected region
         self.vnavme= kwargs.pop('vnavme', variablenames.agui_vnavme_default)
         self.startindex= kwargs.pop('startindex',0)   #NMR Analyzer used
         self.signalstart= kwargs.pop('signalstart',0) #User selected start
         self.signalend=kwargs.pop('signalend',0)      #User selected end
         self.endindex= kwargs.pop('endindex',1)       #NMR Analyzer used
-        self.fitlorentzian = kwargs.pop('fitlorentzian',False)
-        self.xname= kwargs.pop('xname',variablenames.agui_xname_default)
-        self.xaxlabel= kwargs.pop('xaxlabel',self.xname)
-        self.yname= kwargs.pop('yname',variablenames.agui_yname_default)
-        self.yaxlabel= kwargs.pop('yaxlabel',self.yname)
-        self.impression= kwargs.pop('impression',variablenames.agui_impression)
-        self.xmin= kwargs.pop('xmin', '')
-        self.xmax= kwargs.pop('xmax', '')
-        self.startcolumn = kwargs.pop('startcolumn',[])
-        self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))
-        self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])
-        self.self_itemseed = kwargs.pop('the_new_list', None)
+        self.fitlorentzian = kwargs.pop('fitlorentzian',False)  # Fits a lorentzian to current signal.
+        self.xname= kwargs.pop('xname',variablenames.agui_xname_default)    # Current name to get the xaxis data from pandas dataframe
+        self.xaxlabel= kwargs.pop('xaxlabel',self.xname)                    # xax plot label
+        self.yname= kwargs.pop('yname',variablenames.agui_yname_default)    # Current name to get the xaxis data from pandas dataframe
+        self.yaxlabel= kwargs.pop('yaxlabel',self.yname)                    # yax plot label
+        self.impression= kwargs.pop('impression',variablenames.agui_impression)  # If the user wants to generate an impression of the data
+                                                                                 # This will substantially slow down the program.
+        self.xmin= kwargs.pop('xmin', '')   # User selected x minimum for signal region
+        self.xmax= kwargs.pop('xmax', '')   # User selected x maximum for signal region
+        self.startcolumn = kwargs.pop('startcolumn',[]) # The column in which it's appropriate to begin looking at in the automate method.
+        self.instancename = kwargs.pop('instancename', datetime.datetime.now().strftime('%Y%m%d_%H%M%s Instance'))  # Instance name, similar to material type that tagges global_analysis entries with a unique
+                                                                                                                    #   name that is preserved throughout the automate method.
+        self.plottitle= kwargs.pop('title',self.rawsigpath.split('/')[-1])  # Default plot title. (Name of the first file that's selected.)
+        self.self_itemseed = kwargs.pop('the_new_list', None)               # Used to track data during the refitting portion of the NMR automate method - when failed fits occured.
 
         
-        self.filelist = kwargs.pop('filelist', [])
+        self.filelist = kwargs.pop('filelist', [])     # The automate method's todo list in terms of files to analyze.
         
         if not self.hardinit:
-            self.processes = kwargs.pop('processes',1)
+            self.processes = kwargs.pop('processes',1) 
 
         
-        self.blSkipLinesGetter()
-        self.rawsigSkipLinesGetter()
-        self.updateDataFrame()
+        self.blSkipLinesGetter()        # Find the header size of the bl file
+        self.rawsigSkipLinesGetter()    # Find the header size of the rawsig file
+        self.updateDataFrame()          # Generate dataframe based on the user selected filed
         if self.isautomated:
+            # If it's automated, skip the subsequent functions since they were already passed
+            #   into the fetchArgs(**kwargs)
             return True
         self.updateMaterialType()
         self.updateInstanceName()
         self.updateGraph()
 
     def blSkipLinesGetter(self):
+        # Collects the number of lines in the header of the baseline file 
+        #    that the program needs to know to skip
         delimeter = self.delimeter
         choices = self.vnavme
         _, _, _, self.blskiplines = v.gui_bl_file_preview(self.baselinepath, self.delimeter)
 
     def updateInstanceName(self):
+        # Updates the user-defined tag of the analysis-session name.
+        #   The session name allows the user to keep track of particular analysis
+        #   sets during a larger chain of analyses.
         self.announcement("Current instance name: "+self.instancename)
         self.instancename = input("Input new instance name: ")
 
     def rawsigSkipLinesGetter(self):
+        # Collects the number of lines in the header of the raw signal file 
+        #    that the program needs to know to skip
         _, _, self.te_date, self.I, self.T, self.primary_thermistor,\
         self.secondary_thermistor, self.rawsigskiplines, self.centroid,\
         self.spread = v.gui_rawsig_file_preview(self.rawsigpath,self.delimeter,self.vnavme)
@@ -397,6 +415,8 @@ class nmrAnalyser(AsciiGUI):
             self.B = self.I
 
     def updateDataFrame(self):
+        # Re-reads the baseline and the rawsignal file
+        #   and populates a pandas dataframe accordingly.
         self.df = v.gui_file_fetcher(
                 self.rawsigpath, self.baselinepath,
                 self.vnavme,
