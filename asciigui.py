@@ -151,7 +151,7 @@ class AsciiGUI():
                 self.announcement("Invalid Choice.")
                 print(e)
                 return True, os.getcwd()
-                
+
 
         if 'd' in c.lower() and not fileonly:
             item = int(c.split('d')[0])
@@ -315,14 +315,14 @@ class nmrAnalyser(AsciiGUI):
     def getBaseline(self):
         self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
-        self.baselinepath = self.fileDirectorySelector()
+        self.baselinepath = self.fileDirectorySelector(fileonly=True)
         os.chdir(self.rootdir)
         self.announcement("Baseline path updated")
 
     def getRawsig(self):
         self.announcement("Update Raw Signal")
         print("Current working directory:",os.getcwd())
-        self.rawsigpath = self.fileDirectorySelector()
+        self.rawsigpath = self.fileDirectorySelector(fileonly=True)
         os.chdir(self.rootdir)
         self.announcement("Raw Signal path updated")
 
