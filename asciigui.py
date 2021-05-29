@@ -133,14 +133,25 @@ class AsciiGUI():
 
     def choice(self, fixeddirs, fixedfiles, cleanfiles, dirs, dironly, fileonly):
         c = input("Enter Choice: ")
-        if 'f' in c.lower() or 'd' in c.lower:
+        if 'f' in c.lower(): 
             # Stops invalid literal not in base 10
             try:
                 int(c.split('f')[0])
-            except ValueError:
-                self.announcement("Invalid Choice.")
-                return True, os.getcwd()
+            except ValueError as e:
 
+                self.announcement("Invalid Choice.")
+                print(e)
+                return True, os.getcwd()
+        elif 'd' in c.lower():
+            # Stops invalid literal not in base 10
+            try:
+                int(c.split('d')[0])
+            except ValueError as e:
+
+                self.announcement("Invalid Choice.")
+                print(e)
+                return True, os.getcwd()
+                
 
         if 'd' in c.lower() and not fileonly:
             item = int(c.split('d')[0])
