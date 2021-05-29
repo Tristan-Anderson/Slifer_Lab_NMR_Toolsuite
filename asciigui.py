@@ -145,7 +145,7 @@ class AsciiGUI():
             return True, os.getcwd()
 
         try:
-            if 'd' in c.lower() and not fileonly:
+            if 'd' in c.lower():
                 item = int(c.split('d')[0])
                 if item in range(len(dirs)):
                     newpath = fixeddirs[item]
