@@ -48,7 +48,8 @@ class AsciiGUI():
         while status:
             fixeddirs, fixedfiles, cleanfiles, dirs = self.getdir(cwd)
             print("Current working Directory:", cwd)
-            print("Enter choice in the format of: \'LineNum(f/d)\n ex: 1f")
+            print("Enter choice in the format of: \'LineNum(f/d)\n\t ex: 1f\t ex: 1d\n\t ex: ok\t ex: ..\n or type: \'help\', \'?\' for more details.")
+            
             status, path = self.choice(fixeddirs, fixedfiles, cleanfiles, dirs, dironly=dironly, fileonly=fileonly)
             
             cwd = path
@@ -133,43 +134,39 @@ class AsciiGUI():
 
     def choice(self, fixeddirs, fixedfiles, cleanfiles, dirs, dironly, fileonly):
         c = input("Enter Choice: ")
-        if 'f' in c.lower(): 
-            # Stops invalid literal not in base 10
-            try:
-                int(c.split('f')[0])
-            except ValueError as e:
-
-                self.announcement("Invalid Choice.")
-                print(e)
-                return True, os.getcwd()
-        elif 'd' in c.lower():
-            # Stops invalid literal not in base 10
-            try:
-                int(c.split('d')[0])
-            except ValueError as e:
-
-                self.announcement("Invalid Choice.")
-                print(e)
-                return True, os.getcwd()
-
-
-        if 'd' in c.lower() and not fileonly:
-            item = int(c.split('d')[0])
-            if item in range(len(dirs)):
-                newpath = fixeddirs[item]
-                os.chdir(newpath)
-                return True, os.getcwd()
-        elif 'f' in c.lower() and not dironly:
-            item = int(c.split('f')[0])
-            if item in range(len(cleanfiles)):
-                newpath = fixedfiles[int(c.split('f')[0])]
-                return False, os.getcwd()+'/'+newpath
-        elif '..' == c:
-            os.chdir(c)
+        if 'help' in c.lower() or '?' in c.lower():
+            print("To navigate into a directory, enter choice in the format of: LineNum(d)\n\t ex: 1d")
+            print("To navigate out of the current directory, (into the parent of the current directory) enter choice in the format of: \'..\'\n\t ex: ..")
+            print("To select a directory, you must navigate into the directory you want to select. Then enter choice in the format of: \'ok\'\n\t ex: ok")
+            print("To select a particular file, enter choice in the format of: LineNum(f)\n\t ex: 1f")
             return True, os.getcwd()
-        elif 'ok' in c and not fileonly: 
-            print('okay. Saving current directory choice.')
-            return False, os.getcwd()
+        elif 'f' not in c.lower() and '1' not in c.lower():
+            self.announcement("Invalid Choice.")
+            return True, os.getcwd()
+
+        try:
+            if 'd' in c.lower() and not fileonly:
+                item = int(c.split('d')[0])
+                if item in range(len(dirs)):
+                    newpath = fixeddirs[item]
+                    os.chdir(newpath)
+                    return True, os.getcwd()
+            elif 'f' in c.lower() and not dironly:
+                item = int(c.split('f')[0])
+                if item in range(len(cleanfiles)):
+                    newpath = fixedfiles[int(c.split('f')[0])]
+                    return False, os.getcwd()+'/'+newpath
+            elif '..' == c:
+                os.chdir(c)
+                return True, os.getcwd()
+            elif 'ok' in c and not fileonly: 
+                print('okay. Saving current directory choice.')
+                return False, os.getcwd()
+        except ValueError as e:
+                self.announcement("Invalid Choice.")
+                print(e)
+                return True, os.getcwd()
+                
         self.announcement("You selected " +c+ ' which is not a valid option.')
         if dironly:
             self.announcement("File browser is in DIRECTORY-only mode. Select a valid Directory.")
@@ -239,7 +236,6 @@ class AsciiGUI():
         print('\n')
         print("#"*3, mystr, '#'*3)
         print('\n')
-
 
     def header(self, mystr):
         s = 7
