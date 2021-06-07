@@ -898,7 +898,7 @@ class nmrAnalyser(AsciiGUI):
         """
         singleThread = False
         
-        matplotlib.use('Agg') # Thwarts X-server Errors
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_off) # Thwarts X-server Errors
         # Matplotlib is NOT thread-safe w/ known race conditions.
         # Care has been used to avoid these conditions (unique namespaces (instances of this class) should isolate mpl stacks from eachother.)
         # Let me know if I missed any.
@@ -1001,7 +1001,7 @@ class nmrAnalyser(AsciiGUI):
         
         input('Press any key to continue')
         self.addEntry(appendme=self.analysisfile)
-        matplotlib.use("TkAgg") # Turn plotting front-end back on.
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_on) # Turn plotting front-end back on.
         raise KeyboardInterrupt # Get out of the mainloop.
 
     def automatedPKernel(self, graphs, graphdata, home, id_num,self_itemseed=None):
@@ -1189,7 +1189,7 @@ class nmrAnalyser(AsciiGUI):
         # Now that we've collected the critical data, we need to
         #       reinitalize this current instance by executing a customized mainloop.
 
-        matplotlib.use("TkAgg")
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_on)
         self.fitnumber = 0
         self.xname= variablenames.agui_xname_default
         self.yname= variablenames.agui_yname_default
