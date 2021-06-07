@@ -941,6 +941,30 @@ class nmrAnalyser(AsciiGUI):
         self.workpool = [] 
         self.plottitle = self.instancename if self.plottitle == self.rawsigpath.split('/')[-1] else self.plottitle
         for index, value in enumerate(oh_indexes):
+            print('fitnumber',
+            self.automatefits,
+            self.material_type,
+            self.mutouse,
+            self.binning,
+            self.integrate,
+            self.vnavme,
+            self.signalstart,
+            self.signalend,
+            self.fitlorentzian,
+            self.xname,
+            self.xaxlabel,
+            self.yname,
+            self.yaxlabel,
+            self.xmin,
+            self.xmax,
+            self.startcolumn,
+            self.instancename,
+            self.plottitle,
+            True,
+            ([tefiles[start]] if start==end else tefiles[start:end]),
+            self.rawsigpath,
+            self.baselinepath)
+            exit()
             (start, end) = value
             self.workpool.append(nmrAnalyser())
             self.workpool[index].overrideRootDir(self.rootdir)

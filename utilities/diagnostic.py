@@ -18,7 +18,7 @@ sys.path.insert(1, '..')
 import variablenames,daq_muncher, directory_sorter, sweep_averager, global_interpreter, spin_extractor, NMR_Analyzer
 
 sampledumpdir = 'diagnostic_dir/'
-samplefile = 'data_record_9-14-2020.csv'
+samplefile = 'data_record_9-14-2020.tsv'
 
 home = os.getcwd()
 root = os.getcwd() + '/'+sampledumpdir
