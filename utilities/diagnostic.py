@@ -17,10 +17,11 @@ import matplotlib, pandas, scipy, os, gc, time, multiprocessing, sys, matplotlib
 sys.path.insert(1, '..')
 import variablenames,daq_muncher, directory_sorter, sweep_averager, global_interpreter, spin_extractor, NMR_Analyzer
 
-samplefile = 'sampledataset.csv'
 sampledumpdir = 'diagnostic_dir/'
-home = os.get_cwd()
-root = os.get_cwd() + '/'+sampledumpdir
+samplefile = 'data_record_9-14-2020.csv'
+
+home = os.getcwd()
+root = os.getcwd() + '/'+sampledumpdir
 tedir = root +'/TE/'
 baselinedir = root+'/Baseline/'
 blfile = baselinedir+'baseline_average.ta1'
