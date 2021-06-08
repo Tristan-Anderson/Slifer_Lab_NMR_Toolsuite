@@ -545,8 +545,6 @@ class nmrAnalyser(AsciiGUI):
                 #self.updateInstanceName()
                 self.updateGraph()
             while True:
-                if not self.servermode:
-                    self.figure.show()
                 print("#"*70)
                 self.currentSettings()
                 print("#"*70)
@@ -615,6 +613,7 @@ class nmrAnalyser(AsciiGUI):
                     "updaterawsignal":[updaterawsigmsg, self.getRawsig],
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
+        self.figure.show()
         key = self.dict_selector(choices)
         f = choices[key][1]
         if failedfit:
