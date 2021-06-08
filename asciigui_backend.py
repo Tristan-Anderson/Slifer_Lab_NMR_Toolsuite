@@ -140,9 +140,7 @@ class AsciiGUI():
             print("To select a directory, you must navigate into the directory you want to select. Then enter choice in the format of: \'ok\'\n\t ex: ok")
             print("To select a particular file, enter choice in the format of: LineNum(f)\n\t ex: 1f")
             return True, os.getcwd()
-        elif 'f' not in c.lower() and 'd' not in c.lower():
-            self.announcement("Invalid Choice.")
-            return True, os.getcwd()
+
 
         try:
             if 'd' in c.lower():
@@ -159,7 +157,7 @@ class AsciiGUI():
             elif '..' == c:
                 os.chdir(c)
                 return True, os.getcwd()
-            elif 'ok' in c and not fileonly: 
+            elif 'ok' in c.lower() and not fileonly: 
                 print('okay. Saving current directory choice.')
                 return False, os.getcwd()
         except ValueError as e:
