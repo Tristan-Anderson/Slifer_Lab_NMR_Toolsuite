@@ -1460,11 +1460,6 @@ class sweepAverager(AsciiGUI):
 
     def updateLocation(self):
         self.selection = self.fileDirectorySelector(dironly=True)
-        print("You selected", self.selection, "which is a", ('File' if self.is_file else 'Directory'))
-        if self.is_file:
-            print("You selected an individual file. Please ONLY select a directory")
-            print("this is done by entering 'ok' once the current working directory reads the desired path")
-            self.getSelection()
 
     def execute(self):
         try:
