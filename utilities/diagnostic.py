@@ -13,7 +13,7 @@ I love ROCK 'N ROLL!  I memorized all the WORDS to "WIPE-OUT" in
 """
 
 
-import matplotlib, pandas, scipy, os, gc, time, multiprocessing, sys, matplotlib, argparse, numpy, math, traceback, datetime, warnings
+import matplotlib, pandas, scipy, os, gc, time, shutil, multiprocessing, sys, matplotlib, argparse, numpy, math, traceback, datetime, warnings
 sys.path.insert(1, '..')
 import variablenames, daq_muncher, directory_sorter, sweep_averager, global_interpreter, spin_extractor, NMR_Analyzer
 from asciigui_backend import nmrAnalyser
@@ -21,7 +21,15 @@ sampledumpdir = 'diagnostic_dir/'
 samplefile = 'data_record_9-14-2020.tsv'
 
 home = os.getcwd()
-root = os.getcwd() + '/'+sampledumpdir
+root = home + '/'+sampledumpdir
+for root, dirs, files in os.walk(sampledumpdir):
+	break
+for directory in dirs:
+	shutil.rmtree(root+directory)
+print(files)
+
+print(root)
+
 tedir = root +'/TE/'
 tefile = tedir + "0914_184951_0914_184959p__average.ta1"
 baselinedir = root+'/Baseline/'
@@ -45,8 +53,6 @@ instance.fetchArgs(fitnumber="fitnumber", automatefits=[['third_order', 'Third o
 instance.collectFiles()
 instance.diagnosticFitting()
 instance.updateGraph()
-
-print(instance.df)
 instance.mainloop(diagnostic=True)
 exit()
 del instance
