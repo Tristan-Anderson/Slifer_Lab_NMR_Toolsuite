@@ -28,11 +28,11 @@ for directory in dirs:
 	#print(directory)
 	shutil.rmtree(root+directory)
 
-tedir = root +'/TE/'
-tefile = tedir + "0914_184951_0914_184959p__average.ta1"
-baselinedir = root+'/Baseline/'
-blfile = baselinedir+'_average.ta1'
-polarizationdir = root+'/Polarization/'
+tedir = root +'TE/'
+tefile = tedir + "0914_184951_0914_184959p_diagnostic_dir_average.ta1"
+baselinedir = root+'Baseline/'
+blfile = baselinedir+'diagnostic_dir_average.ta1'
+polarizationdir = root+'Polarization/'
 daqfile = root + samplefile
 daq_muncher.single_file(daqfile, root)
 directory_sorter.shelf(tedir,seconds=30)
