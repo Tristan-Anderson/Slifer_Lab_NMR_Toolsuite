@@ -22,13 +22,11 @@ samplefile = 'data_record_9-14-2020.tsv'
 
 home = os.getcwd()
 root = home + '/'+sampledumpdir
-for root, dirs, files in os.walk(sampledumpdir):
+for root, dirs, files in os.walk(root):
 	break
 for directory in dirs:
+	#print(directory)
 	shutil.rmtree(root+directory)
-print(files)
-
-print(root)
 
 tedir = root +'/TE/'
 tefile = tedir + "0914_184951_0914_184959p__average.ta1"
