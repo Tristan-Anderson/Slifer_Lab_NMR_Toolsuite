@@ -25,12 +25,12 @@ This program catagorizes the output files by "NMR Status", so when you set a
 directory that contains the .csv's, and a directory for the .ta1's
 """
 
-file_delimeter = '\t'
+
 
 def to_kelvin(c):
     return c+273.15
 
-def file_muncher(df_path, data, fdump, dulya=False):
+def file_muncher(df_path, data, fdump, dulya=False, file_delimeter = '\t'):
     daq_dict = {}
     
     # Go into the data directory
@@ -52,12 +52,12 @@ def file_muncher(df_path, data, fdump, dulya=False):
                 header = line.split(file_delimeter)
                 #print(header) # You can print this but it's just a list.
                 for index, val in enumerate(header):
-                    # Get the primary thermsitor
-                    if val == variablenames.dmsa_primary_thermometer_colname:
-                        cccst3i = index
                     # Get the time it was taken at
                     if val == variablenames.dmsa_time_colname:
                         timei=index
+                    # Get the primary thermsitor
+                    if val == variablenames.dmsa_primary_thermometer_colname:
+                        cccst3i = index
                     # Get a secondary thermistor
                     if val == variablenames.dmsa_secondary_thermometer_colname:
                         vpti=index
@@ -237,7 +237,7 @@ def filewriter(f, daq_dict, key, x, dulya=False):
     for index, val in enumerate(daq_dict[key][variablenames.dmsa_terminal_colname]):
         f.write(str(x[index])+"\t"+ str(val)+"\n")
 
-def directory(datapath, filedump, cwd):
+def directory(datapath, filedump, cwd, file_delimeter = '\t'):
     from multiprocessing import Pool, cpu_count
     processes = int(8*cpu_count()/10)
     print(processes, "Processing threads available, we're putting it to 80 %")
@@ -276,8 +276,8 @@ def directory(datapath, filedump, cwd):
         results = [r.get() for r in result_objects if r.get() != False]
     print("Complete.")
 
-def single_file(datafile, filedump):
+def single_file(datafile, filedump, file_delimeter = '\t'):
     datadir = '/'.join((datafile.split('/')[:-2]))+'/'
     #print(datadir)
-    file_muncher(datafile,datadir,filedump)
+    file_muncher(datafile,datadir,filedump, file_delimeter=file_delimeter)
     print("Complete.")
