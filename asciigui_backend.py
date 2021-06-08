@@ -1460,8 +1460,6 @@ class sweepAverager(AsciiGUI):
 
     def updateLocation(self):
         self.selection = self.fileDirectorySelector(dironly=True)
-<<<<<<< HEAD
-        
 
 
     def execute(self):
