@@ -316,6 +316,7 @@ class nmrAnalyser(AsciiGUI):
         self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
         self.baselinepath = self.fileDirectorySelector(fileonly=True)
+        
         os.chdir(self.rootdir)
         self.announcement("Baseline path updated")
 
@@ -344,8 +345,7 @@ class nmrAnalyser(AsciiGUI):
         if self.isautomated:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
-        self.baselinepath = kwargs.pop('baselinepath', '')
-        self.rawsigpath = kwargs.pop('rawsigpath', '')
+        
         self.material_type = kwargs.pop('material_type', '')    # User defined that tagges NMR sweeps in global_analysis
         self.fitnumber = kwargs.pop('fitnumber',0)              # The user does not see this, but it is used to generate unique names during fit and fit subtractions.
         self.automatefits = kwargs.pop('automatefits',[])       # Is the list that the program tracks to apply fits during the automate method
@@ -886,7 +886,7 @@ class nmrAnalyser(AsciiGUI):
         filename = self.plottitle if filename is None else filename
         self.updateGraph(automated=automated)
         plt.savefig(filename)
-
+ 
     def updateItemSeed(self, itemseed):
         # Reseed the item in the class.
         # Used for multithreading
