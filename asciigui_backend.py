@@ -290,6 +290,7 @@ def NMRAnalyzer(args):
 class nmrAnalyser(AsciiGUI):
     def __init__(self,args=None, hardinit=False, evademainloop=False):
         # Intialize critical variables
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_on)
         self.rootdir = os.getcwd()
         self.delimeter = variablenames.asciigui_default_delimiter
         self.hardinit = hardinit
