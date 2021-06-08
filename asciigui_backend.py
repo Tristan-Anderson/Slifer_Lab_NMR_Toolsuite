@@ -575,6 +575,7 @@ class nmrAnalyser(AsciiGUI):
                 self.header("Data frame head")
                 print("#"*70)
                 print(self.df.head(3))
+                self.figure.show()
                 _ = self.allchoices(failedfit)
                 if _ == "triggerAutomateMethod":
                     break
@@ -637,9 +638,7 @@ class nmrAnalyser(AsciiGUI):
                     "updaterawsignal":[updaterawsigmsg, self.getRawsig],
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
-        #plt.ion()
-        plt.show()
-        print(matplotlib.get_backend())
+
         key = self.dict_selector(choices)
         f = choices[key][1]
         if failedfit:
