@@ -302,7 +302,7 @@ class nmrAnalyser(AsciiGUI):
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
 
-            self.mainloop(entermainloop=entermainloop)
+            self.mainloop()
 
        
     def overrideRootDir(self, override):
