@@ -303,13 +303,11 @@ class nmrAnalyser(AsciiGUI):
             print(self.processes, "Processing threads available")
         if not evademainloop:
             self.mainloop()
-
        
     def overrideRootDir(self, override):
         # Used only for the automate method.
         self.rootdir = override
         pass
-
 
     def getBaseline(self):
         # Gets the PATH for the baseline
@@ -360,7 +358,6 @@ class nmrAnalyser(AsciiGUI):
                                 y=npriev, plottitle=self.plottitle
                                 )
                 npriev = tupp[1]
-
 
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
@@ -640,8 +637,8 @@ class nmrAnalyser(AsciiGUI):
                     "updaterawsignal":[updaterawsigmsg, self.getRawsig],
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
-        plt.ion()
-        self.figure.show()
+        #plt.ion()
+        plt.show()
         print(matplotlib.get_backend())
         key = self.dict_selector(choices)
         f = choices[key][1]
