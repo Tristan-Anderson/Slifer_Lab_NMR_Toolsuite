@@ -31,7 +31,7 @@ If you want to edit the primary and secondary thermistors - edit them here.
 ####################################################################
 
 asciigui_default_delimiter = '\t'
-asciigui_matplotlib_backend_on = 'GTK3Agg'
+asciigui_matplotlib_backend_on = 'GtkAgg'
 asciigui_matplotlib_backend_off = 'agg'
 
 

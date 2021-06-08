@@ -613,6 +613,7 @@ class nmrAnalyser(AsciiGUI):
                     "updaterawsignal":[updaterawsigmsg, self.getRawsig],
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
+        plt.ion()
         self.figure.show()
         print(matplotlib.get_backend())
         key = self.dict_selector(choices)
