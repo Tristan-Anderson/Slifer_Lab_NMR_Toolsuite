@@ -614,6 +614,7 @@ class nmrAnalyser(AsciiGUI):
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
         self.figure.show()
+        print(matplotlib.get_backend())
         key = self.dict_selector(choices)
         f = choices[key][1]
         if failedfit:
