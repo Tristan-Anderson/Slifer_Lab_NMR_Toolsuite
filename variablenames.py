@@ -47,17 +47,17 @@ asciigui_matplotlib_backend_off = 'agg'
 """
 ####################################################################
 # In the DAQ csv, what is the time column labeled?
-dmsa_time_colname = "Time"
+dmsa_time_colname = "time"
 
  
 # What is the primary thermistor? 
-dmsa_primary_thermometer_colname = "CCX.T3 (K)" #default 
-#dmsa_primary_thermometer_colname = "CCCS.T3 (K)" #For older datasets
+#dmsa_primary_thermometer_colname = "CCX.T3 (K)" #default 
+dmsa_primary_thermometer_colname = "CCCCS.T3 (K)" #For older datasets
 
 
 # What is the secondary thermistor?
-dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)" # default
-#dmsa_secondary_thermometer_colname = "Vapor Pressure (K)" #For older datasets
+#dmsa_secondary_thermometer_colname = "Vapor Pressure Temperature (K)" # default
+dmsa_secondary_thermometer_colname = "Vapor Pressure (K)" #For older datasets
 
 # What is the magnet PSU reading?
 dmsa_magnet_psu_amperage_colname = "Magnet Current (A)"
