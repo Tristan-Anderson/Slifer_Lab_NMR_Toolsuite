@@ -284,12 +284,13 @@ def NMRAnalyzer(args):
     """
     Get the baseline and rawsignal from the user.
     """
-    instance = nmrAnalyser(args, hardinit=True, entermainloop=True)
+    instance = nmrAnalyser(args, hardinit=True)
     del instance
 
 class nmrAnalyser(AsciiGUI):
-    def __init__(self,args=None, hardinit=False, entermainloop=False):
+    def __init__(self,args=None, hardinit=False, evademainloop=False):
         # Intialize critical variables
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_on)
         self.rootdir = os.getcwd()
         self.delimeter = variablenames.asciigui_default_delimiter
         self.hardinit = hardinit
@@ -301,15 +302,13 @@ class nmrAnalyser(AsciiGUI):
             self.servermode = args.servermode
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
-
+        if not evademainloop:
             self.mainloop()
-
        
     def overrideRootDir(self, override):
         # Used only for the automate method.
         self.rootdir = override
         pass
-
 
     def getBaseline(self):
         # Gets the PATH for the baseline
@@ -340,9 +339,34 @@ class nmrAnalyser(AsciiGUI):
         self.rawsigSkipLinesGetter()
         self.updateDataFrame()
 
+    def collectFiles(self): #diagnostic only
+        self.blSkipLinesGetter()
+        self.rawsigSkipLinesGetter()
+        self.updateDataFrame()
+
+    def diagnosticFitting(self): #diagnostic only
+        self.updateIndecies()
+        npriev = self.startcolumn[0]
+        for index, tupp in enumerate(self.automatefits):
+                f = tupp[0] # Function name (sin, third-order, fourth-order ... , exponential)
+                            # Litterally eval()'ed, dont tell opsec, or Professor Arvind Narayan that I did this
+                n = tupp[1] # The name that the user gave their template fit before clicking the "fit data" button
+                            # Used to itteratively map / shift fitting, and naming of fits, subtractions, etc.
+                self.df, fig, chsq, rawsigfit, self.didfailfit = v.gff(
+                                self.df, self.start_index, self.end_index, fit_sans_signal=True,
+                                function=[f], fitname=n, x=self.xname,
+                                binning=self.binning, gui=True, redsig=True, 
+                                y=npriev, plottitle=self.plottitle
+                                )
+                npriev = tupp[1]
+
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
+        self.diagnostic = kwargs.pop('diagnostic', False)
         if self.isautomated:
+            self.baselinepath = kwargs.pop('baselinepath', '')
+            self.rawsigpath = kwargs.pop('rawsigpath', '')
+        if self.diagnostic:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
         
@@ -382,7 +406,7 @@ class nmrAnalyser(AsciiGUI):
         self.blSkipLinesGetter()        # Find the header size of the bl file
         self.rawsigSkipLinesGetter()    # Find the header size of the rawsig file
         self.updateDataFrame()          # Generate dataframe based on the user selected filed
-        if self.isautomated:
+        if self.isautomated or self.diagnostic:
             # If it's automated, skip the subsequent functions since they were already passed
             #   into the fetchArgs(**kwargs)
             return True
@@ -527,23 +551,24 @@ class nmrAnalyser(AsciiGUI):
         else:
             self.figure = graph
 
-    def mainloop(self, failedfit=False):
+    def mainloop(self, failedfit=False, diagnostic=False):
         try:
-            if not failedfit:
-                self.getBaseline()
-                them = '/'.join(self.baselinepath.split('/')[:-1])
-                os.chdir(them)
-                os.chdir('..')
-                self.getRawsig()
-                self.fetchArgs()
-            else:
-                self.blSkipLinesGetter()
-                self.rawsigSkipLinesGetter()
-                self.updateDataFrame()
-                
-                #self.updateMaterialType()
-                #self.updateInstanceName()
-                self.updateGraph()
+            if not diagnostic:
+                if not failedfit:
+                    self.getBaseline()
+                    them = '/'.join(self.baselinepath.split('/')[:-1])
+                    os.chdir(them)
+                    os.chdir('..')
+                    self.getRawsig()
+                    self.fetchArgs()
+                else:
+                    self.blSkipLinesGetter()
+                    self.rawsigSkipLinesGetter()
+                    self.updateDataFrame()
+                    
+                    #self.updateMaterialType()
+                    #self.updateInstanceName()
+                    self.updateGraph()
             while True:
                 print("#"*70)
                 self.currentSettings()
@@ -551,6 +576,7 @@ class nmrAnalyser(AsciiGUI):
                 self.header("Data frame head")
                 print("#"*70)
                 print(self.df.head(3))
+                self.figure.show()
                 _ = self.allchoices(failedfit)
                 if _ == "triggerAutomateMethod":
                     break
@@ -613,7 +639,7 @@ class nmrAnalyser(AsciiGUI):
                     "updaterawsignal":[updaterawsigmsg, self.getRawsig],
                     "updatematerial":[changematerialmsg, self.updateMaterialType],
                     "nameinstance":[nameinstancemsg, self.setInstanceName]}
-        self.figure.show()
+
         key = self.dict_selector(choices)
         f = choices[key][1]
         if failedfit:
