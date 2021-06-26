@@ -18,6 +18,9 @@ Scope: We've got some nasty data, and this program should use cubic spline inter
 	and then be used to subset an seperate datatset.
 """
 
+x = 'time'
+y = 'Scaled Polarization (%)'
+
 class AsciiGUI():
 	"""
 	The master template
@@ -280,8 +283,7 @@ class ripItUp(AsciiGUI):
 		self.data_to_subset = self.getcsv(self.path_data_to_subset)
 
 	def select_n_points(self, tolerance):
-		x = 'time'
-		y = 'sum'
+		
 		n = 25
 
 		self.data_to_subset[x] = pandas.to_datetime(self.data_to_subset[x], format="%Y-%m-%d %H:%M:%S")
@@ -438,5 +440,14 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 			raise ValueError("Can not get xdata for fit.")
 
 	return xdata_for_fit
+if __name__ == "__main__":
+    df = main()
+    
+    if True:
+	    accepted = df[(df['spline min'] < df[y]) & (df['spline max'] > df[y])]
+	    rejected = df[(df['spline min'] > df[y]) & (df['spline max'] < df[y])]
+	    with open('accepted_data.csv', 'w') as f:
+		    accepted.to_csv(f)
+        with open('rejected_data.csv', 'w') as f:
+            rejected.to_csv(f)
 
-#main()
