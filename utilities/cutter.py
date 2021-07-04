@@ -442,12 +442,12 @@ def get_x_for_fit(trimmed, Sd, Sm, Sy, t):
 	return xdata_for_fit
 if __name__ == "__main__":
     df = main()
-    
+
     if True:
-	    accepted = df[(df['spline min'] < df[y]) & (df['spline max'] > df[y])]
-	    rejected = df[(df['spline min'] > df[y]) & (df['spline max'] < df[y])]
-	    with open('accepted_data.csv', 'w') as f:
-		    accepted.to_csv(f)
+        accepted = df[(df['spline min'] < df[y]) & (df['spline max'] > df[y])]
+        rejected = df[(df['spline min'] > df[y]) & (df['spline max'] < df[y])]
+        with open('accepted_data.csv', 'w') as f:
+            accepted.to_csv(f)
         with open('rejected_data.csv', 'w') as f:
             rejected.to_csv(f)
 

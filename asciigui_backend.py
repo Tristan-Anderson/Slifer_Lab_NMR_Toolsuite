@@ -16,7 +16,7 @@ contents may have occurred during shipment.
 import NMR_Analyzer as v
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor,asciigui_backend
 from matplotlib import pyplot as plt
-import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
+import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse,traceback,sys
 
 """
 # TODO: Add overview of current settings on each mainloop in table format.
@@ -311,6 +311,7 @@ class nmrAnalyser(AsciiGUI):
         pass
 
     def getBaseline(self):
+        traceback.print_stack()
         # Gets the PATH for the baseline
         self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
@@ -363,10 +364,7 @@ class nmrAnalyser(AsciiGUI):
     def fetchArgs(self, **kwargs):
         self.isautomated = kwargs.pop('isautomated', False)
         self.diagnostic = kwargs.pop('diagnostic', False)
-        if self.isautomated:
-            self.baselinepath = kwargs.pop('baselinepath', '')
-            self.rawsigpath = kwargs.pop('rawsigpath', '')
-        if self.diagnostic:
+        if self.isautomated or self.diagnostic:
             self.baselinepath = kwargs.pop('baselinepath', '')
             self.rawsigpath = kwargs.pop('rawsigpath', '')
         
@@ -925,7 +923,7 @@ class nmrAnalyser(AsciiGUI):
         """
             Replicated from the tkinter version of the gui
         """
-        singleThread = False
+        singleThread = True
         
         matplotlib.use(variablenames.asciigui_matplotlib_backend_off) # Thwarts X-server Errors
         # Matplotlib is NOT thread-safe w/ known race conditions.
@@ -972,31 +970,8 @@ class nmrAnalyser(AsciiGUI):
         for index, value in enumerate(oh_indexes):
             
             (start, end) = value
-            """print('fitnumber',
-            self.automatefits,
-            self.material_type,
-            self.mutouse,
-            self.binning,
-            self.integrate,
-            self.vnavme,
-            self.signalstart,
-            self.signalend,
-            self.fitlorentzian,
-            self.xname,
-            self.xaxlabel,
-            self.yname,
-            self.yaxlabel,
-            self.xmin,
-            self.xmax,
-            self.startcolumn,
-            self.instancename,
-            self.plottitle,
-            True,
-            ([tefiles[start]] if start==end else tefiles[start:end]),
-            self.rawsigpath,
-            self.baselinepath)
-            exit()"""
-            self.workpool.append(nmrAnalyser())
+            
+            self.workpool.append(nmrAnalyser(evademainloop=True))
             self.workpool[index].overrideRootDir(self.rootdir)
             self.workpool[index].fetchArgs(fitnumber='fitnumber',
                 automatefits= self.automatefits,
@@ -1020,7 +995,8 @@ class nmrAnalyser(AsciiGUI):
                 isautomated= True,
                 filelist = ([tefiles[start]] if start==end else tefiles[start:end]),
                 rawsigpath = self.rawsigpath,
-                baselinepath = self.baselinepath)
+                baselinepath = self.baselinepath
+                )
             self.workpool[index].updateItemSeed(start)
 
         if singleThread:

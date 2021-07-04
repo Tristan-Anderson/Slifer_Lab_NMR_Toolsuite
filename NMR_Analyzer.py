@@ -630,7 +630,7 @@ def lorentzian(xdata, x0, w, A):
 
     #A = 1
 
-    return A / (3.1415926535897932384626433) * (1 / 2 * w) / (((xdata - x0)) ** 2 + (1 / 2 * w) ** 2)
+    return A / (numpy.pi) * (1 / 2 * w) / (((xdata - x0)) ** 2 + (1 / 2 * w) ** 2)
 
 
 def gcurve(xdata, x0, sigma, A):
