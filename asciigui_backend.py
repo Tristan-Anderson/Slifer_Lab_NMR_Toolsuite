@@ -923,7 +923,7 @@ class nmrAnalyser(AsciiGUI):
         """
             Replicated from the tkinter version of the gui
         """
-        singleThread = True
+        singleThread = False
         
         matplotlib.use(variablenames.asciigui_matplotlib_backend_off) # Thwarts X-server Errors
         # Matplotlib is NOT thread-safe w/ known race conditions.
