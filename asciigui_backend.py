@@ -1039,6 +1039,7 @@ class nmrAnalyser(AsciiGUI):
 
     def repeatAdNauseum(self, filelist, graphs, graphdata, home, failed=False, failedno=0, self_itemseed = None, id_num=''):
         # based on VME/VNA file selection what y-axis are we going to apply the user's settings to first on a blind loop
+        matplotlib.use(variablenames.asciigui_matplotlib_backend_off) # The backend must be off, or we'll crash x.
         self.analysisfile = pandas.DataFrame()
         self.dataset = {}
         self.failedfiles = []
@@ -1238,7 +1239,7 @@ class nmrAnalyser(AsciiGUI):
             self.workpool = {}
             for index, value in enumerate(failed_multi_threaded_indexes):
                 (start, end) = value
-                self.workpool[index] = nmrAnalyser()
+                self.workpool[index] = nmrAnalyser(evademainloop=True)
                 self.workpool[index].overrideRootDir(self.rootdir)
                 self.workpool[index].fetchArgs(fitnumber='fitnumber',
                     automatefits= self.automatefits,
