@@ -288,7 +288,7 @@ def NMRAnalyzer(args):
     del instance
 
 class nmrAnalyser(AsciiGUI):
-    def __init__(self,args=None, hardinit=False, evademainloop=False):
+    def __init__(self,args='', hardinit=False, evademainloop=False):
         # Intialize critical variables
         matplotlib.use(variablenames.asciigui_matplotlib_backend_on)
         self.rootdir = os.getcwd()
@@ -299,7 +299,7 @@ class nmrAnalyser(AsciiGUI):
         self.analysisfile = pandas.DataFrame()
         self.failedfiles = []
         if hardinit:
-            self.servermode = args.servermode
+            self.servermode = False
             self.processes = int(8*multiprocessing.cpu_count()/10)
             print(self.processes, "Processing threads available")
         if not evademainloop:
@@ -581,7 +581,10 @@ class nmrAnalyser(AsciiGUI):
                 elif _ == "giveUpRefitting":
                     break
         except KeyboardInterrupt:
-            print("Keyboard Inturrupt recieved in mainloop. Exiting.")
+            if self.diagnostic:
+                pass
+            else:
+                print("Keyboard Inturrupt recieved in mainloop. Exiting.")
             return True
 
     def allchoices(self, failedfit):
@@ -746,6 +749,11 @@ class nmrAnalyser(AsciiGUI):
         self.xaxlabel = self.xname
         self.updateGraph()
 
+    def overrideYname(self, yname):
+        self.yname = yname
+        self.yaxlabel = self.yname
+        self.updateGraph()
+
     def changeyname(self):
         self.announcement("Current Y name "+str(self.yname))
         columns = self.df.columns.tolist()
@@ -753,9 +761,8 @@ class nmrAnalyser(AsciiGUI):
         print("available columns:") 
         nice = [columnmsg for i in range(len(columns))]
         choices = dict(zip(columns, nice))
-        self.yname = self.dict_selector(choices)
-        self.yaxlabel = self.yname
-        self.updateGraph()
+        self.overrideYname(self.dict_selector(choices))
+        
 
     def changexlabel(self):
         self.announcement("Current xlabel "+str(self.xaxlabel))
@@ -919,10 +926,11 @@ class nmrAnalyser(AsciiGUI):
         print("Filelist")
         print(self.filelist)
 
-    def automate(self):
+    def automate(self, **kwargs):
         """
             Replicated from the tkinter version of the gui
         """
+        addition = kwargs.pop("addition", '')
         singleThread = False
         
         matplotlib.use(variablenames.asciigui_matplotlib_backend_off) # Thwarts X-server Errors
@@ -1029,8 +1037,7 @@ class nmrAnalyser(AsciiGUI):
             self.automatefits = []
             self.failedFitCatcher(graphs, graphdata, home)
         
-        input('Press any key to continue')
-        self.addEntry(appendme=self.analysisfile)
+        self.addEntry(appendme=self.analysisfile, addition=addition)
         matplotlib.use(variablenames.asciigui_matplotlib_backend_on) # Turn plotting front-end back on.
         raise KeyboardInterrupt # Get out of the mainloop.
 
@@ -1181,7 +1188,7 @@ class nmrAnalyser(AsciiGUI):
                 self.df.to_csv(f,index=False)
             v.add_entry(*k, headers=headers if h is not None else h, addition=addition,dontwrite=dontwrite)
         elif appendme is not None:
-            v.add_entry(*headers, headers=headers if h is not None else h, appendme=appendme)
+            v.add_entry(*headers, headers=headers if h is not None else h, appendme=appendme, addition=addition)
         else:
             with open(self.instancename+'.csv', 'w') as f:
                 self.df.to_csv(f,index=False)
@@ -1609,6 +1616,8 @@ class spinCurves(AsciiGUI):
         updateEndTime = "Set end time"
         updateEndDate = "Set end date"
         executemsg = "Fit the plot"
+        reselectx = "Select an x-axis"
+        reselecty = "Select a y-axis"
         toggleupdownmsg = "Toggle Spin up / Spin Down mode"
 
         c = {"SelectCSV":[selectionmsg, self.getSelection],
@@ -1619,12 +1628,20 @@ class spinCurves(AsciiGUI):
             'updateStartDate':[setstartdate, self.updateStartDate],
             'updateEndTime':[updateEndTime, self.updateEndTime],
             'updateEndDate':[updateEndDate, self.updateEndDate],
+            'reselectx':[updateEndDate, self.updateXAxis],
+            'reselecty':[updateEndDate, self.updateYAxis],
             'fitcurve':[executemsg, self.execute]
                 }
 
         key = self.dict_selector(c)
         f = c[key][1]
         f()
+
+    def updateXAxis(self):
+        pass
+
+    def updateYAxis(self):
+        pass
 
     def updateStartTime(self):
         print("START TIME: Enter the number of seconds:")

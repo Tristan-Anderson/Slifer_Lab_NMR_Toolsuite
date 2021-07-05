@@ -221,11 +221,13 @@ def kc1(filesdir, dn='', dump='.', additive="TE"):
 		print("Checking file sizes may be a good way to start looking mis-matched #'s.")
 		return 0
 
+	
 	os.chdir(dump)
 	with open(dn+additive+"_average.ta1", 'w') as f:
 		ta1filewriter(f, yavg, xavg, avgt, icurent, cfq, freqspan,date=(min(da)+(max(da)-min(da))/2).strftime("%Y-%m-%d %H:%M:%S"))
+	
 
-def avg_nested_dirs(filesdir):
+def avg_nested_dirs(filesdir, returndir='.'):
 	additive=''.join(filesdir.split('/')[-3]) # Is a string of the element between  /^^/ <- there. Useful in making the user type less.
 	for (dirpath, dirnames, filenames) in os.walk(filesdir):
 		dirnames = dirnames
@@ -233,11 +235,13 @@ def avg_nested_dirs(filesdir):
 	for dirname in dirnames:
 		kc1(filesdir+dirname+'/', dn=dirname+'_', dump=filesdir, additive=additive)
 	print("Avering nested directories complete.")
+	os.chdir(returndir)
 
-def avg_single_dir(filesdir):
+def avg_single_dir(filesdir, returndir='.'):
 	additive=''.join(filesdir.split('/')[-3])
 	kc1(filesdir, dump=filesdir, additive=additive)
 	print("Avering single directory complete.")
+	os.chdir(returndir)
 # A place where there are a bunch of child directories containing .ta1 files (organized by te_directory_sorter.py)
 # And averages each child directory into a single file which it writes in parent directory
 """bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"

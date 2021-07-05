@@ -670,9 +670,6 @@ def gff(df, start, finish, fitname, **kwargs):
     #   __nearest IS YOUR FRIEND                                        #
     #####################################################################
 
-    Fucntion parameters that should be used together are grouped
-        together in the definition of the function.
-
     This fitting function has two modes
         It can fit the data arround a signal slice TO ONE FUNCTION that you 
             provide it (generally the fastest thing to do)

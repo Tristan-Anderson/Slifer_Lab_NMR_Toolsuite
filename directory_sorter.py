@@ -46,6 +46,7 @@ def shelf(location, **ts):
 	for (dirpath, dirnames, filenames) in os.walk(location):
 		fnames = filenames
 		break
+	print(location)
 
 	broken = []
 	alldates = []

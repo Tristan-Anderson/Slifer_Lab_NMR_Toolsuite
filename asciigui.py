@@ -14,7 +14,7 @@ contents may have occurred during shipment.
 """
 import NMR_Analyzer as v
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor,asciigui_backend
-import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib,argparse
+import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
 
 def main(args):
     def options():
@@ -65,10 +65,6 @@ def main(args):
     #cwd=rootdir
 
     #fixeddirs, fixedfiles = lsdir(cwd)
-parser = argparse.ArgumentParser(description='Start the toolsuite')
-parser.add_argument('--server-mode', dest='servermode', action='store_true', default=False,
-                    help='Disable the .show methods on figures, useful for remote execution')
 
-args = parser.parse_args()
 
 main(args)
