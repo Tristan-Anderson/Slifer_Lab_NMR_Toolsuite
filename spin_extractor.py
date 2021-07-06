@@ -165,3 +165,7 @@ def getupdown(*args, **kwargs):
 	ax[0].legend(loc='best')
 
 	return fig
+
+if __name__ == "__main__":
+	#Needs some work
+	pass

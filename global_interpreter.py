@@ -512,16 +512,14 @@ def collator(datapath, te=False, constant=1, home=None, deuteron=False, to_save 
 		return constants, teinfo
 	return False
 
+if __name__ == "__main__":
+	#Useage:
 
-"""
-#Useage:
+	home= ""		# Where the interpreter will drop final results.
+	datapath = ""	# Where the global analysis csv is
 
-home= ""		# Where the interpreter will drop final results.
-datapath = ""	# Where the TE global analysis csv is
+	# constants and teinfo are calibration parameters, and some statistics passed foward to the enhanced calculation
+	constants, teinfo = collator(datapath,te=True, home=home, title="TE d-Prop", deuteron=True)
 
-# constants and teinfo are calibration parameters, and some statistics passed foward to the enhanced calculation
-constants, teinfo = collator(datapath,te=True, home=home, title="TE d-Prop", deuteron=True)
-
-datapath = ""	# Where the enhanced global analysis csv is
-collator(datapath, home=home, constant=constants, to_save=teinfo, title="ENHANCED d-Prop", deuteron=True)
-"""
+	datapath = ""	# Where the enhanced global analysis csv is
+	collator(datapath, home=home, constant=constants, to_save=teinfo, title="ENHANCED d-Prop", deuteron=True)

@@ -778,19 +778,19 @@ def main_videomaker(tolerance):
 	    pool.join()
 
 
+if __name__ == "__main__":
+	print("#"*50)
+	print("#",15*" ", "Start Merging", 15*" ","#")
+	print("#"*50)
+	if not os.path.isfile(globalcsv2):
+		main_df_column_merger()
 
-print("#"*50)
-print("#",15*" ", "Start Merging", 15*" ","#")
-print("#"*50)
-if not os.path.isfile(globalcsv2):
-	main_df_column_merger()
-
-print("#"*50)
-print("#",15*" ", "Start Metric", 15*" ","#")
-print("#"*50)
-if not os.path.isfile(karlmethod):
-	main_metric_generator()
-print("#"*50)
-print("#",15*" ", "Start Video", 15*" ","#")
-print("#"*50)
-main_videomaker(tolerance=.3)
+	print("#"*50)
+	print("#",15*" ", "Start Metric", 15*" ","#")
+	print("#"*50)
+	if not os.path.isfile(karlmethod):
+		main_metric_generator()
+	print("#"*50)
+	print("#",15*" ", "Start Video", 15*" ","#")
+	print("#"*50)
+	main_videomaker(tolerance=.3)

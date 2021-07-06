@@ -242,15 +242,15 @@ def avg_single_dir(filesdir, returndir='.'):
 	kc1(filesdir, dump=filesdir, additive=additive)
 	print("Avering single directory complete.")
 	os.chdir(returndir)
-# A place where there are a bunch of child directories containing .ta1 files (organized by te_directory_sorter.py)
-# And averages each child directory into a single file which it writes in parent directory
-"""bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"
-additive=''.join(bldirs.split('/')[-3]) # Is a string of the element between  /^^/ <- there. Useful in making the user type less.
-kc1("sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", dump="sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", additive='TE_')
-exit()
-for (dirpath, dirnames, filenames) in os.walk(bldirs):
-	dirnames = dirnames
-	break
-for dirname in dirnames:
-	kc1(bldirs+dirname+'/', dn=dirname+'_', dump=bldirs, additive=additive)
-"""
+
+if __name__ == "__main__":
+	# Needs some work
+	bldirs = "sep_2020/data_record_9-12-2020/TE/912_514p/"
+	additive=''.join(bldirs.split('/')[-3])
+	kc1("sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", dump="sep_2020/data_record_9-14-2020/TE/914_641_650p_for_karl/", additive='TE_')
+	
+	for (dirpath, dirnames, filenames) in os.walk(bldirs):
+		dirnames = dirnames
+		break
+	for dirname in dirnames:
+		kc1(bldirs+dirname+'/', dn=dirname+'_', dump=bldirs, additive=additive)
