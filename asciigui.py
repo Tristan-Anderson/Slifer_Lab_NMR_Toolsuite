@@ -16,7 +16,7 @@ import NMR_Analyzer as v
 import daq_muncher, directory_sorter,sweep_averager,global_interpreter,spin_extractor,asciigui_backend
 import datetime,pandas,os,numpy,gc,time,multiprocessing,variablenames,matplotlib
 
-def main(args):
+def main():
     def options():
         print("NMR Toolsuite options:")
         functions = [asciigui_backend.DAQExtractor, asciigui_backend.DirSorter, asciigui_backend.SweepAverager, asciigui_backend.NMRAnalyzer, asciigui_backend.GlobalInterpreter, asciigui_backend.SpinCurves]
@@ -43,7 +43,7 @@ def main(args):
     while True:
         c= options()
         f = optdict[c]
-        f(args)
+        f()
         # Good idea to "clean up" so to set home directory, and return to it in-between functionalities.
         os.chdir(home)
         
@@ -67,4 +67,4 @@ def main(args):
     #fixeddirs, fixedfiles = lsdir(cwd)
 
 
-main(args)
+main()

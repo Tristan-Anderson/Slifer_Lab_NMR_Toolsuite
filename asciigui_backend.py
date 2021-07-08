@@ -32,15 +32,13 @@ class AsciiGUI():
         - Output formatting
         - And an Options selection method,
     """
-    def __init__(self, args, **passed):
+    def __init__(self, **passed):
         self.delimeter = '\t'
         self.hardinit = passed.pop('hardinit',False)
         if passed.pop('getrootdir',False):
             self.rootdir = os.getcwd()
         self.processes = 1
         self.servermode = False
-        if self.hardinit:
-            self.servermode = args.servermode
 
     def fileDirectorySelector(self, dironly=False, fileonly=False):
         cwd = os.getcwd()
@@ -280,11 +278,11 @@ class AsciiGUI():
                 print("Invalid Format. Enter date in MM/DD/YYYY format.")
 
 
-def NMRAnalyzer(args):
+def NMRAnalyzer():
     """
     Get the baseline and rawsignal from the user.
     """
-    instance = nmrAnalyser(args, hardinit=True)
+    instance = nmrAnalyser(hardinit=True)
     del instance
 
 class nmrAnalyser(AsciiGUI):
@@ -311,7 +309,6 @@ class nmrAnalyser(AsciiGUI):
         pass
 
     def getBaseline(self):
-        traceback.print_stack()
         # Gets the PATH for the baseline
         self.announcement("Update Baseline")
         print("Current working directory:",os.getcwd())
@@ -581,7 +578,7 @@ class nmrAnalyser(AsciiGUI):
                 elif _ == "giveUpRefitting":
                     break
         except KeyboardInterrupt:
-            if self.diagnostic:
+            if diagnostic:
                 pass
             else:
                 print("Keyboard Inturrupt recieved in mainloop. Exiting.")
@@ -1298,7 +1295,7 @@ class nmrAnalyser(AsciiGUI):
 
 
 class daqExtractor(AsciiGUI):
-    def __init__(self, args):
+    def __init__(self):
         self.header("DAQ Extractor")
         print("Extracts and organizes DAQ .csvs into .ta1 based on keywords found in variablenames.py and setting entered here, by the user.")
         self.selecton = ''
@@ -1363,18 +1360,18 @@ class daqExtractor(AsciiGUI):
 
 
 class dirSorter(AsciiGUI):
-    def __init__(self, args):
+    def __init__(self):
         self.header("Directory Sorter")
         print("Packs and unpacks directories by a width of time based on timestamps present in the .ta1 files")
         self.selecton = ''
         self.fdump = ''
         self.rootdir = os.getcwd()
-        self.getSelection()
         self.mainloop()
 
 
     def mainloop(self):
         try:
+            self.getSelection()
             while True:
                 self.choices()
         except KeyboardInterrupt:
@@ -1426,28 +1423,28 @@ class dirSorter(AsciiGUI):
         self.h = self.getNumInRange(0,23)
 
         
-def DAQExtractor(args):  
-    instance = daqExtractor(args)
+def DAQExtractor():  
+    instance = daqExtractor()
     del instance
 
-def DirSorter(args):
-    instance = dirSorter(args)
+def DirSorter():
+    instance = dirSorter()
     del instance
 
-def SweepAverager(args):
-    instance = sweepAverager(args)
+def SweepAverager():
+    instance = sweepAverager()
     del instance
 
 class sweepAverager(AsciiGUI):
-    def __init__(self, args):
-        super().__init__(args, getrootdir=True)
+    def __init__(self):
+        super().__init__(getrootdir=True)
 
         self.mainloop()
 
 
     def mainloop(self):
-        self.updateLocation()
         try: 
+            self.updateLocation()
             while True:
                 self.choices()
 
@@ -1484,13 +1481,13 @@ class sweepAverager(AsciiGUI):
             sweep_averager.avg_nested_dirs(self.selection)
 
 
-def GlobalInterpreter(args):
-    instance = globalInterpreter(args)
+def GlobalInterpreter():
+    instance = globalInterpreter()
     del instance
 
 class globalInterpreter(AsciiGUI):
-    def __init__(self, args):
-        super().__init__(args, getrootdir=True)
+    def __init__(self):
+        super().__init__(getrootdir=True)
         self.rootdir += '/'
         self.enhancedpath = ''
         self.tepath = ''
@@ -1548,14 +1545,14 @@ class globalInterpreter(AsciiGUI):
         print("Enhanced Global analysis complete.")
 
 
-def SpinCurves(args):
-    instance = spinCurves(args)
+def SpinCurves():
+    instance = spinCurves()
     del instance
     print("Feature not entirely implemented.")
 
 class spinCurves(AsciiGUI):
-    def __init__(self, args):
-        super().__init__(args, getrootdir=True)
+    def __init__(self):
+        super().__init__( getrootdir=True)
         self.title = "Spin Curve"
         self.df = pandas.DataFrame()
         self.selection="None"
@@ -1572,9 +1569,9 @@ class spinCurves(AsciiGUI):
         self.mainloop()
 
     def mainloop(self):
-        self.getSelection()
-        self.selectDate()
         try:
+            self.getSelection()
+            self.selectDate()
             while True:
                 self.currentSettings()
                 if self.Hasplots:
@@ -1753,7 +1750,7 @@ class spinCurves(AsciiGUI):
 
 
 class omniVIEW(AsciiGUI):
-    def __init__(self, args):
+    def __init__(self):
         pass
 
 
